@@ -150,6 +150,10 @@ function sanitizeLine(value) {
 
 function parsePeriodFromMarketName(marketName = "") {
   const n = normalizeForCompare(marketName);
+  if (/prv[ýy]\s*set/.test(n)) return "first_set";
+  if (/druh[ýy]\s*set/.test(n)) return "second_set";
+  if (/^1\s*\.?\s*set|v 1\.?\s*sete|1\.?\s*set/.test(n)) return "first_set";
+  if (/^2\s*\.?\s*set|v 2\.?\s*sete|2\.?\s*set/.test(n)) return "second_set";
   if (/^1\s*\.?\s*polcas|v 1\.?\s*polcase|1\.?\s*polcas/.test(n)) return "first_half";
   if (/^2\s*\.?\s*polcas|v 2\.?\s*polcase|2\.?\s*polcas/.test(n)) return "second_half";
   return "full_time";
@@ -162,17 +166,23 @@ function pushMarket(markets, row) {
 
 function parseNikeDetailMarketsForMatch(match, detailMarkets = []) {
   const markets = [];
+  const homeKey = normalizeForCompare(match.homeTeam || "").split(" ").filter(Boolean)[0] || "";
+  const awayKey = normalizeForCompare(match.awayTeam || "").split(" ").filter(Boolean)[0] || "";
   for (const market of detailMarkets) {
     const marketName = String(market.marketName || "").trim();
     if (!marketName) continue;
     const normalizedName = normalizeForCompare(marketName);
     const period = parsePeriodFromMarketName(marketName);
-    // Current compare pipeline is full-time only.
-    if (period !== "full_time") continue;
+    if (!["full_time", "first_set", "second_set"].includes(period)) continue;
     const rows = Array.isArray(market.rows) ? market.rows : [];
 
     // Zápas can contain 1X2 + double chance, or 2-way winner depending on sport.
-    if (normalizedName === "zapas") {
+    const isPureSetWinnerMarket = /^([12]\s*\.?\s*set|prv[ýy]\s*set|druh[ýy]\s*set)$/.test(normalizedName);
+    if (
+      normalizedName === "zapas" ||
+      normalizedName === "vitaz zapasu" ||
+      isPureSetWinnerMarket
+    ) {
       for (const row of rows) {
         const odds = (row.odds || []).map((v) => parseOdd(v, { rejectDateLike: false, rejectTimeLike: false })).filter((v) => v !== null);
         const hasDraw = normalizeForCompare(row.text || "").includes("remiza");
@@ -211,7 +221,11 @@ function parseNikeDetailMarketsForMatch(match, detailMarkets = []) {
       continue;
     }
 
-    if (normalizedName === "handicap") {
+    if (
+      normalizedName === "handicap" ||
+      normalizedName === "handicap gemy" ||
+      normalizedName.endsWith("handicap gemy")
+    ) {
       for (const row of rows) {
         const odds = (row.odds || []).map((v) => parseOdd(v, { rejectDateLike: false, rejectTimeLike: false })).filter((v) => v !== null);
         const lines = [...String(row.text || "").matchAll(/([+-]\d+(?:[.,](?:0|5))?)/g)]
@@ -230,7 +244,12 @@ function parseNikeDetailMarketsForMatch(match, detailMarkets = []) {
       continue;
     }
 
-    if (normalizedName.includes("pocet golov v zapase")) {
+    const isMatchGoalsTotal = normalizedName === "pocet golov v zapase";
+    const isMatchGamesTotal = normalizedName === "pocet gemov";
+    const isPlayerScopedTotal =
+      (homeKey && normalizedName.includes(homeKey)) ||
+      (awayKey && normalizedName.includes(awayKey));
+    if ((isMatchGoalsTotal || isMatchGamesTotal) && !isPlayerScopedTotal) {
       for (const row of rows) {
         const odds = (row.odds || []).map((v) => parseOdd(v, { rejectDateLike: false, rejectTimeLike: false })).filter((v) => v !== null);
         const lineTokens = [...String(row.text || "").matchAll(/menej ako\s*(\d+(?:[.,](?:0|5))?)/gi)]

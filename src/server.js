@@ -7,7 +7,7 @@ import { scrapeNikeSuperkurzy, debugNikeSuperkurzy } from "./scrapers/nike.js";
 import { searchFlashscoreMatch, scrapeFlashscoreDoubleChance, scrapeFlashscoreMarketByType } from "./scrapers/flashscore.js";
 import { EXPECTED_SUPERPONUKA_SNAPSHOT, EXPECTED_SUPERPONUKA_SPORT_BY_TITLE } from "./config/superponuka.js";
 import { createNormalizedMarket } from "./markets/market-model.js";
-import { getAllMarketHandlers } from "./markets/handlers.js";
+import { getAllMarketHandlers, getMarketHandler } from "./markets/handlers.js";
 import {
   normalizeForCompare,
   compareRows,
@@ -34,6 +34,9 @@ const PORT = Number(process.env.PORT || 3001);
 const HEADLESS = String(process.env.HEADLESS || "true") !== "false";
 const REQUEST_TIMEOUT_MS = Number(process.env.REQUEST_TIMEOUT_MS || 45000);
 const STRICT_EXPECTED_SUPERPONUKA = String(process.env.STRICT_EXPECTED_SUPERPONUKA || "false") === "true";
+const UI_CACHE_MS = Number(process.env.UI_CACHE_MS || 10000);
+let uiPipelineCache = { pipeline: null, cachedAtMs: 0 };
+let uiPipelineInFlight = null;
 
 function validateSuperponuka(matches) {
   if (!Array.isArray(matches) || matches.length === 0) return { ok: false, error: "Nike parser mismatch: no matches parsed" };
@@ -93,6 +96,33 @@ function validateFlashscoreMappings(matchMappings, expectedCount = null) {
   const hrefs = (matchMappings || []).filter((m) => m.matched).map((m) => m.flashscoreHref);
   if (new Set(hrefs).size !== hrefs.length) errors.push("duplicate flashscore href mapping");
   return { ok: errors.length === 0, errors };
+}
+
+async function getUiPipeline({ force = false } = {}) {
+  const now = Date.now();
+  const cacheValid = uiPipelineCache.pipeline && (now - uiPipelineCache.cachedAtMs) < UI_CACHE_MS;
+  if (!force && cacheValid) return uiPipelineCache.pipeline;
+  if (uiPipelineInFlight) return uiPipelineInFlight;
+  uiPipelineInFlight = (async () => {
+    const pipeline = await buildNikeTipsportPipeline();
+    if (pipeline?.ok) {
+      uiPipelineCache = { pipeline, cachedAtMs: Date.now() };
+    }
+    return pipeline;
+  })();
+  try {
+    return await uiPipelineInFlight;
+  } finally {
+    uiPipelineInFlight = null;
+  }
+}
+
+function selectionKeysForMarket(marketType) {
+  const handler = getMarketHandler(marketType);
+  if (Array.isArray(handler?.selectionKeys) && handler.selectionKeys.length) {
+    return handler.selectionKeys;
+  }
+  return [];
 }
 
 
@@ -185,33 +215,37 @@ async function buildNikeTipsportPipeline() {
         }
         continue;
       }
-      const fsMarket = marketType === "double_chance"
-        ? await scrapeFlashscoreDoubleChance({ matchUrl: fsMatch.href, headless: HEADLESS, timeoutMs: REQUEST_TIMEOUT_MS })
-        : await scrapeFlashscoreMarketByType({ matchUrl: fsMatch.href, marketType, headless: HEADLESS, timeoutMs: REQUEST_TIMEOUT_MS });
-      const tipsportRows = fsMarket.bookmakerRows.filter((b) => normalizeForCompare(b.bookmaker).includes("tipsport"));
       const nikeMarketRows = nikeMarketsForMatch.filter((m) => m.marketType === marketType);
+      const periods = [...new Set(nikeMarketRows.map((m) => m.period || "full_time"))];
 
-      if (!tipsportRows.length) {
-        for (const m of nikeMarketRows) {
-          controlRows.push({
-            matchId: match.id,
-            match: match.rawTitle,
-            kickoffAt: match.kickoffAt || null,
-            sport: match.sport,
-            marketType,
-            rawMarketName: fsMarket.marketName || marketType,
-            selection: m.selection,
-            period: m.period || "full_time",
-            line: m.line ?? null,
-            nikeOdd: m.nikeOdd,
-            tipsportOdd: null,
-            status: "NO_TIPSPORT_ROW",
-            compareReason: "tipsport_row_not_found_for_market"
-          });
+      for (const period of periods) {
+        const fsMarket = marketType === "double_chance"
+          ? await scrapeFlashscoreDoubleChance({ matchUrl: fsMatch.href, period, headless: HEADLESS, timeoutMs: REQUEST_TIMEOUT_MS })
+          : await scrapeFlashscoreMarketByType({ matchUrl: fsMatch.href, marketType, period, headless: HEADLESS, timeoutMs: REQUEST_TIMEOUT_MS });
+        const tipsportRows = fsMarket.bookmakerRows.filter((b) => normalizeForCompare(b.bookmaker).includes("tipsport"));
+        const nikeRowsForPeriod = nikeMarketRows.filter((m) => (m.period || "full_time") === period);
+
+        if (!tipsportRows.length) {
+          for (const m of nikeRowsForPeriod) {
+            controlRows.push({
+              matchId: match.id,
+              match: match.rawTitle,
+              kickoffAt: match.kickoffAt || null,
+              sport: match.sport,
+              marketType,
+              rawMarketName: fsMarket.marketName || marketType,
+              selection: m.selection,
+              period: m.period || "full_time",
+              line: m.line ?? null,
+              nikeOdd: m.nikeOdd,
+              tipsportOdd: null,
+              status: "NO_TIPSPORT_ROW",
+              compareReason: "tipsport_row_not_found_for_market_period"
+            });
+          }
         }
-      }
 
-      for (const nikeMarket of nikeMarketRows) {
+        for (const nikeMarket of nikeRowsForPeriod) {
         let mappedSelection = nikeMarket.selection;
         if (marketType === "double_chance") mappedSelection = mapSelectionForSwap(nikeMarket.selection, swapped);
         else if (isHomeAwayMarket(marketType)) mappedSelection = mapSelectionForSwap(nikeMarket.selection, swapped);
@@ -236,6 +270,7 @@ async function buildNikeTipsportPipeline() {
           tipsportOdd,
           flashscoreMatchUrl: fsMatch.href,
           sourceMarketName: fsMarket.marketName || null,
+          sourcePeriod: fsMarket.period || period,
           sourcePeriodName: fsMarket.periodName || null,
           columnLabels: fsMarket.columnLabels || [],
           rawBookmakerRowText: tipsportRow?.rawRowText || "",
@@ -336,6 +371,76 @@ async function buildNikeTipsportPipeline() {
         comparedRows.push({
           ...row,
           ...metrics
+        });
+      }
+      }
+    }
+
+    // Transparency rows: explicitly show market families available on Tipsport but not emitted by Nike.
+    const emittedTypeSet = new Set(nikeMarketsForMatch.map((m) => m.marketType));
+    const compareTypes = [...E2E_COMPARE_MARKET_TYPES];
+    for (const marketType of compareTypes) {
+      if (emittedTypeSet.has(marketType)) continue;
+      try {
+        const fsOnlyMarket = marketType === "double_chance"
+          ? await scrapeFlashscoreDoubleChance({ matchUrl: fsMatch.href, period: "full_time", headless: HEADLESS, timeoutMs: REQUEST_TIMEOUT_MS })
+          : await scrapeFlashscoreMarketByType({ matchUrl: fsMatch.href, marketType, period: "full_time", headless: HEADLESS, timeoutMs: REQUEST_TIMEOUT_MS });
+        const tipsportRows = fsOnlyMarket.bookmakerRows.filter((b) => normalizeForCompare(b.bookmaker).includes("tipsport"));
+        if (!tipsportRows.length) {
+          controlRows.push({
+            matchId: match.id,
+            match: match.rawTitle,
+            kickoffAt: match.kickoffAt || null,
+            sport: match.sport,
+            marketType,
+            rawMarketName: fsOnlyMarket.marketName || marketType,
+            selection: null,
+            period: fsOnlyMarket.period || "full_time",
+            line: null,
+            nikeOdd: null,
+            tipsportOdd: null,
+            status: "UNSUPPORTED",
+            compareReason: "nike_not_emitted_and_no_tipsport_rows_found"
+          });
+          continue;
+        }
+        const keys = selectionKeysForMarket(marketType);
+        for (const row of tipsportRows) {
+          for (const selectionKey of keys) {
+            const tipsportOdd = row.selectionOdds?.[selectionKey] ?? null;
+            if (tipsportOdd == null) continue;
+            controlRows.push({
+              matchId: match.id,
+              match: match.rawTitle,
+              kickoffAt: match.kickoffAt || null,
+              sport: match.sport,
+              marketType,
+              rawMarketName: fsOnlyMarket.marketName || marketType,
+              selection: selectionKey,
+              period: fsOnlyMarket.period || "full_time",
+              line: row.line ?? null,
+              nikeOdd: null,
+              tipsportOdd,
+              status: "TIPSPORT_ONLY",
+              compareReason: "nike_market_not_emitted_for_match"
+            });
+          }
+        }
+      } catch {
+        controlRows.push({
+          matchId: match.id,
+          match: match.rawTitle,
+          kickoffAt: match.kickoffAt || null,
+          sport: match.sport,
+          marketType,
+          rawMarketName: marketType,
+          selection: null,
+          period: "full_time",
+          line: null,
+          nikeOdd: null,
+          tipsportOdd: null,
+          status: "UNSUPPORTED",
+          compareReason: "flashscore_probe_failed_for_non_emitted_market"
         });
       }
     }
@@ -669,7 +774,7 @@ app.get("/api/flashscore/double-chance", async (req, res) => {
 });
 
 app.get("/api/flashscore/market-2way", async (req, res) => {
-  const { matchUrl, marketType } = req.query;
+  const { matchUrl, marketType, period } = req.query;
   if (!matchUrl || !String(matchUrl).trim()) {
     return res.status(400).setHeader("Content-Type", "application/json").json({ ok: false, error: "Query parameter matchUrl is required." });
   }
@@ -680,6 +785,7 @@ app.get("/api/flashscore/market-2way", async (req, res) => {
     const result = await scrapeFlashscoreMarketByType({
       matchUrl: String(matchUrl).trim(),
       marketType: String(marketType).trim(),
+      period: String(period || "full_time").trim(),
       headless: HEADLESS,
       timeoutMs: REQUEST_TIMEOUT_MS
     });
@@ -693,7 +799,8 @@ app.get("/api/flashscore/market-2way", async (req, res) => {
 
 app.get("/api/ui/summary", async (_req, res) => {
   try {
-    const pipeline = await buildNikeTipsportPipeline();
+    const force = String(_req.query?.force || "") === "1";
+    const pipeline = await getUiPipeline({ force });
     if (!pipeline.ok) return res.status(500).json({ ok: false, error: pipeline.error, stage: pipeline.stage });
     res.json({
       ok: true,
@@ -711,7 +818,8 @@ app.get("/api/ui/summary", async (_req, res) => {
 
 app.get("/api/ui/final-edges", async (_req, res) => {
   try {
-    const pipeline = await buildNikeTipsportPipeline();
+    const force = String(_req.query?.force || "") === "1";
+    const pipeline = await getUiPipeline({ force });
     if (!pipeline.ok) return res.status(500).json({ ok: false, error: pipeline.error, stage: pipeline.stage });
     res.json({ ok: true, updatedAt: new Date().toISOString(), rows: pipeline.rows });
   } catch (err) {
@@ -722,12 +830,47 @@ app.get("/api/ui/final-edges", async (_req, res) => {
 
 app.get("/api/ui/control-table", async (_req, res) => {
   try {
-    const pipeline = await buildNikeTipsportPipeline();
+    const force = String(_req.query?.force || "") === "1";
+    const pipeline = await getUiPipeline({ force });
     if (!pipeline.ok) return res.status(500).json({ ok: false, error: pipeline.error, stage: pipeline.stage });
     res.json({
       ok: true,
       updatedAt: new Date().toISOString(),
       rows: pipeline.controlRows
+    });
+  } catch (err) {
+    const message = normalizePlaywrightError(err?.message);
+    res.status(500).json({ ok: false, error: message });
+  }
+});
+
+app.get("/api/ui/snapshot", async (req, res) => {
+  try {
+    const force = String(req.query?.force || "") === "1";
+    const pipeline = await getUiPipeline({ force });
+    if (!pipeline.ok) return res.status(500).json({ ok: false, error: pipeline.error, stage: pipeline.stage });
+    const updatedAt = new Date().toISOString();
+    res.json({
+      ok: true,
+      updatedAt,
+      summary: {
+        ok: true,
+        updatedAt,
+        superponukaMatches: pipeline.nike.matches.length,
+        nikeEmittedMarkets: pipeline.nike.markets.length,
+        matchedComparedRows: pipeline.controlRows.filter((r) => r.status === "MATCHED").length,
+        finalEdgeRows: pipeline.rows.length
+      },
+      finalEdges: {
+        ok: true,
+        updatedAt,
+        rows: pipeline.rows
+      },
+      controlTable: {
+        ok: true,
+        updatedAt,
+        rows: pipeline.controlRows
+      }
     });
   } catch (err) {
     const message = normalizePlaywrightError(err?.message);

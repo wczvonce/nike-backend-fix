@@ -187,38 +187,6 @@ Rybakina E.
 +49
 SUPERŠANCA
 Stav si na favoritov vo výhodnom superkurze a využi skvelú šancu na navýšenie výhry – Superšancu! Kurzy zápasov sú tu výrazne vyššie než v bežnej ponuke a preto je podmienkou minimálne 5 zápasov na tikete. Máš už svojich favoritov? Mrkni ešte na Superšancu a navýš svoju výhru!
-14.03.2026 - Sobota
-Superšanca
-1
-X
-2
-1X
-12
-X2
-21:00
-162094
-Real Madrid
-vs
-Elche
-1.32
-6.32
-10.20
-1.09
-1.16
-3.91
-+334
-21:30
-162093
-FC Arouca
-vs
-Benfica Lisabon
-9.18
-5.91
-1.36
-3.60
-1.18
-1.10
-+224
 15.03.2026 - Nedeľa
 Superšanca
 1
@@ -316,12 +284,12 @@ Nordsjaelland
 Feyenoord
 vs
 Excelsior Rotterdam
-1.31
-6.12
-8.77
-1.08
-1.14
-3.60
+1.34
+6.32
+9.18
+1.10
+1.16
+3.74
 +256
 21:30
 229529
@@ -435,14 +403,6 @@ Toulouse
 Superšanca
 1
 2
-21:30
-157005
-Zverev A.
-vs
-Sinner J.
-5.30
-1.20
-+64
 23:00
 157004
 Alcaraz C.
@@ -500,12 +460,12 @@ X2
 AS Trenčín
 vs
 Skalica
-2.32
-3.25
-3.00
+2.38
+3.35
+3.10
+1.39
 1.35
-1.31
-1.56
+1.61
 +157
 18:00
 261100
@@ -779,24 +739,24 @@ Bodö/Glimt
 Arsenal FC
 vs
 Leverkusen
-1.30
-5.40
-9.20
-1.05
-1.14
-3.40
+1.32
+5.60
+9.60
+1.07
+1.16
+3.54
 +146
 21:00
 100313
 Chelsea
 vs
 Paris St.G.
-2.08
+2.14
 4.00
-3.00
-1.37
-1.23
-1.71
+3.10
+1.39
+1.27
+1.75
 +153
 21:00
 100314

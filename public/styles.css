@@ -19,7 +19,7 @@ h1 {
   display: flex;
   gap: 12px;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 button {
@@ -29,6 +29,51 @@ button {
   padding: 8px 12px;
   border-radius: 6px;
   cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.loading-panel {
+  margin-bottom: 12px;
+  padding: 8px 10px;
+  border: 1px solid #374151;
+  border-radius: 8px;
+  background: #111827;
+}
+
+.loading-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 6px;
+  font-size: 12px;
+  color: #cbd5e1;
+}
+
+.loading-track {
+  height: 9px;
+  border-radius: 999px;
+  background: #1f2937;
+  overflow: hidden;
+}
+
+.loading-bar {
+  height: 100%;
+  width: 0%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #2563eb 0%, #22d3ee 100%);
+  transition: width 220ms ease;
+}
+
+.loading-detail {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #9ca3af;
+  min-height: 16px;
 }
 
 .summary {

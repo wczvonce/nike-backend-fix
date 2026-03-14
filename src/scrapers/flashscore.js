@@ -107,6 +107,29 @@ function normalizeHeaderToken(value = "") {
     .toLowerCase();
 }
 
+function periodConfigFromKey(period = "full_time") {
+  const p = String(period || "full_time").toLowerCase();
+  if (p === "first_set") {
+    return {
+      period: "first_set",
+      periodName: "1. set",
+      clickRegex: /1\.\s*SET|1ST SET/i
+    };
+  }
+  if (p === "second_set") {
+    return {
+      period: "second_set",
+      periodName: "2. set",
+      clickRegex: /2\.\s*SET|2ND SET/i
+    };
+  }
+  return {
+    period: "full_time",
+    periodName: "Základný čas",
+    clickRegex: /Z[ÁA]KLADN[ÝY]\s*[ČC]AS|FULL TIME/i
+  };
+}
+
 export function isExactOrderedLabelSet(labels = [], expected = []) {
   if (!Array.isArray(labels) || !Array.isArray(expected)) return false;
   if (labels.length !== expected.length) return false;
@@ -156,10 +179,12 @@ async function scrapeFlashscoreMarketTable({
   requireExactLabelSet = false,
   expectedOddCount,
   requireLine = false,
+  period = "full_time",
   headless = true,
   timeoutMs = 45000
 }) {
   const url = normalizeMatchUrl(matchUrl);
+  const periodConfig = periodConfigFromKey(period);
   const browser = await chromium.launch({ headless });
   try {
     const context = await browser.newContext({ viewport: DEFAULT_VIEWPORT, userAgent: DEFAULT_UA });
@@ -168,7 +193,7 @@ async function scrapeFlashscoreMarketTable({
     await delay(2500);
     await page.getByText(tabRegex).first().click({ timeout: 4500 }).catch(() => {});
     await delay(1200);
-    await page.getByText(/ZÁKLADNÝ ČAS|FULL TIME/i).first().click({ timeout: 2000 }).catch(() => {});
+    await page.getByText(periodConfig.clickRegex).first().click({ timeout: 2200 }).catch(() => {});
     await delay(1200);
 
     const table = await page.evaluate(() => {
@@ -213,7 +238,9 @@ async function scrapeFlashscoreMarketTable({
         labelAliases,
         requireExactLabelSet,
         expectedOddCount,
-        requireLine
+        requireLine,
+        period: periodConfig.period,
+        periodName: periodConfig.periodName
       },
       url
     );
@@ -230,7 +257,9 @@ export function normalizeFlashscoreMarketSnapshot(snapshot, config, matchUrl = "
     labelAliases = {},
     requireExactLabelSet = false,
     expectedOddCount,
-    requireLine = false
+    requireLine = false,
+    period = "full_time",
+    periodName = "Základný čas"
   } = config || {};
   const safeSnapshot = snapshot || { labels: [], rows: [], activeHints: [] };
   const canonicalLabels = [...new Set(
@@ -246,8 +275,8 @@ export function normalizeFlashscoreMarketSnapshot(snapshot, config, matchUrl = "
       return {
         marketType,
         marketName,
-        period: "full_time",
-        periodName: "Základný čas",
+        period,
+        periodName,
         matchUrl,
         columnLabels: canonicalLabels,
         activeHints: safeSnapshot.activeHints || [],
@@ -258,8 +287,8 @@ export function normalizeFlashscoreMarketSnapshot(snapshot, config, matchUrl = "
       return {
         marketType,
         marketName,
-        period: "full_time",
-        periodName: "Základný čas",
+        period,
+        periodName,
         matchUrl,
         columnLabels: canonicalLabels,
         activeHints: safeSnapshot.activeHints || [],
@@ -292,8 +321,8 @@ export function normalizeFlashscoreMarketSnapshot(snapshot, config, matchUrl = "
   return {
     marketType,
     marketName,
-    period: "full_time",
-    periodName: "Základný čas",
+    period,
+    periodName,
     matchUrl,
     columnLabels: canonicalLabels,
     activeHints: safeSnapshot.activeHints || [],
@@ -343,6 +372,18 @@ function keepFirstPerBookmaker(rows = []) {
   return result;
 }
 
+function keepDistinctRowsByKey(rows = [], keyBuilder) {
+  const out = [];
+  const seen = new Set();
+  for (const row of rows) {
+    const key = keyBuilder(row);
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    out.push(row);
+  }
+  return out;
+}
+
 function toScrapeConfigFromHandler(handler, override = {}) {
   return {
     tabRegex: override.tabRegex || handler?.tabRegex,
@@ -356,11 +397,12 @@ function toScrapeConfigFromHandler(handler, override = {}) {
   };
 }
 
-export async function scrapeFlashscoreDoubleChance({ matchUrl, headless = true, timeoutMs = 45000 }) {
+export async function scrapeFlashscoreDoubleChance({ matchUrl, period = "full_time", headless = true, timeoutMs = 45000 }) {
   const handler = getMarketHandler("double_chance");
   const base = await scrapeFlashscoreMarketTable({
     matchUrl,
     ...toScrapeConfigFromHandler(handler),
+    period,
     headless,
     timeoutMs
   });
@@ -371,11 +413,12 @@ export async function scrapeFlashscoreDoubleChance({ matchUrl, headless = true, 
   };
 }
 
-export async function scrapeFlashscoreTipsportWinner2Way({ matchUrl, headless = true, timeoutMs = 45000 }) {
+export async function scrapeFlashscoreTipsportWinner2Way({ matchUrl, period = "full_time", headless = true, timeoutMs = 45000 }) {
   const handler = getMarketHandler("match_winner_2way");
   const base = await scrapeFlashscoreMarketTable({
     matchUrl,
     ...toScrapeConfigFromHandler(handler),
+    period,
     headless,
     timeoutMs
   });
@@ -385,39 +428,48 @@ export async function scrapeFlashscoreTipsportWinner2Way({ matchUrl, headless = 
   };
 }
 
-export async function scrapeFlashscoreOverUnder2Way({ matchUrl, headless = true, timeoutMs = 45000 }) {
+export async function scrapeFlashscoreOverUnder2Way({ matchUrl, period = "full_time", headless = true, timeoutMs = 45000 }) {
   const handler = getMarketHandler("over_under_2way");
   const base = await scrapeFlashscoreMarketTable({
     matchUrl,
     ...toScrapeConfigFromHandler(handler),
+    period,
     headless,
     timeoutMs
   });
   return {
     ...base,
-    bookmakerRows: keepFirstPerBookmaker(mapTwoWayRows(base.bookmakerRows, "over", "under", 1.01, 20))
+    bookmakerRows: keepDistinctRowsByKey(
+      mapTwoWayRows(base.bookmakerRows, "over", "under", 1.01, 20),
+      (row) => `${normalizeHeaderToken(row.bookmaker)}|${row.line ?? "null"}`
+    )
   };
 }
 
-export async function scrapeFlashscoreAsianHandicap2Way({ matchUrl, headless = true, timeoutMs = 45000 }) {
+export async function scrapeFlashscoreAsianHandicap2Way({ matchUrl, period = "full_time", headless = true, timeoutMs = 45000 }) {
   const handler = getMarketHandler("asian_handicap_2way");
   const base = await scrapeFlashscoreMarketTable({
     matchUrl,
     ...toScrapeConfigFromHandler(handler),
+    period,
     headless,
     timeoutMs
   });
   return {
     ...base,
-    bookmakerRows: keepFirstPerBookmaker(mapTwoWayRows(base.bookmakerRows, "home", "away", 1.01, 20))
+    bookmakerRows: keepDistinctRowsByKey(
+      mapTwoWayRows(base.bookmakerRows, "home", "away", 1.01, 20),
+      (row) => `${normalizeHeaderToken(row.bookmaker)}|${row.line ?? "null"}`
+    )
   };
 }
 
-export async function scrapeFlashscoreBttsYesNo({ matchUrl, headless = true, timeoutMs = 45000 }) {
+export async function scrapeFlashscoreBttsYesNo({ matchUrl, period = "full_time", headless = true, timeoutMs = 45000 }) {
   const handler = getMarketHandler("both_teams_to_score");
   const base = await scrapeFlashscoreMarketTable({
     matchUrl,
     ...toScrapeConfigFromHandler(handler),
+    period,
     headless,
     timeoutMs
   });
@@ -427,11 +479,12 @@ export async function scrapeFlashscoreBttsYesNo({ matchUrl, headless = true, tim
   };
 }
 
-export async function scrapeFlashscoreDrawNoBet2Way({ matchUrl, headless = true, timeoutMs = 45000 }) {
+export async function scrapeFlashscoreDrawNoBet2Way({ matchUrl, period = "full_time", headless = true, timeoutMs = 45000 }) {
   const handler = getMarketHandler("draw_no_bet_2way");
   const base = await scrapeFlashscoreMarketTable({
     matchUrl,
     ...toScrapeConfigFromHandler(handler),
+    period,
     headless,
     timeoutMs
   });
@@ -441,11 +494,12 @@ export async function scrapeFlashscoreDrawNoBet2Way({ matchUrl, headless = true,
   };
 }
 
-export async function scrapeFlashscoreEuropeanHandicap2Way({ matchUrl, headless = true, timeoutMs = 45000 }) {
+export async function scrapeFlashscoreEuropeanHandicap2Way({ matchUrl, period = "full_time", headless = true, timeoutMs = 45000 }) {
   const handler = getMarketHandler("european_handicap_2way");
   const base = await scrapeFlashscoreMarketTable({
     matchUrl,
     ...toScrapeConfigFromHandler(handler),
+    period,
     headless,
     timeoutMs
   });
@@ -455,11 +509,12 @@ export async function scrapeFlashscoreEuropeanHandicap2Way({ matchUrl, headless 
   };
 }
 
-export async function scrapeFlashscoreGenericYesNo({ matchUrl, tabRegex, marketName = "Yes/No", headless = true, timeoutMs = 45000 }) {
+export async function scrapeFlashscoreGenericYesNo({ matchUrl, tabRegex, marketName = "Yes/No", period = "full_time", headless = true, timeoutMs = 45000 }) {
   const handler = getMarketHandler("generic_yes_no");
   const base = await scrapeFlashscoreMarketTable({
     matchUrl,
     ...toScrapeConfigFromHandler(handler, { tabRegex, marketName }),
+    period,
     headless,
     timeoutMs
   });
@@ -469,11 +524,12 @@ export async function scrapeFlashscoreGenericYesNo({ matchUrl, tabRegex, marketN
   };
 }
 
-export async function scrapeFlashscoreTeamToScoreYesNo({ matchUrl, headless = true, timeoutMs = 45000 }) {
+export async function scrapeFlashscoreTeamToScoreYesNo({ matchUrl, period = "full_time", headless = true, timeoutMs = 45000 }) {
   const handler = getMarketHandler("team_to_score_yes_no");
   const base = await scrapeFlashscoreMarketTable({
     matchUrl,
     ...toScrapeConfigFromHandler(handler),
+    period,
     headless,
     timeoutMs
   });
@@ -486,24 +542,24 @@ export async function scrapeFlashscoreTeamToScoreYesNo({ matchUrl, headless = tr
 /*
  * Backward-compatible wrapper kept for existing callers.
  */
-export async function scrapeFlashscoreMarketByType({ matchUrl, marketType, headless = true, timeoutMs = 45000 }) {
+export async function scrapeFlashscoreMarketByType({ matchUrl, marketType, period = "full_time", headless = true, timeoutMs = 45000 }) {
   switch (marketType) {
     case "double_chance":
-      return scrapeFlashscoreDoubleChance({ matchUrl, headless, timeoutMs });
+      return scrapeFlashscoreDoubleChance({ matchUrl, period, headless, timeoutMs });
     case "match_winner_2way":
-      return scrapeFlashscoreTipsportWinner2Way({ matchUrl, headless, timeoutMs });
+      return scrapeFlashscoreTipsportWinner2Way({ matchUrl, period, headless, timeoutMs });
     case "over_under_2way":
-      return scrapeFlashscoreOverUnder2Way({ matchUrl, headless, timeoutMs });
+      return scrapeFlashscoreOverUnder2Way({ matchUrl, period, headless, timeoutMs });
     case "asian_handicap_2way":
-      return scrapeFlashscoreAsianHandicap2Way({ matchUrl, headless, timeoutMs });
+      return scrapeFlashscoreAsianHandicap2Way({ matchUrl, period, headless, timeoutMs });
     case "both_teams_to_score":
-      return scrapeFlashscoreBttsYesNo({ matchUrl, headless, timeoutMs });
+      return scrapeFlashscoreBttsYesNo({ matchUrl, period, headless, timeoutMs });
     case "draw_no_bet_2way":
-      return scrapeFlashscoreDrawNoBet2Way({ matchUrl, headless, timeoutMs });
+      return scrapeFlashscoreDrawNoBet2Way({ matchUrl, period, headless, timeoutMs });
     case "european_handicap_2way":
-      return scrapeFlashscoreEuropeanHandicap2Way({ matchUrl, headless, timeoutMs });
+      return scrapeFlashscoreEuropeanHandicap2Way({ matchUrl, period, headless, timeoutMs });
     case "team_to_score_yes_no":
-      return scrapeFlashscoreTeamToScoreYesNo({ matchUrl, headless, timeoutMs });
+      return scrapeFlashscoreTeamToScoreYesNo({ matchUrl, period, headless, timeoutMs });
     default:
       {
       const normalized = normalizeMatchUrl(matchUrl);

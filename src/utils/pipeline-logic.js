@@ -90,7 +90,10 @@ export function validateMarketCandidate(row) {
   if (!ALLOWED_MARKET_TYPES.has(row.marketType)) return { ok: false, reason: "market_type_not_allowed" };
   if (row.nikeOdd == null || row.tipsportOdd == null) return { ok: false, reason: "missing_odds" };
   if (!(row.nikeOdd > 1 && row.tipsportOdd > 1)) return { ok: false, reason: "invalid_odds_range" };
-  if (row.period !== "full_time") return { ok: false, reason: "period_mismatch" };
+  const allowedPeriods = new Set(["full_time", "first_set", "second_set"]);
+  if (!allowedPeriods.has(row.period)) return { ok: false, reason: "period_mismatch" };
+  const sourcePeriod = row.sourcePeriod || row.period;
+  if (sourcePeriod !== row.period) return { ok: false, reason: "period_mismatch" };
 
   if (row.marketType === "double_chance" && !["1x", "12", "x2"].includes(row.selection)) return { ok: false, reason: "selection_mismatch" };
   if (row.marketType === "double_chance" && !(row.nikeOdd >= 1.05 && row.nikeOdd <= 4.5 && row.tipsportOdd >= 1.05 && row.tipsportOdd <= 4.5)) {

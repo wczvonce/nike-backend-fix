@@ -14,6 +14,16 @@
         <button id="refreshBtn">Refresh</button>
         <span id="lastUpdated">Last updated: -</span>
       </section>
+      <section class="loading-panel" id="loadingPanel" aria-live="polite">
+        <div class="loading-row">
+          <span id="loadingText">Ready.</span>
+          <span id="loadingPercent">0%</span>
+        </div>
+        <div class="loading-track">
+          <div class="loading-bar" id="loadingBar"></div>
+        </div>
+        <div class="loading-detail" id="loadingDetail">Čakám na refresh.</div>
+      </section>
 
       <section class="summary" id="summaryCards"></section>
 

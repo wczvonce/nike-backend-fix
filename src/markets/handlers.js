@@ -32,7 +32,13 @@ export const MARKET_HANDLER_DEFINITIONS = {
     displayName: "Over/Under 2-way",
     tabRegex: /OVER\/UNDER|OVER UNDER/i,
     expectedLabels: ["celkom", "over", "under"],
-    labelAliases: { celkom: "celkom", over: "over", under: "under" },
+    labelAliases: {
+      celkom: "celkom",
+      sety: "celkom",
+      gemy: "celkom",
+      over: "over",
+      under: "under"
+    },
     requireExactLabelSet: false,
     expectedOddCount: 2,
     requireLine: true,
@@ -46,7 +52,15 @@ export const MARKET_HANDLER_DEFINITIONS = {
     displayName: "Asian Handicap 2-way",
     tabRegex: /ÁZIJSKÝ HANDICAP|AZIJSK[YÝ] HANDICAP|ASIAN HANDICAP/i,
     expectedLabels: ["handicap", "1", "2"],
-    labelAliases: { handicap: "handicap", "1": "1", "2": "2", home: "1", away: "2" },
+    labelAliases: {
+      handicap: "handicap",
+      sety: "handicap",
+      gemy: "handicap",
+      "1": "1",
+      "2": "2",
+      home: "1",
+      away: "2"
+    },
     requireExactLabelSet: false,
     expectedOddCount: 2,
     requireLine: true,
