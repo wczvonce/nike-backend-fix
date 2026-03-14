@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nike vs Tipsport Local UI</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <h1>Nike vs Tipsport - Local Control UI</h1>
+
+      <section class="toolbar">
+        <button id="refreshBtn">Refresh</button>
+        <span id="lastUpdated">Last updated: -</span>
+      </section>
+
+      <section class="summary" id="summaryCards"></section>
+
+      <section class="tabs">
+        <button class="tab-btn active" data-tab="edges">Final Edges</button>
+        <button class="tab-btn" data-tab="control">Control Table</button>
+      </section>
+
+      <section id="edgesTab" class="tab-panel active">
+        <div class="filters">
+          <input id="edgeSearch" placeholder="Search match..." />
+          <select id="edgeSport"><option value="">All sports</option></select>
+          <select id="edgeMarket"><option value="">All markets</option></select>
+        </div>
+        <div class="table-wrap">
+          <table id="edgesTable">
+            <thead>
+              <tr>
+                <th>Match</th>
+                <th>Date/Time</th>
+                <th>Sport</th>
+                <th>Market</th>
+                <th>Selection</th>
+                <th>Period</th>
+                <th>Line</th>
+                <th>Nike</th>
+                <th>Tipsport</th>
+                <th>Edge (pp)</th>
+                <th>Diff</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="controlTab" class="tab-panel">
+        <div class="table-wrap">
+          <table id="controlTable">
+            <thead>
+              <tr>
+                <th>Match</th>
+                <th>Date/Time</th>
+                <th>Sport</th>
+                <th>MarketType</th>
+                <th>RawMarketName</th>
+                <th>Selection</th>
+                <th>Period</th>
+                <th>Line</th>
+                <th>Nike</th>
+                <th>Tipsport</th>
+                <th>Status</th>
+                <th>Compare reason</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+    <script type="module" src="/app.js"></script>
+  </body>
+  </html>
+

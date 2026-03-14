@@ -1,6 +1,8 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { scrapeNikeSuperkurzy, debugNikeSuperkurzy } from "./scrapers/nike.js";
 import { searchFlashscoreMatch, scrapeFlashscoreDoubleChance, scrapeFlashscoreMarketByType } from "./scrapers/flashscore.js";
 import { EXPECTED_SUPERPONUKA_SNAPSHOT, EXPECTED_SUPERPONUKA_SPORT_BY_TITLE } from "./config/superponuka.js";
@@ -25,6 +27,9 @@ dotenv.config();
 const app = express();
 app.use(cors({ origin: process.env.ALLOWED_ORIGIN || "*" }));
 app.use(express.json({ limit: "2mb" }));
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+app.use(express.static(path.join(__dirname, "..", "public")));
 const PORT = Number(process.env.PORT || 3001);
 const HEADLESS = String(process.env.HEADLESS || "true") !== "false";
 const REQUEST_TIMEOUT_MS = Number(process.env.REQUEST_TIMEOUT_MS || 45000);
@@ -100,6 +105,7 @@ async function buildNikeTipsportPipeline() {
 
   const comparedRows = [];
   const rejectedRows = [];
+  const controlRows = [];
   const matchMappings = [];
 
   for (const match of nike.matches) {
@@ -114,6 +120,24 @@ async function buildNikeTipsportPipeline() {
 
     if (!fsMatch?.href) {
       matchMappings.push({ nikeMatch: match.rawTitle, matched: false, reason: "flashscore_not_found" });
+      const nikeMarketsForUnmatched = nike.markets.filter((m) => m.matchId === match.id);
+      for (const m of nikeMarketsForUnmatched) {
+        controlRows.push({
+          matchId: match.id,
+          match: match.rawTitle,
+          kickoffAt: match.kickoffAt || null,
+          sport: match.sport,
+          marketType: m.marketType,
+          rawMarketName: m.marketType,
+          selection: m.selection,
+          period: m.period || "full_time",
+          line: m.line ?? null,
+          nikeOdd: m.nikeOdd,
+          tipsportOdd: null,
+          status: "NIKE_ONLY",
+          compareReason: "flashscore_match_not_found"
+        });
+      }
       continue;
     }
     const swapped = isSwappedOrientation(match, fsMatch);
@@ -134,6 +158,21 @@ async function buildNikeTipsportPipeline() {
       if (!E2E_COMPARE_MARKET_TYPES.has(marketType)) {
         const disabledMarkets = nikeMarketsForMatch.filter((m) => m.marketType === marketType);
         for (const m of disabledMarkets) {
+          controlRows.push({
+            matchId: match.id,
+            match: match.rawTitle,
+            kickoffAt: match.kickoffAt || null,
+            sport: match.sport,
+            marketType,
+            rawMarketName: marketType,
+            selection: m.selection,
+            period: m.period || "full_time",
+            line: m.line ?? null,
+            nikeOdd: m.nikeOdd,
+            tipsportOdd: null,
+            status: "DISABLED",
+            compareReason: "market_not_enabled_end_to_end"
+          });
           rejectedRows.push({
             matchId: match.id,
             match: match.rawTitle,
@@ -151,6 +190,26 @@ async function buildNikeTipsportPipeline() {
         : await scrapeFlashscoreMarketByType({ matchUrl: fsMatch.href, marketType, headless: HEADLESS, timeoutMs: REQUEST_TIMEOUT_MS });
       const tipsportRows = fsMarket.bookmakerRows.filter((b) => normalizeForCompare(b.bookmaker).includes("tipsport"));
       const nikeMarketRows = nikeMarketsForMatch.filter((m) => m.marketType === marketType);
+
+      if (!tipsportRows.length) {
+        for (const m of nikeMarketRows) {
+          controlRows.push({
+            matchId: match.id,
+            match: match.rawTitle,
+            kickoffAt: match.kickoffAt || null,
+            sport: match.sport,
+            marketType,
+            rawMarketName: fsMarket.marketName || marketType,
+            selection: m.selection,
+            period: m.period || "full_time",
+            line: m.line ?? null,
+            nikeOdd: m.nikeOdd,
+            tipsportOdd: null,
+            status: "NO_TIPSPORT_ROW",
+            compareReason: "tipsport_row_not_found_for_market"
+          });
+        }
+      }
 
       for (const nikeMarket of nikeMarketRows) {
         let mappedSelection = nikeMarket.selection;
@@ -216,14 +275,64 @@ async function buildNikeTipsportPipeline() {
         });
         const marketValidation = validateMarketCandidate(row);
         if (!marketValidation.ok) {
+          const statusByReason = {
+            line_mismatch: "LINE_MISMATCH",
+            period_mismatch: "PERIOD_MISMATCH",
+            selection_mismatch: "SELECTION_MISMATCH"
+          };
+          controlRows.push({
+            matchId: match.id,
+            match: match.rawTitle,
+            kickoffAt: match.kickoffAt || null,
+            sport: match.sport,
+            marketType,
+            rawMarketName: fsMarket.marketName || marketType,
+            selection: nikeMarket.selection,
+            period: nikeMarket.period || "full_time",
+            line: nikeMarket.line ?? null,
+            nikeOdd: nikeMarket.nikeOdd,
+            tipsportOdd,
+            status: statusByReason[marketValidation.reason] || "REJECTED_BY_VALIDATOR",
+            compareReason: marketValidation.reason
+          });
           rejectedRows.push({ ...row, rejectReason: marketValidation.reason });
           continue;
         }
         if (!isNikeGreaterThanTipsport(row.nikeOdd, row.tipsportOdd)) {
+          controlRows.push({
+            matchId: match.id,
+            match: match.rawTitle,
+            kickoffAt: match.kickoffAt || null,
+            sport: match.sport,
+            marketType,
+            rawMarketName: fsMarket.marketName || marketType,
+            selection: nikeMarket.selection,
+            period: nikeMarket.period || "full_time",
+            line: nikeMarket.line ?? null,
+            nikeOdd: nikeMarket.nikeOdd,
+            tipsportOdd,
+            status: "REJECTED_BY_VALIDATOR",
+            compareReason: "nike_not_gt_tipsport"
+          });
           rejectedRows.push({ ...row, rejectReason: "nike_not_gt_tipsport" });
           continue;
         }
         const metrics = computeMetrics(row.nikeOdd, row.tipsportOdd);
+        controlRows.push({
+          matchId: match.id,
+          match: match.rawTitle,
+          kickoffAt: match.kickoffAt || null,
+          sport: match.sport,
+          marketType,
+          rawMarketName: fsMarket.marketName || marketType,
+          selection: nikeMarket.selection,
+          period: nikeMarket.period || "full_time",
+          line: nikeMarket.line ?? null,
+          nikeOdd: nikeMarket.nikeOdd,
+          tipsportOdd,
+          status: "MATCHED",
+          compareReason: "nike_gt_tipsport"
+        });
         comparedRows.push({
           ...row,
           ...metrics
@@ -266,6 +375,7 @@ async function buildNikeTipsportPipeline() {
     },
     matchMappings,
     rejectedRows,
+    controlRows,
     rows: comparedRows
   };
 }
@@ -576,6 +686,50 @@ app.get("/api/flashscore/market-2way", async (req, res) => {
     const message = normalizePlaywrightError(err?.message);
     console.error("[flashscore/market-2way]", err?.message);
     res.status(500).setHeader("Content-Type", "application/json").json({ ok: false, error: message });
+  }
+});
+
+app.get("/api/ui/summary", async (_req, res) => {
+  try {
+    const pipeline = await buildNikeTipsportPipeline();
+    if (!pipeline.ok) return res.status(500).json({ ok: false, error: pipeline.error, stage: pipeline.stage });
+    res.json({
+      ok: true,
+      updatedAt: new Date().toISOString(),
+      superponukaMatches: pipeline.nike.matches.length,
+      nikeEmittedMarkets: pipeline.nike.markets.length,
+      matchedComparedRows: pipeline.controlRows.filter((r) => r.status === "MATCHED").length,
+      finalEdgeRows: pipeline.rows.length
+    });
+  } catch (err) {
+    const message = normalizePlaywrightError(err?.message);
+    res.status(500).json({ ok: false, error: message });
+  }
+});
+
+app.get("/api/ui/final-edges", async (_req, res) => {
+  try {
+    const pipeline = await buildNikeTipsportPipeline();
+    if (!pipeline.ok) return res.status(500).json({ ok: false, error: pipeline.error, stage: pipeline.stage });
+    res.json({ ok: true, updatedAt: new Date().toISOString(), rows: pipeline.rows });
+  } catch (err) {
+    const message = normalizePlaywrightError(err?.message);
+    res.status(500).json({ ok: false, error: message });
+  }
+});
+
+app.get("/api/ui/control-table", async (_req, res) => {
+  try {
+    const pipeline = await buildNikeTipsportPipeline();
+    if (!pipeline.ok) return res.status(500).json({ ok: false, error: pipeline.error, stage: pipeline.stage });
+    res.json({
+      ok: true,
+      updatedAt: new Date().toISOString(),
+      rows: pipeline.controlRows
+    });
+  } catch (err) {
+    const message = normalizePlaywrightError(err?.message);
+    res.status(500).json({ ok: false, error: message });
   }
 });
 

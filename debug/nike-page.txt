@@ -39,7 +39,6 @@ CALL OF DUTY
 ALPSKÉ LYŽOVANIE
 AUSTRÁLSKY FUTBAL
 BADMINTON
-BANDY HOKEJ
 BOJOVÉ ŠPORTY
 BOX
 CURLING
@@ -53,9 +52,7 @@ MOTORIZMUS
 PLÁŽOVÝ VOLEJBAL
 POLITIKA
 RUGBY
-SKOKY NA LYŽIACH
 SPOLOČENSKÉ STÁVKY
-SQUASH
 STOLNÝ TENIS
 ŠÍPKY
 VODNÉ PÓLO
@@ -110,8 +107,14 @@ NEDEĽA
 5.4
 PONDELOK
 6.4
+PIATOK
+10.4
+SOBOTA
+11.4
 NEDEĽA
 12.4
+PONDELOK
+13.4
 SOBOTA
 18.4
 UTOROK
@@ -138,26 +141,6 @@ Všetko
 
 SUPERPONUKA
 Chceš hrať najvyššie kurzy na najzaujímavejšie zápasy dňa? Tu si správne! Len Superponuka ponúka kurzy také vysoké, že len o trochu vyššie by pre bookmakerov znamenali istú stratu. Hrať môžeš aj ako sólo stávku.
-14.03.2026 - Sobota
-Zápas
-1
-X
-2
-1X
-12
-X2
-18:30
-270091
-Chelsea
-vs
-Newcastle Utd.
-1.86
-4.10
-3.90
-1.28
-1.26
-2.00
-+353
 15.03.2026 - Nedeľa
 Zápas
 1
@@ -178,6 +161,18 @@ AS Roma
 1.34
 1.76
 +328
+16:30
+229786
+Michalovce
+vs
+Spišská N. Ves
+2.25
+4.20
+2.65
+1.47
+1.22
+1.62
++72
 15.03.2026 - Nedeľa
 Víťaz zápasu
 1
@@ -200,18 +195,6 @@ X
 1X
 12
 X2
-18:30
-162089
-Arsenal FC
-vs
-Everton
-1.45
-4.89
-8.57
-1.12
-1.23
-3.11
-+356
 21:00
 162094
 Real Madrid
@@ -224,30 +207,6 @@ Elche
 1.19
 3.52
 +334
-18:00
-162317
-Napoli
-vs
-Lecce
-1.44
-4.69
-9.79
-1.10
-1.25
-3.17
-+320
-18:00
-161995
-FC Zlín
-vs
-SK Slavia Praha
-7.55
-4.59
-1.50
-2.86
-1.25
-1.13
-+163
 21:30
 162093
 FC Arouca
@@ -315,7 +274,7 @@ FC Sevilla
 1.10
 1.15
 3.88
-+327
++330
 16:00
 229521
 Beroe Stara Zagora
@@ -465,12 +424,12 @@ Huesca
 Paris St.G.
 vs
 Toulouse
-1.10
-16.30
-10.19
-1.03
+1.11
+17.32
+11.21
+1.04
 1.02
-6.27
+6.81
 +23
 14.03.2026 - Sobota
 Superšanca
@@ -489,8 +448,8 @@ Sinner J.
 Alcaraz C.
 vs
 Medvedev D.
-1.21
-5.10
+1.20
+5.30
 +63
 15.03.2026 - Nedeľa
 Superšanca
@@ -501,8 +460,8 @@ Superšanca
 Allianz Milano
 vs
 Verona
-4.89
-1.16
+5.10
+1.17
 +21
 14:45
 229834
@@ -524,51 +483,6 @@ Alba Berlin
 1.26
 +53
 Niké liga
-Zápas - Výsledok
-2. polčas
-76'
-(0:0,0:0)
-LIVE
-Prešov
-0 : 0
-KFC Komárno
-5.00
-Prešov
-1.42
-remíza
-6.50
-KFC Komárno
-+56
-Zápas - Výsledok
-2. polčas
-74'
-(1:0,0:1)
-LIVE
-Ružomberok
-1 : 1
-FC Košice
-5.00
-Ružomberok
-1.70
-remíza
-4.10
-FC Košice
-+79
-Zápas - Výsledok
-2. polčas
-72'
-(0:0,0:1)
-LIVE
-Podbrezová
-0 : 1
-Michalovce
-10.00
-Podbrezová
-3.40
-remíza
-1.42
-Michalovce
-+81
 Zápas
 Počet gólov v zápase
 Obaja dajú gól
@@ -605,6 +519,94 @@ MŠK Žilina
 1.19
 2.41
 +165
+21.03.2026 - Sobota
+Zápas
+1
+X
+2
+1X
+12
+X2
+15:30
+279466
+AS Trenčín
+vs
+Ružomberok
+2.50
+3.45
+2.65
+1.44
+1.29
+1.50
++5
+15:30
+277893
+Michalovce
+vs
+Spartak Trnava
+3.55
+3.40
+2.01
+1.74
+1.28
+1.26
++102
+15:30
+279472
+MŠK Žilina
+vs
+Dunajská Streda
+2.65
+3.45
+2.50
+1.50
+1.29
+1.44
++5
+18:00
+279469
+FC Košice
+vs
+Prešov
+1.65
+4.05
+4.60
+1.17
+1.21
+2.15
++5
+18:00
+279475
+Slovan Bratislava
+vs
+Podbrezová
+1.45
+4.80
+5.80
+1.11
+1.16
+2.62
++5
+22.03.2026 - Nedeľa
+Zápas
+1
+X
+2
+1X
+12
+X2
+15:30
+279463
+Skalica
+vs
+KFC Komárno
+2.65
+3.55
+2.45
+1.52
+1.27
+1.44
++5
 Kvalifikácia MS UEFA baráž
 Hlavné
 Zápas
@@ -765,25 +767,25 @@ X2
 Sporting CP
 vs
 Bodö/Glimt
-1.57
-4.60
-4.80
-1.17
-1.18
-2.35
-+157
+1.60
+4.70
+4.90
+1.19
+1.21
+2.40
++208
 21:00
 98388
 Arsenal FC
 vs
 Leverkusen
-1.32
+1.30
 5.40
-8.80
-1.06
-1.15
-3.35
-+143
+9.20
+1.05
+1.14
+3.40
++146
 21:00
 100313
 Chelsea
@@ -795,7 +797,7 @@ Paris St.G.
 1.37
 1.23
 1.71
-+150
++153
 21:00
 100314
 Manchester City
@@ -807,7 +809,7 @@ Real Madrid
 1.14
 1.17
 2.54
-+157
++164
 18.03.2026 - Streda
 Zápas
 1
@@ -827,7 +829,7 @@ Newcastle Utd.
 1.17
 1.18
 2.40
-+149
++155
 21:00
 62654
 Bayern München
@@ -839,7 +841,7 @@ Atalanta
 1.06
 1.12
 3.50
-+145
++150
 21:00
 60014
 FC Liverpool
@@ -863,7 +865,7 @@ Atletico Madrid
 1.49
 1.26
 1.51
-+150
++153
 17.03.2026 - Utorok
 Celkovo - Víťaz
 áno

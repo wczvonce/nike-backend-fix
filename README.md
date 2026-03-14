@@ -46,6 +46,9 @@ Copy `.env.example` to `.env` and adjust if needed:
 | GET | `/api/pipeline/nike-vs-tipsport` | End-to-end pipeline (Nike Superponuka -> Flashscore -> 2-way Nike vs Tipsport ranking) |
 | GET | `/api/debug/full-check` | One-link full QA summary (PASS/FAIL + all major checks) |
 | GET | `/api/flashscore/market-2way?matchUrl=...&marketType=...` | Debug parser for supported Flashscore 2-way market families |
+| GET | `/api/ui/summary` | UI summary counters for local frontend |
+| GET | `/api/ui/final-edges` | UI endpoint with final ranked Nike > Tipsport rows |
+| GET | `/api/ui/control-table` | UI endpoint with control-table status rows |
 
 ## Real End-to-End Market Scope
 
@@ -87,6 +90,23 @@ Live smoke-only check (non-deterministic; not a replacement for deterministic te
 ```powershell
 npm run smoke:live
 ```
+
+Full verification chain:
+
+```powershell
+npm run verify:all
+```
+
+## Built-in Local Frontend
+
+Open:
+
+- `http://localhost:3001/`
+
+UI includes:
+
+- **Final Edges** table (ranked rows where Nike > Tipsport)
+- **Control Table** (all emitted comparable rows with explicit status/reason)
 
 After starting the server:
 

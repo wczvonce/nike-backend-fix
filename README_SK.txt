@@ -71,6 +71,9 @@ API endpointy:
   GET /api/pipeline/nike-vs-tipsport               – end-to-end pipeline (Nike Superponuka -> Flashscore -> porovnanie s Tipsport)
   GET /api/debug/full-check                         – jeden link na full QA súhrn (PASS/FAIL + všetky hlavné kontroly)
   GET /api/flashscore/market-2way?matchUrl=...&marketType=... – debug parser pre jednotlivé 2-way markety
+  GET /api/ui/summary                             – UI súhrn (počty pre lokálny frontend)
+  GET /api/ui/final-edges                         – finálne edge riadky (Nike > Tipsport)
+  GET /api/ui/control-table                       – kontrolná tabuľka so status/reason
   (matchUrl môže byť relatívna cesta z search, napr. /match/abc, alebo plná URL)
 
 Poznámka k reálnej end-to-end podpore:
@@ -96,6 +99,13 @@ Live smoke test (len orientačný, nie deterministický dôkaz):
 
 Plný verifikačný reťazec (zlyhá pri akomkoľvek kritickom probléme):
   npm run verify:all
+
+Lokálny vstavaný frontend:
+  http://localhost:3001/
+
+Frontend má presne 2 hlavné tabuľky:
+  - Final Edges
+  - Control Table
 
 --------------------------------------------------------------------------------
 Voliteľný pomocník start.ps1
