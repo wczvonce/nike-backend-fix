@@ -54,6 +54,7 @@ eq(parseOdd("14.03"), null, "date 14.03 rejected");
 eq(parseOdd("2.10"), 2.1, "odd 2.10 kept (not date)");
 eq(parseOdd("13.05"), null, "date-like 13.05 rejected by default");
 eq(parseOdd("13.05", { rejectDateLike: false }), 13.05, "13.05 can be kept in trusted selector contexts");
+eq(parseOdd("14.00", { rejectDateLike: false, rejectTimeLike: false }), 14, "14.00 can be kept in trusted odds contexts");
 
 console.log("--- normalizeTeamName ---");
 eq(normalizeTeamName("ŠK Slovan Bratislava"), "sk slovan bratislava", "diacritics");

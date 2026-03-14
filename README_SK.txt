@@ -4,7 +4,7 @@
 
 Účel:
   - škrabanie tipov z Nike Superkurzy (m.nike.sk / www.nike.sk)
-  - škrabanie kurzov z Flashscore (vyhľadávanie zápasov, double chance kurzy)
+  - škrabanie kurzov z Flashscore (vyhľadávanie zápasov, 2-way trhy)
   - REST API pre frontend (napr. Lovable)
 
 Požiadavky:
@@ -77,7 +77,13 @@ Poznámka k reálnej end-to-end podpore:
   - v produkčnom porovnaní (Nike -> Flashscore/Tipsport -> finálny ranking) sú aktuálne aktívne:
     - double_chance
     - match_winner_2way
-  - ostatné 2-way parsery (over_under, asian_handicap, BTTS, draw_no_bet, team_to_score_yes_no, european_handicap) sú dostupné cez debug endpoint, ale nie sú zapnuté do finálneho compare flow, kým Nike spoľahlivo negeneruje ekvivalentné trhy.
+    - over_under_2way
+    - asian_handicap_2way
+    - both_teams_to_score
+    - draw_no_bet_2way
+  - zámerne vypnuté:
+    - team_to_score_yes_no (team-scope ekvivalencia nie je ešte bezpečne zapojená end-to-end)
+    - european_handicap_2way (2-way bezpečnosť tabuľky nie je konzistentne dokázaná)
 
 Jednotný normalizovaný model trhu:
   - pozri `src/markets/market-model.js`
@@ -87,6 +93,9 @@ Jednotný normalizovaný model trhu:
 
 Live smoke test (len orientačný, nie deterministický dôkaz):
   npm run smoke:live
+
+Plný verifikačný reťazec (zlyhá pri akomkoľvek kritickom probléme):
+  npm run verify:all
 
 --------------------------------------------------------------------------------
 Voliteľný pomocník start.ps1

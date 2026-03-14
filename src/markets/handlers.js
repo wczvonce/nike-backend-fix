@@ -39,7 +39,7 @@ export const MARKET_HANDLER_DEFINITIONS = {
     selectionKeys: ["over", "under"],
     minOdd: 1.01,
     maxOdd: 20,
-    compareEnabled: false
+    compareEnabled: true
   },
   asian_handicap_2way: {
     marketType: "asian_handicap_2way",
@@ -53,7 +53,7 @@ export const MARKET_HANDLER_DEFINITIONS = {
     selectionKeys: ["home", "away"],
     minOdd: 1.01,
     maxOdd: 20,
-    compareEnabled: false
+    compareEnabled: true
   },
   both_teams_to_score: {
     marketType: "both_teams_to_score",
@@ -67,7 +67,7 @@ export const MARKET_HANDLER_DEFINITIONS = {
     selectionKeys: ["yes", "no"],
     minOdd: 1.01,
     maxOdd: 20,
-    compareEnabled: false
+    compareEnabled: true
   },
   draw_no_bet_2way: {
     marketType: "draw_no_bet_2way",
@@ -81,7 +81,7 @@ export const MARKET_HANDLER_DEFINITIONS = {
     selectionKeys: ["home", "away"],
     minOdd: 1.01,
     maxOdd: 20,
-    compareEnabled: false
+    compareEnabled: true
   },
   team_to_score_yes_no: {
     marketType: "team_to_score_yes_no",

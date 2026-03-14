@@ -75,6 +75,7 @@ export const ALLOWED_MARKET_TYPES = new Set([
   "asian_handicap_2way",
   "both_teams_to_score",
   "draw_no_bet_2way",
+  "team_to_score_yes_no",
   "european_handicap_2way",
   "generic_yes_no"
 ]);
@@ -123,7 +124,7 @@ export function validateMarketCandidate(row) {
   }
 
   if (["over_under_2way"].includes(row.marketType) && !["over", "under"].includes(row.selection)) return { ok: false, reason: "selection_mismatch" };
-  if (["both_teams_to_score", "generic_yes_no"].includes(row.marketType) && !["yes", "no"].includes(row.selection)) return { ok: false, reason: "selection_mismatch" };
+  if (["both_teams_to_score", "team_to_score_yes_no", "generic_yes_no"].includes(row.marketType) && !["yes", "no"].includes(row.selection)) return { ok: false, reason: "selection_mismatch" };
   if (["asian_handicap_2way", "draw_no_bet_2way", "european_handicap_2way"].includes(row.marketType) && !["home", "away"].includes(row.selection)) {
     return { ok: false, reason: "selection_mismatch" };
   }

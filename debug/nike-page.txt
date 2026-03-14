@@ -15,6 +15,7 @@ Kurzy
 Live
 Virtuálky
 Výsledky
+VÁŽENÝ KLIENT, Z DÔVODU PLÁNOVANEJ ÚDRŽBY NEBUDÚ DNES OD POLNOCI 00:00 DO NEDELE 1:00 RÁNO DOSTUPNÉ PLATBY CEZ BANKOVÉ ÚČTY. POČAS TOHTO ČASU MÔŽETE VYUŽIŤ CARDPAY, SKRILL, PAYSAFE ALEBO SMS PLATBU. ĎAKUJEME ZA POCHOPENIE A TRPEZLIVOSŤ.
 Zodpovedné hranie
 DNEŠNÁ PONUKA
 VÝSLEDKY
@@ -39,7 +40,6 @@ ALPSKÉ LYŽOVANIE
 AUSTRÁLSKY FUTBAL
 BADMINTON
 BANDY HOKEJ
-BIATLON
 BOJOVÉ ŠPORTY
 BOX
 CURLING
@@ -52,7 +52,6 @@ MALÝ FUTBAL
 MOTORIZMUS
 PLÁŽOVÝ VOLEJBAL
 POLITIKA
-POZEMNÝ HOKEJ
 RUGBY
 SKOKY NA LYŽIACH
 SPOLOČENSKÉ STÁVKY
@@ -178,27 +177,7 @@ AS Roma
 1.31
 1.34
 1.76
-+326
-14.03.2026 - Sobota
-Zápas
-1
-X
-2
-1X
-12
-X2
-16:30
-142144
-Michalovce
-vs
-Spišská N. Ves
-2.27
-4.00
-2.70
-1.45
-1.23
-1.61
-+197
++328
 15.03.2026 - Nedeľa
 Víťaz zápasu
 1
@@ -208,9 +187,9 @@ Víťaz zápasu
 Sabalenka A.
 vs
 Rybakina E.
-1.70
-2.22
-+48
+1.68
+2.26
++49
 SUPERŠANCA
 Stav si na favoritov vo výhodnom superkurze a využi skvelú šancu na navýšenie výhry – Superšancu! Kurzy zápasov sú tu výrazne vyššie než v bežnej ponuke a preto je podmienkou minimálne 5 zápasov na tikete. Máš už svojich favoritov? Mrkni ešte na Superšancu a navýš svoju výhru!
 14.03.2026 - Sobota
@@ -221,18 +200,6 @@ X
 1X
 12
 X2
-15:30
-159517
-Podbrezová
-vs
-Michalovce
-1.58
-4.69
-5.71
-1.18
-1.23
-2.58
-+160
 18:30
 162089
 Arsenal FC
@@ -245,89 +212,29 @@ Everton
 1.23
 3.11
 +356
-15:30
-159471
-Dortmund
-vs
-FC Augsburg
-1.52
-5.10
-6.32
-1.17
-1.22
-2.82
-+309
-15:30
-159470
-Eintracht Frankfurt
-vs
-Heidenheim
-1.62
-4.69
-5.51
-1.20
-1.25
-2.53
-+303
-15:30
-159469
-Hoffenheim
-vs
-VfL Wolfsburg
-1.42
-5.50
-7.94
-1.13
-1.21
-3.25
-+318
-16:15
-162095
-Atletico Madrid
-vs
-Getafe
-1.68
-3.72
-6.73
-1.16
-1.35
-2.40
-+308
 21:00
 162094
 Real Madrid
 vs
 Elche
 1.38
-5.91
-8.16
-1.12
-1.18
-3.43
-+332
-15:00
-162318
-Inter Milan
-vs
-Atalanta
-1.57
-4.79
-5.91
-1.18
-1.24
-2.65
-+341
+5.71
+9.18
+1.11
+1.19
+3.52
++334
 18:00
 162317
 Napoli
 vs
 Lecce
 1.44
-4.79
-9.18
+4.69
+9.79
 1.10
-1.24
-3.15
+1.25
+3.17
 +320
 18:00
 161995
@@ -352,7 +259,7 @@ Benfica Lisabon
 3.60
 1.18
 1.10
-+225
++224
 15.03.2026 - Nedeľa
 Superšanca
 1
@@ -396,7 +303,7 @@ Tottenham
 1.09
 1.16
 3.74
-+334
++336
 16:15
 229623
 FC Barcelona
@@ -408,7 +315,7 @@ FC Sevilla
 1.10
 1.15
 3.88
-+326
++327
 16:00
 229521
 Beroe Stara Zagora
@@ -510,13 +417,13 @@ vs
 Salavat Ufa
 vs
 Shanghai Dragons
-1.62
+1.65
 4.48
-4.48
-1.19
-1.19
-2.24
-+100
+4.38
+1.20
+1.20
+2.21
++166
 14:00
 229689
 Bremerhaven
@@ -528,18 +435,18 @@ Dresden
 1.05
 1.12
 3.76
-+103
++104
 15:00
 229802
 Björklöven
 vs
 Oskarshamn
-1.57
-4.48
-4.99
-1.16
+1.54
+4.59
+5.30
+1.15
 1.19
-2.36
+2.46
 +100
 16:30
 229986
@@ -558,12 +465,12 @@ Huesca
 Paris St.G.
 vs
 Toulouse
-1.12
-14.26
-9.37
-1.04
+1.10
+16.30
+10.19
+1.03
 1.02
-5.65
+6.27
 +23
 14.03.2026 - Sobota
 Superšanca
@@ -582,8 +489,8 @@ Sinner J.
 Alcaraz C.
 vs
 Medvedev D.
-1.20
-5.30
+1.21
+5.10
 +63
 15.03.2026 - Nedeľa
 Superšanca
@@ -594,8 +501,8 @@ Superšanca
 Allianz Milano
 vs
 Verona
-4.79
-1.17
+4.89
+1.16
 +21
 14:45
 229834
@@ -603,69 +510,69 @@ PGE Belchatów
 vs
 Projekt Warszawa
 2.65
-1.46
+1.49
 +21
 15:00
 229807
 Mitteldeutscher
 vs
 Alba Berlin
-4.28
-18.35
-1.34
-3.48
-1.24
+4.18
+19.37
+1.36
+3.44
+1.26
 +53
 Niké liga
-Hlavné
+Zápas - Výsledok
+2. polčas
+76'
+(0:0,0:0)
+LIVE
+Prešov
+0 : 0
+KFC Komárno
+5.00
+Prešov
+1.42
+remíza
+6.50
+KFC Komárno
++56
+Zápas - Výsledok
+2. polčas
+74'
+(1:0,0:1)
+LIVE
+Ružomberok
+1 : 1
+FC Košice
+5.00
+Ružomberok
+1.70
+remíza
+4.10
+FC Košice
++79
+Zápas - Výsledok
+2. polčas
+72'
+(0:0,0:1)
+LIVE
+Podbrezová
+0 : 1
+Michalovce
+10.00
+Podbrezová
+3.40
+remíza
+1.42
+Michalovce
++81
 Zápas
 Počet gólov v zápase
 Obaja dajú gól
 Ďalšie
-14.03.2026 - Sobota
-Zápas
-1
-X
-2
-1X
-12
-X2
-15:30
-261094
-Podbrezová
-vs
-Michalovce
-1.55
-4.60
-5.60
-1.16
-1.21
-2.53
-+160
-15:30
-261142
-Prešov
-vs
-KFC Komárno
-2.42
-3.30
-3.10
-1.40
-1.36
-1.60
-+160
-15:30
-261145
-Ružomberok
-vs
-FC Košice
-2.90
-3.50
-2.43
-1.59
-1.32
-1.43
-+156
 15.03.2026 - Nedeľa
 Zápas
 1
@@ -698,27 +605,6 @@ MŠK Žilina
 1.19
 2.41
 +165
-14.03.2026 - Sobota
-Celkovo - Víťaz
-áno
-nie
-15:30
-11765
-Niké liga 2025/2026 celkovo
-Slovan Bratislava
-1.23
-3.58
-+15
-14.03.2026 - Sobota
-Najlepší strelec
-áno
-nie
-15:30
-11880
-Niké liga 2025/2026 najlepší strelec celkovo
-Faško M.
-3.00
-+11
 Kvalifikácia MS UEFA baráž
 Hlavné
 Zápas
@@ -860,6 +746,145 @@ Poľsko
 2.54
 1.44
 +4
+Liga majstrov
+Hlavné
+Zápas
+Počet gólov v zápase
+Obaja dajú gól
+Ďalšie
+17.03.2026 - Utorok
+Zápas
+1
+X
+2
+1X
+12
+X2
+18:45
+100315
+Sporting CP
+vs
+Bodö/Glimt
+1.57
+4.60
+4.80
+1.17
+1.18
+2.35
++157
+21:00
+98388
+Arsenal FC
+vs
+Leverkusen
+1.32
+5.40
+8.80
+1.06
+1.15
+3.35
++143
+21:00
+100313
+Chelsea
+vs
+Paris St.G.
+2.08
+4.00
+3.00
+1.37
+1.23
+1.71
++150
+21:00
+100314
+Manchester City
+vs
+Real Madrid
+1.50
+4.80
+5.40
+1.14
+1.17
+2.54
++157
+18.03.2026 - Streda
+Zápas
+1
+X
+2
+1X
+12
+X2
+18:45
+62751
+FC Barcelona
+vs
+Newcastle Utd.
+1.55
+4.70
+4.90
+1.17
+1.18
+2.40
++149
+21:00
+62654
+Bayern München
+vs
+Atalanta
+1.29
+6.00
+8.40
+1.06
+1.12
+3.50
++145
+21:00
+60014
+FC Liverpool
+vs
+Galatasaray
+1.26
+6.40
+9.20
+1.05
+1.11
+3.77
++151
+21:00
+62666
+Tottenham
+vs
+Atletico Madrid
+2.50
+3.70
+2.55
+1.49
+1.26
+1.51
++150
+17.03.2026 - Utorok
+Celkovo - Víťaz
+áno
+nie
+18:45
+37974
+Liga majstrov 2025/2026 celkovo
+Arsenal FC
+3.30
+1.27
++32
+17.03.2026 - Utorok
+Najlepší strelec
+áno
+nie
+18:45
+115828
+Liga majstrov 2025/2026 najlepší strelec
+Mbappé K.
+1.40
++11
 Zobraziť viac
 DÔLEŽITÉ INFORMÁCIE PRE UZATVÁRANIE LIVE STÁVOK
 	

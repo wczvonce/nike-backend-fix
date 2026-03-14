@@ -97,7 +97,7 @@ async function openNikePage(page, timeoutMs) {
   throw new Error(`Nike page failed to load: ${lastError?.message || "unknown error"}`);
 }
 
-function buildMarkets(matches) {
+function buildMarketsFromCardOdds(matches) {
   const markets = [];
   const dcRange = (o) => o >= 1.05 && o <= 4.5;
   for (const match of matches) {
@@ -131,6 +131,136 @@ function buildMarkets(matches) {
     }
   }
   return markets;
+}
+
+function parseLineToken(value = "") {
+  const m = String(value || "").match(/[+-]?\d+(?:[.,]\d+)?/);
+  if (!m) return null;
+  const num = Number(m[0].replace(",", "."));
+  return Number.isFinite(num) ? num : null;
+}
+
+function sanitizeLine(value) {
+  if (value == null || !Number.isFinite(Number(value))) return null;
+  const num = Number(value);
+  const snappedHalf = Math.round(num * 2) / 2;
+  if (Math.abs(num - snappedHalf) <= 0.11) return Number(snappedHalf.toFixed(2));
+  return Number(num.toFixed(2));
+}
+
+function parsePeriodFromMarketName(marketName = "") {
+  const n = normalizeForCompare(marketName);
+  if (/^1\s*\.?\s*polcas|v 1\.?\s*polcase|1\.?\s*polcas/.test(n)) return "first_half";
+  if (/^2\s*\.?\s*polcas|v 2\.?\s*polcase|2\.?\s*polcas/.test(n)) return "second_half";
+  return "full_time";
+}
+
+function pushMarket(markets, row) {
+  if (row.nikeOdd == null || !Number.isFinite(row.nikeOdd)) return;
+  markets.push(row);
+}
+
+function parseNikeDetailMarketsForMatch(match, detailMarkets = []) {
+  const markets = [];
+  for (const market of detailMarkets) {
+    const marketName = String(market.marketName || "").trim();
+    if (!marketName) continue;
+    const normalizedName = normalizeForCompare(marketName);
+    const period = parsePeriodFromMarketName(marketName);
+    // Current compare pipeline is full-time only.
+    if (period !== "full_time") continue;
+    const rows = Array.isArray(market.rows) ? market.rows : [];
+
+    // Zápas can contain 1X2 + double chance, or 2-way winner depending on sport.
+    if (normalizedName === "zapas") {
+      for (const row of rows) {
+        const odds = (row.odds || []).map((v) => parseOdd(v, { rejectDateLike: false, rejectTimeLike: false })).filter((v) => v !== null);
+        const hasDraw = normalizeForCompare(row.text || "").includes("remiza");
+        if (odds.length >= 6 && hasDraw) {
+          const dc = odds.slice(-3);
+          if (dc.length === 3 && dc.every((o) => o >= 1.05 && o <= 4.5)) {
+            pushMarket(markets, { id: `${match.id}-dc-1x`, matchId: match.id, marketType: "double_chance", period, line: null, selection: "1x", nikeOdd: dc[0] });
+            pushMarket(markets, { id: `${match.id}-dc-12`, matchId: match.id, marketType: "double_chance", period, line: null, selection: "12", nikeOdd: dc[1] });
+            pushMarket(markets, { id: `${match.id}-dc-x2`, matchId: match.id, marketType: "double_chance", period, line: null, selection: "x2", nikeOdd: dc[2] });
+          }
+        } else if (odds.length >= 2 && !hasDraw) {
+          pushMarket(markets, { id: `${match.id}-winner-home`, matchId: match.id, marketType: "match_winner_2way", period, line: null, selection: "home", nikeOdd: odds[0] });
+          pushMarket(markets, { id: `${match.id}-winner-away`, matchId: match.id, marketType: "match_winner_2way", period, line: null, selection: "away", nikeOdd: odds[1] });
+        }
+      }
+      continue;
+    }
+
+    if (normalizedName.includes("stavka bez remizy")) {
+      for (const row of rows) {
+        const odds = (row.odds || []).map((v) => parseOdd(v, { rejectDateLike: false, rejectTimeLike: false })).filter((v) => v !== null);
+        if (odds.length < 2) continue;
+        pushMarket(markets, { id: `${match.id}-dnb-home`, matchId: match.id, marketType: "draw_no_bet_2way", period, line: null, selection: "home", nikeOdd: odds[0] });
+        pushMarket(markets, { id: `${match.id}-dnb-away`, matchId: match.id, marketType: "draw_no_bet_2way", period, line: null, selection: "away", nikeOdd: odds[1] });
+      }
+      continue;
+    }
+
+    if (normalizedName === "obaja daju gol") {
+      for (const row of rows) {
+        const odds = (row.odds || []).map((v) => parseOdd(v, { rejectDateLike: false, rejectTimeLike: false })).filter((v) => v !== null);
+        if (odds.length < 2) continue;
+        pushMarket(markets, { id: `${match.id}-btts-yes`, matchId: match.id, marketType: "both_teams_to_score", period, line: null, selection: "yes", nikeOdd: odds[0] });
+        pushMarket(markets, { id: `${match.id}-btts-no`, matchId: match.id, marketType: "both_teams_to_score", period, line: null, selection: "no", nikeOdd: odds[1] });
+      }
+      continue;
+    }
+
+    if (normalizedName === "handicap") {
+      for (const row of rows) {
+        const odds = (row.odds || []).map((v) => parseOdd(v, { rejectDateLike: false, rejectTimeLike: false })).filter((v) => v !== null);
+        const lines = [...String(row.text || "").matchAll(/([+-]\d+(?:[.,](?:0|5))?)/g)]
+          .map((m) => sanitizeLine(parseLineToken(m[1])))
+          .filter((x) => x != null);
+        const pairs = Math.floor(odds.length / 2);
+        for (let i = 0; i < pairs; i++) {
+          const line = sanitizeLine(lines[i * 2] ?? lines[i] ?? null);
+          if (line == null) continue;
+          const homeOdd = odds[i * 2];
+          const awayOdd = odds[i * 2 + 1];
+          pushMarket(markets, { id: `${match.id}-ah-home-${line}-${i}`, matchId: match.id, marketType: "asian_handicap_2way", period, line, selection: "home", nikeOdd: homeOdd });
+          pushMarket(markets, { id: `${match.id}-ah-away-${line}-${i}`, matchId: match.id, marketType: "asian_handicap_2way", period, line, selection: "away", nikeOdd: awayOdd });
+        }
+      }
+      continue;
+    }
+
+    if (normalizedName.includes("pocet golov v zapase")) {
+      for (const row of rows) {
+        const odds = (row.odds || []).map((v) => parseOdd(v, { rejectDateLike: false, rejectTimeLike: false })).filter((v) => v !== null);
+        const lineTokens = [...String(row.text || "").matchAll(/menej ako\s*(\d+(?:[.,](?:0|5))?)/gi)]
+          .map((m) => sanitizeLine(parseLineToken(m[1])))
+          .filter((x) => x != null);
+        const pairs = Math.floor(odds.length / 2);
+        for (let i = 0; i < pairs; i++) {
+          const line = sanitizeLine(lineTokens[i] ?? null);
+          if (line == null) continue;
+          const underOdd = odds[i * 2];
+          const overOdd = odds[i * 2 + 1];
+          pushMarket(markets, { id: `${match.id}-ou-under-${line}-${i}`, matchId: match.id, marketType: "over_under_2way", period, line, selection: "under", nikeOdd: underOdd });
+          pushMarket(markets, { id: `${match.id}-ou-over-${line}-${i}`, matchId: match.id, marketType: "over_under_2way", period, line, selection: "over", nikeOdd: overOdd });
+        }
+      }
+    }
+  }
+  return markets;
+}
+
+function dedupeMarkets(markets = []) {
+  const result = [];
+  const seen = new Set();
+  for (const m of markets) {
+    const key = [m.matchId, m.marketType, m.period || "full_time", m.line ?? "null", m.selection, m.nikeOdd].join("|");
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push(m);
+  }
+  return result;
 }
 
 async function scrapeNikeCore({ headless = true, timeoutMs = 45000, saveDebugArtifacts = false } = {}) {
@@ -213,7 +343,7 @@ async function scrapeNikeCore({ headless = true, timeoutMs = 45000, saveDebugArt
         : splitParticipants(card.participants);
       const homeTeam = teams.homeTeam?.trim();
       const awayTeam = teams.awayTeam?.trim();
-      const parsedOdds = card.odds.map((v) => parseOdd(v, { rejectDateLike: false })).filter((v) => v !== null);
+      const parsedOdds = card.odds.map((v) => parseOdd(v, { rejectDateLike: false, rejectTimeLike: false })).filter((v) => v !== null);
       if (!homeTeam || !awayTeam || parsedOdds.length < 2) continue;
       const uniqueOdds = [...new Set(parsedOdds)];
       const dedupKey = `${normalizeTeamName(homeTeam)}__${normalizeTeamName(awayTeam)}__${card.tournament || ""}`;
@@ -235,7 +365,46 @@ async function scrapeNikeCore({ headless = true, timeoutMs = 45000, saveDebugArt
     }
 
     validateSuperponukaMatches(matches);
-    const markets = buildMarkets(matches);
+    const detailMarketsByMatch = {};
+    for (const match of matches) {
+      const rowBtn = page
+        .locator('[data-atid="bets-opponents"]')
+        .filter({ hasText: match.homeTeam })
+        .filter({ hasText: match.awayTeam })
+        .first();
+      try {
+        if (await rowBtn.count()) {
+          await rowBtn.click({ timeout: 3500 });
+          await delay(1800);
+          const detailMarkets = await page.evaluate(() => {
+            const clean = (v) => (v || "").replace(/\u00a0/g, " ").replace(/\s+/g, " ").trim();
+            const accordions = Array.from(document.querySelectorAll('[data-atid="market-accordion"]'));
+            return accordions.map((acc) => {
+              const marketName = clean(acc.textContent || "");
+              const panel = acc.nextElementSibling;
+              if (!panel) return { marketName, rows: [] };
+              const groupRows = Array.from(panel.querySelectorAll('[data-atid="bet-group-view"]'));
+              const rows = (groupRows.length ? groupRows : [panel]).map((row) => ({
+                text: clean(row.textContent || ""),
+                odds: Array.from(row.querySelectorAll('[data-atid="n1-bet-odd"]'))
+                  .map((el) => clean(el.textContent || ""))
+                  .filter(Boolean)
+              }));
+              return { marketName, rows };
+            }).filter((m) => m.marketName);
+          });
+          detailMarketsByMatch[match.id] = detailMarkets;
+        } else {
+          detailMarketsByMatch[match.id] = [];
+        }
+      } catch {
+        detailMarketsByMatch[match.id] = [];
+      }
+    }
+
+    const fallbackMarkets = buildMarketsFromCardOdds(matches);
+    const detailMarkets = matches.flatMap((m) => parseNikeDetailMarketsForMatch(m, detailMarketsByMatch[m.id] || []));
+    const markets = dedupeMarkets([...fallbackMarkets, ...detailMarkets]);
     const debugInfo = {
       title: extracted.title,
       finalUrl: extracted.finalUrl,
@@ -243,7 +412,8 @@ async function scrapeNikeCore({ headless = true, timeoutMs = 45000, saveDebugArt
       candidateCardsCount: extracted.candidateCards.length,
       sampleCards: extracted.candidateCards.slice(0, 12),
       parsedMatchesCount: matches.length,
-      parsedMarketsCount: markets.length
+      parsedMarketsCount: markets.length,
+      detailMarketsByMatch
     };
 
     return { sourceUrl: extracted.finalUrl, matches, markets, debugInfo };

@@ -271,7 +271,7 @@ export function normalizeFlashscoreMarketSnapshot(snapshot, config, matchUrl = "
   const parsedRows = (safeSnapshot.rows || []).map((row) => {
     const oddTexts = Array.isArray(row.oddTexts) ? row.oddTexts : [];
     const parsedOdds = oddTexts
-      .map((v) => parseOdd(v, { rejectDateLike: false }))
+      .map((v) => parseOdd(v, { rejectDateLike: false, rejectTimeLike: false }))
       .filter((x) => x !== null);
     const lineValue = requireLine ? (parseLineValue(row.lineText) ?? parseLineFromRow(row.rawRowText, oddTexts)) : null;
     return {

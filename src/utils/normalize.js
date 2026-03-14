@@ -32,7 +32,7 @@ export function normalizeTeamName(value = "") {
 
 /** Valid odds range 1.01–50.0. Rejects time-like and (by default) date-like values. */
 export function parseOdd(text = "", options = {}) {
-  const { rejectDateLike = true } = options;
+  const { rejectDateLike = true, rejectTimeLike = true } = options;
   if (text == null || typeof text !== "string") return null;
   const match = text.match(/(?<!\d)(\d{1,2}[.,]\d{1,2})(?!\d)/);
   if (!match) return null;
@@ -41,7 +41,7 @@ export function parseOdd(text = "", options = {}) {
   const intPart = Math.floor(num);
   const fracPart = Math.round((num - intPart) * 100);
   const looksLikeTime = fracPart === 0 || fracPart === 15 || fracPart === 30 || fracPart === 45;
-  if (intPart >= 13 && intPart <= 23 && looksLikeTime) return null;
+  if (rejectTimeLike && intPart >= 13 && intPart <= 23 && looksLikeTime) return null;
   if (rejectDateLike && intPart >= 13 && intPart <= 31 && fracPart >= 1 && fracPart <= 12) return null;
   return num;
 }

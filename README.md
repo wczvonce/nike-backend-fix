@@ -52,7 +52,13 @@ Copy `.env.example` to `.env` and adjust if needed:
 - End-to-end compare (Nike -> Flashscore/Tipsport -> ranked output) is currently enabled for:
   - `double_chance`
   - `match_winner_2way`
-- Additional market parsers (`over_under_2way`, `asian_handicap_2way`, `both_teams_to_score`, `draw_no_bet_2way`, `team_to_score_yes_no`, `european_handicap_2way`) are available via parser-debug endpoint, but are **not** enabled in final compare until Nike emits those markets with equivalent mapping certainty.
+  - `over_under_2way`
+  - `asian_handicap_2way`
+  - `both_teams_to_score`
+  - `draw_no_bet_2way`
+- Intentionally disabled in final compare:
+  - `team_to_score_yes_no` (team-scope equivalence not safely wired end-to-end yet)
+  - `european_handicap_2way` (safe 2-way table evidence is inconsistent; kept disabled)
 
 ## Unified Normalized Market Schema
 
@@ -68,6 +74,12 @@ Run parsing/normalization tests (no browser):
 
 ```powershell
 npm test
+```
+
+Full verification chain (fails on any critical mismatch):
+
+```powershell
+npm run verify:all
 ```
 
 Live smoke-only check (non-deterministic; not a replacement for deterministic tests):

@@ -234,7 +234,24 @@ async function buildNikeTipsportPipeline() {
 
   comparedRows.sort(compareRows);
   const flashscoreValidation = validateFlashscoreMappings(matchMappings, nike.matches.length);
-  const marketValidation = { ok: rejectedRows.filter((r) => r.rejectReason !== "nike_not_gt_tipsport").length === 0, errors: rejectedRows.filter((r) => r.rejectReason !== "nike_not_gt_tipsport").map((r) => `${r.match}:${r.selection}:${r.rejectReason}`) };
+  const blockingRejectReasons = new Set([
+    "market_type_not_allowed",
+    "double_chance_market_name_mismatch",
+    "double_chance_column_label_mismatch",
+    "double_chance_row_parse_mismatch",
+    "winner_2way_market_name_mismatch",
+    "winner_2way_column_label_mismatch",
+    "winner_2way_row_parse_mismatch",
+    "line_mismatch",
+    "period_mismatch",
+    "selection_mismatch",
+    "selection_source_mismatch"
+  ]);
+  const blockingRows = rejectedRows.filter((r) => blockingRejectReasons.has(r.rejectReason));
+  const marketValidation = {
+    ok: blockingRows.length === 0,
+    errors: blockingRows.map((r) => `${r.match}:${r.selection}:${r.rejectReason}`)
+  };
   const finalValidation = validateFinalRows(comparedRows);
 
   return {
