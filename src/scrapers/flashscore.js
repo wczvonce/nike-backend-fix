@@ -189,7 +189,7 @@ function toLineValue(value) {
   return Number.isFinite(num) ? Number(num.toFixed(2)) : null;
 }
 
-function parseGraphqlOddsToSnapshot(payload, { marketType, period, marketName }) {
+export function parseGraphqlOddsToSnapshot(payload, { marketType, period, marketName }) {
   const root = payload?.data?.findOddsByEventId || {};
   const byBookmakerId = new Map(
     (root?.settings?.bookmakers || []).map((x) => [String(x?.bookmaker?.id || ""), x?.bookmaker?.name || ""])
