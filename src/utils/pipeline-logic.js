@@ -1,3 +1,5 @@
+import { getCompareEnabledMarketTypes } from "../markets/handlers.js";
+
 export function normalizeForCompare(value) {
   return String(value || "")
     .normalize("NFD")
@@ -77,10 +79,7 @@ export const ALLOWED_MARKET_TYPES = new Set([
   "generic_yes_no"
 ]);
 
-export const E2E_COMPARE_MARKET_TYPES = new Set([
-  "double_chance",
-  "match_winner_2way"
-]);
+export const E2E_COMPARE_MARKET_TYPES = getCompareEnabledMarketTypes();
 
 export function isNikeGreaterThanTipsport(nikeOdd, tipsportOdd) {
   return Number(nikeOdd) > Number(tipsportOdd);

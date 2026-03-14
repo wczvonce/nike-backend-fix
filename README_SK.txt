@@ -77,7 +77,16 @@ Poznámka k reálnej end-to-end podpore:
   - v produkčnom porovnaní (Nike -> Flashscore/Tipsport -> finálny ranking) sú aktuálne aktívne:
     - double_chance
     - match_winner_2way
-  - ostatné 2-way parsery (over_under, asian_handicap, BTTS, draw_no_bet, european_handicap) sú dostupné cez debug endpoint, ale nie sú zapnuté do finálneho compare flow, kým Nike spoľahlivo negeneruje ekvivalentné trhy.
+  - ostatné 2-way parsery (over_under, asian_handicap, BTTS, draw_no_bet, team_to_score_yes_no, european_handicap) sú dostupné cez debug endpoint, ale nie sú zapnuté do finálneho compare flow, kým Nike spoľahlivo negeneruje ekvivalentné trhy.
+
+Jednotný normalizovaný model trhu:
+  - pozri `src/markets/market-model.js`
+  - compare flow vracia:
+    - normalizedNikeMarket
+    - normalizedTipsportMarket
+
+Live smoke test (len orientačný, nie deterministický dôkaz):
+  npm run smoke:live
 
 --------------------------------------------------------------------------------
 Voliteľný pomocník start.ps1

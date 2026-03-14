@@ -1,6 +1,7 @@
 import { chromium } from "playwright";
 import { normalizeTeamName, parseOdd } from "../utils/normalize.js";
 import { delay } from "../utils/delay.js";
+import { getMarketHandler } from "../markets/handlers.js";
 
 const FLASHSCORE_BASE = "https://www.flashscore.sk";
 const DEFAULT_VIEWPORT = { width: 1280, height: 1800 };
@@ -136,7 +137,7 @@ function parseLineFromRow(rawRowText = "", oddTexts = []) {
   const normalizedOdds = oddTexts.map((x) => String(x || "").replace(",", "."));
   const oddsSuffix = normalizedOdds.join("");
   let candidate = normalizedRaw;
-  if (oddsSuffix && normalizedRaw.endsWith(oddsSuffix) && normalizedRaw.length > oddsSuffix.length) {
+  if (oddsSuffix && normalizedRaw.endsWith(oddsSuffix) && normalizedRaw.length >= oddsSuffix.length) {
     candidate = normalizedRaw.slice(0, -oddsSuffix.length);
   }
   const matches = candidate.match(/[-+]?\d+(?:[.,]\d+)?/g);
@@ -199,74 +200,105 @@ async function scrapeFlashscoreMarketTable({
       return { labels, activeHints, rows };
     });
 
-    const canonicalLabels = [...new Set(
-      table.labels
-        .map((x) => normalizeHeaderToken(x))
-        .map((x) => labelAliases[x] || x)
-        .filter(Boolean)
-    )];
-    if (expectedLabels.length) {
-      const expected = expectedLabels.map((x) => normalizeHeaderToken(x));
-      const hasExpected = expected.every((x) => canonicalLabels.includes(x));
-      if (!hasExpected) {
-        return {
-          marketType,
-          marketName,
-          period: "full_time",
-          periodName: "Základný čas",
-          matchUrl: url,
-          columnLabels: canonicalLabels,
-          activeHints: table.activeHints,
-          bookmakerRows: []
-        };
-      }
-      if (requireExactLabelSet && (canonicalLabels.length !== expected.length || !canonicalLabels.every((x, idx) => x === expected[idx]))) {
-        return {
-          marketType,
-          marketName,
-          period: "full_time",
-          periodName: "Základný čas",
-          matchUrl: url,
-          columnLabels: canonicalLabels,
-          activeHints: table.activeHints,
-          bookmakerRows: []
-        };
-      }
-    }
-
-    const parsedRows = table.rows.map((row) => {
-      const parsedOdds = row.oddTexts
-        .map((v) => parseOdd(v, { rejectDateLike: false }))
-        .filter((x) => x !== null);
-      const lineValue = requireLine ? (parseLineValue(row.lineText) ?? parseLineFromRow(row.rawRowText, row.oddTexts)) : null;
-      const normalized = {
-        bookmaker: row.bookmaker,
-        bookmakerId: row.bookmakerId || null,
-        line: lineValue,
-        lineRaw: row.lineText || "",
-        extractedOddsArray: parsedOdds,
-        rawRowText: row.rawRowText
-      };
-      return normalized;
-    }).filter((row) => {
-      if (expectedOddCount != null && row.extractedOddsArray.length !== expectedOddCount) return false;
-      if (requireLine && row.line == null) return false;
-      return true;
-    });
-
-    return {
-      marketType,
-      marketName,
-      period: "full_time",
-      periodName: "Základný čas",
-      matchUrl: url,
-      columnLabels: canonicalLabels,
-      activeHints: table.activeHints,
-      bookmakerRows: parsedRows
-    };
+    return normalizeFlashscoreMarketSnapshot(
+      {
+        labels: table.labels,
+        rows: table.rows,
+        activeHints: table.activeHints
+      },
+      {
+        marketType,
+        marketName,
+        expectedLabels,
+        labelAliases,
+        requireExactLabelSet,
+        expectedOddCount,
+        requireLine
+      },
+      url
+    );
   } finally {
     await browser.close();
   }
+}
+
+export function normalizeFlashscoreMarketSnapshot(snapshot, config, matchUrl = "") {
+  const {
+    marketType,
+    marketName,
+    expectedLabels = [],
+    labelAliases = {},
+    requireExactLabelSet = false,
+    expectedOddCount,
+    requireLine = false
+  } = config || {};
+  const safeSnapshot = snapshot || { labels: [], rows: [], activeHints: [] };
+  const canonicalLabels = [...new Set(
+    (safeSnapshot.labels || [])
+      .map((x) => normalizeHeaderToken(x))
+      .map((x) => labelAliases[x] || x)
+      .filter(Boolean)
+  )];
+  if (expectedLabels.length) {
+    const expected = expectedLabels.map((x) => normalizeHeaderToken(x));
+    const hasExpected = expected.every((x) => canonicalLabels.includes(x));
+    if (!hasExpected) {
+      return {
+        marketType,
+        marketName,
+        period: "full_time",
+        periodName: "Základný čas",
+        matchUrl,
+        columnLabels: canonicalLabels,
+        activeHints: safeSnapshot.activeHints || [],
+        bookmakerRows: []
+      };
+    }
+    if (requireExactLabelSet && (canonicalLabels.length !== expected.length || !canonicalLabels.every((x, idx) => x === expected[idx]))) {
+      return {
+        marketType,
+        marketName,
+        period: "full_time",
+        periodName: "Základný čas",
+        matchUrl,
+        columnLabels: canonicalLabels,
+        activeHints: safeSnapshot.activeHints || [],
+        bookmakerRows: []
+      };
+    }
+  }
+
+  const parsedRows = (safeSnapshot.rows || []).map((row) => {
+    const oddTexts = Array.isArray(row.oddTexts) ? row.oddTexts : [];
+    const parsedOdds = oddTexts
+      .map((v) => parseOdd(v, { rejectDateLike: false }))
+      .filter((x) => x !== null);
+    const lineValue = requireLine ? (parseLineValue(row.lineText) ?? parseLineFromRow(row.rawRowText, oddTexts)) : null;
+    return {
+      bookmaker: row.bookmaker || "",
+      bookmakerId: row.bookmakerId || null,
+      line: lineValue,
+      lineRaw: row.lineText || "",
+      extractedOddsArray: parsedOdds,
+      rawRowText: row.rawRowText || ""
+    };
+  }).filter((row) => {
+    if (!row.bookmaker) return false;
+    if (expectedOddCount != null && row.extractedOddsArray.length !== expectedOddCount) return false;
+    if (requireLine && row.line == null) return false;
+    return true;
+  });
+
+  return {
+    marketType,
+    marketName,
+    period: "full_time",
+    periodName: "Základný čas",
+    matchUrl,
+    columnLabels: canonicalLabels,
+    activeHints: safeSnapshot.activeHints || [],
+    bookmakerRows: parsedRows
+  };
 }
 
 function mapDcRows(rows = []) {
@@ -311,17 +343,24 @@ function keepFirstPerBookmaker(rows = []) {
   return result;
 }
 
+function toScrapeConfigFromHandler(handler, override = {}) {
+  return {
+    tabRegex: override.tabRegex || handler?.tabRegex,
+    marketType: handler?.marketType,
+    marketName: override.marketName || handler?.displayName || "Unknown market",
+    expectedLabels: handler?.expectedLabels || [],
+    labelAliases: handler?.labelAliases || {},
+    requireExactLabelSet: handler?.requireExactLabelSet || false,
+    expectedOddCount: handler?.expectedOddCount,
+    requireLine: handler?.requireLine || false
+  };
+}
+
 export async function scrapeFlashscoreDoubleChance({ matchUrl, headless = true, timeoutMs = 45000 }) {
+  const handler = getMarketHandler("double_chance");
   const base = await scrapeFlashscoreMarketTable({
     matchUrl,
-    tabRegex: /DVOJITÁ ŠANCA|DOUBLE CHANCE/i,
-    marketType: "double_chance",
-    marketName: "Dvojitá šanca",
-    expectedLabels: ["1x", "12", "x2"],
-    labelAliases: { "1x": "1x", "12": "12", "x2": "x2" },
-    requireExactLabelSet: true,
-    expectedOddCount: 3,
-    requireLine: false,
+    ...toScrapeConfigFromHandler(handler),
     headless,
     timeoutMs
   });
@@ -333,16 +372,10 @@ export async function scrapeFlashscoreDoubleChance({ matchUrl, headless = true, 
 }
 
 export async function scrapeFlashscoreTipsportWinner2Way({ matchUrl, headless = true, timeoutMs = 45000 }) {
+  const handler = getMarketHandler("match_winner_2way");
   const base = await scrapeFlashscoreMarketTable({
     matchUrl,
-    tabRegex: /1X2|VÍŤAZ ZÁPASU|MATCH WINNER/i,
-    marketType: "match_winner_2way",
-    marketName: "Víťaz zápasu 2-way",
-    expectedLabels: ["1", "2"],
-    labelAliases: { "1": "1", "2": "2", "home": "1", "away": "2" },
-    requireExactLabelSet: true,
-    expectedOddCount: 2,
-    requireLine: false,
+    ...toScrapeConfigFromHandler(handler),
     headless,
     timeoutMs
   });
@@ -353,16 +386,10 @@ export async function scrapeFlashscoreTipsportWinner2Way({ matchUrl, headless = 
 }
 
 export async function scrapeFlashscoreOverUnder2Way({ matchUrl, headless = true, timeoutMs = 45000 }) {
+  const handler = getMarketHandler("over_under_2way");
   const base = await scrapeFlashscoreMarketTable({
     matchUrl,
-    tabRegex: /OVER\/UNDER|OVER UNDER/i,
-    marketType: "over_under_2way",
-    marketName: "Over/Under",
-    expectedLabels: ["over", "under"],
-    labelAliases: { over: "over", under: "under", "o/u": "over" },
-    requireExactLabelSet: false,
-    expectedOddCount: 2,
-    requireLine: true,
+    ...toScrapeConfigFromHandler(handler),
     headless,
     timeoutMs
   });
@@ -373,16 +400,10 @@ export async function scrapeFlashscoreOverUnder2Way({ matchUrl, headless = true,
 }
 
 export async function scrapeFlashscoreAsianHandicap2Way({ matchUrl, headless = true, timeoutMs = 45000 }) {
+  const handler = getMarketHandler("asian_handicap_2way");
   const base = await scrapeFlashscoreMarketTable({
     matchUrl,
-    tabRegex: /ÁZIJSKÝ HANDICAP|AZIJSK[YÝ] HANDICAP|ASIAN HANDICAP/i,
-    marketType: "asian_handicap_2way",
-    marketName: "Ázijský handicap",
-    expectedLabels: ["1", "2"],
-    labelAliases: { "1": "1", "2": "2", home: "1", away: "2" },
-    requireExactLabelSet: false,
-    expectedOddCount: 2,
-    requireLine: true,
+    ...toScrapeConfigFromHandler(handler),
     headless,
     timeoutMs
   });
@@ -393,16 +414,10 @@ export async function scrapeFlashscoreAsianHandicap2Way({ matchUrl, headless = t
 }
 
 export async function scrapeFlashscoreBttsYesNo({ matchUrl, headless = true, timeoutMs = 45000 }) {
+  const handler = getMarketHandler("both_teams_to_score");
   const base = await scrapeFlashscoreMarketTable({
     matchUrl,
-    tabRegex: /OBAJA DAJ[ÚU] G[ÓO]L|BOTH TEAMS TO SCORE/i,
-    marketType: "both_teams_to_score",
-    marketName: "Obaja dajú gól",
-    expectedLabels: ["yes", "no"],
-    labelAliases: { ano: "yes", áno: "yes", yes: "yes", nie: "no", no: "no" },
-    requireExactLabelSet: false,
-    expectedOddCount: 2,
-    requireLine: false,
+    ...toScrapeConfigFromHandler(handler),
     headless,
     timeoutMs
   });
@@ -413,16 +428,10 @@ export async function scrapeFlashscoreBttsYesNo({ matchUrl, headless = true, tim
 }
 
 export async function scrapeFlashscoreDrawNoBet2Way({ matchUrl, headless = true, timeoutMs = 45000 }) {
+  const handler = getMarketHandler("draw_no_bet_2way");
   const base = await scrapeFlashscoreMarketTable({
     matchUrl,
-    tabRegex: /ST[ÁA]VKA BEZ REM[ÍI]ZY|DRAW NO BET/i,
-    marketType: "draw_no_bet_2way",
-    marketName: "Stávka bez remízy",
-    expectedLabels: ["1", "2"],
-    labelAliases: { "1": "1", "2": "2", home: "1", away: "2" },
-    requireExactLabelSet: false,
-    expectedOddCount: 2,
-    requireLine: false,
+    ...toScrapeConfigFromHandler(handler),
     headless,
     timeoutMs
   });
@@ -433,16 +442,10 @@ export async function scrapeFlashscoreDrawNoBet2Way({ matchUrl, headless = true,
 }
 
 export async function scrapeFlashscoreEuropeanHandicap2Way({ matchUrl, headless = true, timeoutMs = 45000 }) {
+  const handler = getMarketHandler("european_handicap_2way");
   const base = await scrapeFlashscoreMarketTable({
     matchUrl,
-    tabRegex: /EUR[ÓO]PSKY HANDICAP|EUROPEAN HANDICAP/i,
-    marketType: "european_handicap_2way",
-    marketName: "Európsky handicap",
-    expectedLabels: ["handicap", "1", "2"],
-    labelAliases: { "1": "1", "2": "2", home: "1", away: "2" },
-    requireExactLabelSet: true,
-    expectedOddCount: 2,
-    requireLine: true,
+    ...toScrapeConfigFromHandler(handler),
     headless,
     timeoutMs
   });
@@ -453,16 +456,24 @@ export async function scrapeFlashscoreEuropeanHandicap2Way({ matchUrl, headless 
 }
 
 export async function scrapeFlashscoreGenericYesNo({ matchUrl, tabRegex, marketName = "Yes/No", headless = true, timeoutMs = 45000 }) {
+  const handler = getMarketHandler("generic_yes_no");
   const base = await scrapeFlashscoreMarketTable({
     matchUrl,
-    tabRegex,
-    marketType: "generic_yes_no",
-    marketName,
-    expectedLabels: ["yes", "no"],
-    labelAliases: { ano: "yes", áno: "yes", yes: "yes", nie: "no", no: "no" },
-    requireExactLabelSet: false,
-    expectedOddCount: 2,
-    requireLine: false,
+    ...toScrapeConfigFromHandler(handler, { tabRegex, marketName }),
+    headless,
+    timeoutMs
+  });
+  return {
+    ...base,
+    bookmakerRows: keepFirstPerBookmaker(mapTwoWayRows(base.bookmakerRows, "yes", "no", 1.01, 20))
+  };
+}
+
+export async function scrapeFlashscoreTeamToScoreYesNo({ matchUrl, headless = true, timeoutMs = 45000 }) {
+  const handler = getMarketHandler("team_to_score_yes_no");
+  const base = await scrapeFlashscoreMarketTable({
+    matchUrl,
+    ...toScrapeConfigFromHandler(handler),
     headless,
     timeoutMs
   });
@@ -491,6 +502,8 @@ export async function scrapeFlashscoreMarketByType({ matchUrl, marketType, headl
       return scrapeFlashscoreDrawNoBet2Way({ matchUrl, headless, timeoutMs });
     case "european_handicap_2way":
       return scrapeFlashscoreEuropeanHandicap2Way({ matchUrl, headless, timeoutMs });
+    case "team_to_score_yes_no":
+      return scrapeFlashscoreTeamToScoreYesNo({ matchUrl, headless, timeoutMs });
     default:
       {
       const normalized = normalizeMatchUrl(matchUrl);

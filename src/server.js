@@ -4,6 +4,8 @@ import dotenv from "dotenv";
 import { scrapeNikeSuperkurzy, debugNikeSuperkurzy } from "./scrapers/nike.js";
 import { searchFlashscoreMatch, scrapeFlashscoreDoubleChance, scrapeFlashscoreMarketByType } from "./scrapers/flashscore.js";
 import { EXPECTED_SUPERPONUKA_SNAPSHOT, EXPECTED_SUPERPONUKA_SPORT_BY_TITLE } from "./config/superponuka.js";
+import { createNormalizedMarket } from "./markets/market-model.js";
+import { getAllMarketHandlers } from "./markets/handlers.js";
 import {
   normalizeForCompare,
   compareRows,
@@ -179,6 +181,37 @@ async function buildNikeTipsportPipeline() {
           extractedOddsArray: tipsportRow?.extractedOddsArray || [],
           sourceSelection: mappedSelection
         };
+        row.normalizedNikeMarket = createNormalizedMarket({
+          matchId: match.id,
+          marketType,
+          period: nikeMarket.period || "full_time",
+          line: nikeMarket.line ?? null,
+          selection: nikeMarket.selection,
+          side: isHomeAwayMarket(marketType) ? nikeMarket.selection : null,
+          bookmaker: "Nike",
+          odd: nikeMarket.nikeOdd,
+          rawMarketName: marketType,
+          rawSelectionName: nikeMarket.selection,
+          source: "nike",
+          metadata: { matchTitle: match.rawTitle }
+        });
+        row.normalizedTipsportMarket = createNormalizedMarket({
+          matchId: match.id,
+          marketType,
+          period: nikeMarket.period || "full_time",
+          line: tipsportRow?.line ?? null,
+          selection: mappedSelection,
+          side: isHomeAwayMarket(marketType) ? mappedSelection : null,
+          bookmaker: tipsportRow?.bookmaker || "Tipsport",
+          odd: tipsportOdd,
+          rawMarketName: fsMarket.marketName || null,
+          rawSelectionName: mappedSelection,
+          source: "flashscore_tipsport",
+          metadata: {
+            rawBookmakerRowText: tipsportRow?.rawRowText || "",
+            extractedOddsArray: tipsportRow?.extractedOddsArray || []
+          }
+        });
         const marketValidation = validateMarketCandidate(row);
         if (!marketValidation.ok) {
           rejectedRows.push({ ...row, rejectReason: marketValidation.reason });
@@ -387,15 +420,7 @@ app.get("/api/debug/full-check", async (_req, res) => {
       const fallback = pipeline.nike.matches.find((m) => hrefByNikeTitle.has(m.rawTitle));
       return fallback ? hrefByNikeTitle.get(fallback.rawTitle) : null;
     };
-    const marketTypes = [
-      "double_chance",
-      "match_winner_2way",
-      "over_under_2way",
-      "asian_handicap_2way",
-      "both_teams_to_score",
-      "draw_no_bet_2way",
-      "european_handicap_2way"
-    ];
+    const marketTypes = getAllMarketHandlers().map((h) => h.marketType);
 
     const marketSamples = [];
     for (const marketType of marketTypes) {
@@ -435,9 +460,10 @@ app.get("/api/debug/full-check", async (_req, res) => {
     );
     const supportMatrix = marketTypes.map((marketType) => {
       const sample = marketSamples.find((m) => m.marketType === marketType) || null;
+      const handler = getAllMarketHandlers().find((h) => h.marketType === marketType) || null;
       const nikeEmits = (nikeEmittedByType[marketType] || 0) > 0;
       const flashscoreParses = Boolean(sample && sample.rowsCount > 0 && sample.tipsportFound);
-      const compareWired = E2E_COMPARE_MARKET_TYPES.has(marketType);
+      const compareWired = E2E_COMPARE_MARKET_TYPES.has(marketType) && Boolean(handler?.compareEnabled);
       const tested = compareWired && nikeEmits;
       const finalStatus = compareWired ? (nikeEmits ? "supported_e2e" : "wired_but_not_emitted_by_nike") : "disabled_compare_parser_only";
       return {
