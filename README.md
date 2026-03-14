@@ -30,7 +30,7 @@ Copy `.env.example` to `.env` and adjust if needed:
 - `HEADLESS` – `true` (no browser window) or `false` (show Chrome)
 - `REQUEST_TIMEOUT_MS` – page load timeout (default 45000)
 - `ALLOWED_ORIGIN` – CORS origin (e.g. `*` or your frontend URL)
-- `STRICT_EXPECTED_SUPERPONUKA` – `true` keeps strict snapshot check for the known 4-match state; `false` allows dynamic Superponuka parsing while keeping parser safety checks
+- `STRICT_EXPECTED_SUPERPONUKA` – default is `false` (recommended dynamic Superponuka parsing); set `true` only for strict historical 4-match snapshot debugging
 
 ## Endpoints
 

@@ -35,7 +35,7 @@ Premenné v .env:
   HEADLESS=true          – true = bez okna, false = zobrazí sa prehliadač
   REQUEST_TIMEOUT_MS=45000 – timeout pre načítanie stránok
   ALLOWED_ORIGIN=*       – CORS (pre frontend)
-  STRICT_EXPECTED_SUPERPONUKA=true – true = striktne 4 snapshot zápasy, false = dynamická Superponuka validácia
+  STRICT_EXPECTED_SUPERPONUKA=false – false = dynamická Superponuka validácia (odporúčané), true = striktne 4 snapshot zápasy
 
 --------------------------------------------------------------------------------
 KROK 3 – Spustenie servera

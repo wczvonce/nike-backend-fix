@@ -8,7 +8,7 @@ import { normalizeForCompare } from "../utils/pipeline-logic.js";
 
 const NIKE_URLS = ["https://m.nike.sk/tipovanie", "https://www.nike.sk/tipovanie"];
 const DC_SELECTIONS = ["1x", "12", "x2"];
-const STRICT_EXPECTED_SUPERPONUKA = String(process.env.STRICT_EXPECTED_SUPERPONUKA || "true") === "true";
+const STRICT_EXPECTED_SUPERPONUKA = String(process.env.STRICT_EXPECTED_SUPERPONUKA || "false") === "true";
 
 function detectSportFromText(value = "") {
   const t = String(value || "").toLowerCase();

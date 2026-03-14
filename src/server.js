@@ -28,7 +28,7 @@ app.use(express.json({ limit: "2mb" }));
 const PORT = Number(process.env.PORT || 3001);
 const HEADLESS = String(process.env.HEADLESS || "true") !== "false";
 const REQUEST_TIMEOUT_MS = Number(process.env.REQUEST_TIMEOUT_MS || 45000);
-const STRICT_EXPECTED_SUPERPONUKA = String(process.env.STRICT_EXPECTED_SUPERPONUKA || "true") === "true";
+const STRICT_EXPECTED_SUPERPONUKA = String(process.env.STRICT_EXPECTED_SUPERPONUKA || "false") === "true";
 
 function validateSuperponuka(matches) {
   if (!Array.isArray(matches) || matches.length === 0) return { ok: false, error: "Nike parser mismatch: no matches parsed" };
@@ -74,10 +74,12 @@ function isSwappedOrientation(nikeMatch, fsMatch) {
 }
 
 
-function validateFlashscoreMappings(matchMappings) {
+function validateFlashscoreMappings(matchMappings, expectedCount = null) {
   const errors = [];
-  if (!Array.isArray(matchMappings) || matchMappings.length !== 4) {
-    errors.push(`expected 4 mappings, got ${matchMappings?.length ?? 0}`);
+  if (!Array.isArray(matchMappings)) {
+    errors.push("missing mappings array");
+  } else if (Number.isInteger(expectedCount) && expectedCount >= 0 && matchMappings.length !== expectedCount) {
+    errors.push(`expected ${expectedCount} mappings, got ${matchMappings.length}`);
   }
   const unmatched = (matchMappings || []).filter((m) => !m.matched);
   if (unmatched.length) errors.push(`unmatched nike events: ${unmatched.map((m) => m.nikeMatch).join(", ")}`);
@@ -231,7 +233,7 @@ async function buildNikeTipsportPipeline() {
   }
 
   comparedRows.sort(compareRows);
-  const flashscoreValidation = validateFlashscoreMappings(matchMappings);
+  const flashscoreValidation = validateFlashscoreMappings(matchMappings, nike.matches.length);
   const marketValidation = { ok: rejectedRows.filter((r) => r.rejectReason !== "nike_not_gt_tipsport").length === 0, errors: rejectedRows.filter((r) => r.rejectReason !== "nike_not_gt_tipsport").map((r) => `${r.match}:${r.selection}:${r.rejectReason}`) };
   const finalValidation = validateFinalRows(comparedRows);
 
@@ -398,10 +400,13 @@ app.get("/api/debug/full-check", async (_req, res) => {
 
     const requiredNikeTitles = new Set(EXPECTED_SUPERPONUKA_SNAPSHOT);
     const nikeTitles = pipeline.nike.matches.map((m) => m.rawTitle);
-    const nikeExactListOk =
-      nikeTitles.length === 4 &&
-      new Set(nikeTitles).size === 4 &&
-      nikeTitles.every((t) => requiredNikeTitles.has(t));
+    const nikeExactListOk = STRICT_EXPECTED_SUPERPONUKA
+      ? (
+        nikeTitles.length === EXPECTED_SUPERPONUKA_SNAPSHOT.length &&
+        new Set(nikeTitles).size === EXPECTED_SUPERPONUKA_SNAPSHOT.length &&
+        nikeTitles.every((t) => requiredNikeTitles.has(t))
+      )
+      : true;
 
     const hrefByNikeTitle = new Map(
       pipeline.matchMappings
