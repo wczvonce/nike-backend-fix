@@ -30,6 +30,7 @@ Copy `.env.example` to `.env` and adjust if needed:
 - `HEADLESS` – `true` (no browser window) or `false` (show Chrome)
 - `REQUEST_TIMEOUT_MS` – page load timeout (default 45000)
 - `ALLOWED_ORIGIN` – CORS origin (e.g. `*` or your frontend URL)
+- `STRICT_EXPECTED_SUPERPONUKA` – `true` keeps strict snapshot check for the known 4-match state; `false` allows dynamic Superponuka parsing while keeping parser safety checks
 
 ## Endpoints
 
@@ -43,6 +44,8 @@ Copy `.env.example` to `.env` and adjust if needed:
 | GET | `/api/debug/flashscore` | Flashscore matching debug + validation |
 | GET | `/api/debug/compare` | Comparison debug (kept/rejected rows + validation) |
 | GET | `/api/pipeline/nike-vs-tipsport` | End-to-end pipeline (Nike Superponuka -> Flashscore -> 2-way Nike vs Tipsport ranking) |
+| GET | `/api/debug/full-check` | One-link full QA summary (PASS/FAIL + all major checks) |
+| GET | `/api/flashscore/market-2way?matchUrl=...&marketType=...` | Debug parser for supported Flashscore 2-way market families |
 
 ## Tests
 

@@ -3,21 +3,12 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { normalizeTeamName, parseOdd } from "../utils/normalize.js";
 import { delay } from "../utils/delay.js";
+import { EXPECTED_SUPERPONUKA_SNAPSHOT, EXPECTED_SUPERPONUKA_SPORT_BY_TITLE } from "../config/superponuka.js";
+import { normalizeForCompare } from "../utils/pipeline-logic.js";
 
 const NIKE_URLS = ["https://m.nike.sk/tipovanie", "https://www.nike.sk/tipovanie"];
 const DC_SELECTIONS = ["1x", "12", "x2"];
-const EXPECTED_SUPERPONUKA = [
-  "Chelsea vs Newcastle Utd.",
-  "Como vs AS Roma",
-  "Michalovce vs Spišská N. Ves",
-  "Sabalenka A. vs Rybakina E."
-];
-const EXPECTED_SPORT_BY_MATCH = {
-  "Chelsea vs Newcastle Utd.": "football",
-  "Como vs AS Roma": "football",
-  "Michalovce vs Spišská N. Ves": "hockey",
-  "Sabalenka A. vs Rybakina E.": "tennis"
-};
+const STRICT_EXPECTED_SUPERPONUKA = String(process.env.STRICT_EXPECTED_SUPERPONUKA || "true") === "true";
 
 function detectSportFromText(value = "") {
   const t = String(value || "").toLowerCase();
@@ -45,29 +36,28 @@ function normalizeMatchLabel(rawTitle = "") {
 }
 
 function validateSuperponukaMatches(matches) {
-  if (!Array.isArray(matches) || matches.length !== 4) {
-    throw new Error(`Nike Superponuka validation failed: expected 4 matches, got ${matches?.length ?? 0}`);
+  if (!Array.isArray(matches) || matches.length === 0) {
+    throw new Error("Nike Superponuka validation failed: no matches");
   }
-  const expected = EXPECTED_SUPERPONUKA.map((m) => normalizeMatchLabel(m));
   const got = matches.map((m) => normalizeMatchLabel(m.rawTitle));
   if (new Set(got).size !== got.length) {
     throw new Error("Nike Superponuka validation failed: duplicates found");
   }
-  for (const label of expected) {
-    if (!got.includes(label)) {
-      throw new Error(`Nike Superponuka validation failed: missing expected match "${label}"`);
-    }
-  }
-  for (const label of got) {
-    if (!expected.includes(label)) {
-      throw new Error(`Nike Superponuka validation failed: unexpected extra match "${label}"`);
-    }
-  }
   for (const match of matches) {
-    const expectedSport = EXPECTED_SPORT_BY_MATCH[match.rawTitle];
-    if (!expectedSport) throw new Error(`Nike Superponuka validation failed: unknown match "${match.rawTitle}"`);
-    if (match.sport !== expectedSport) {
+    const expectedSport = EXPECTED_SUPERPONUKA_SPORT_BY_TITLE[normalizeForCompare(match.rawTitle)];
+    if (expectedSport && match.sport !== expectedSport && STRICT_EXPECTED_SUPERPONUKA) {
       throw new Error(`Nike Superponuka validation failed: wrong sport for "${match.rawTitle}" (expected ${expectedSport}, got ${match.sport})`);
+    }
+  }
+  if (STRICT_EXPECTED_SUPERPONUKA) {
+    if (matches.length !== EXPECTED_SUPERPONUKA_SNAPSHOT.length) {
+      throw new Error(`Nike Superponuka validation failed: expected ${EXPECTED_SUPERPONUKA_SNAPSHOT.length} matches, got ${matches.length}`);
+    }
+    const expected = EXPECTED_SUPERPONUKA_SNAPSHOT.map((m) => normalizeMatchLabel(m));
+    for (const label of expected) {
+      if (!got.includes(label)) {
+        throw new Error(`Nike Superponuka validation failed: missing expected match "${label}"`);
+      }
     }
   }
 }
@@ -114,8 +104,8 @@ function buildMarkets(matches) {
     const odds = match.rawOdds;
     if (match.sport === "tennis") {
       if (odds.length >= 2) {
-        markets.push({ id: `${match.id}-winner-home`, matchId: match.id, marketType: "match_winner_2way", period: "full_time", selection: "home", nikeOdd: odds[0] });
-        markets.push({ id: `${match.id}-winner-away`, matchId: match.id, marketType: "match_winner_2way", period: "full_time", selection: "away", nikeOdd: odds[1] });
+        markets.push({ id: `${match.id}-winner-home`, matchId: match.id, marketType: "match_winner_2way", period: "full_time", line: null, selection: "home", nikeOdd: odds[0] });
+        markets.push({ id: `${match.id}-winner-away`, matchId: match.id, marketType: "match_winner_2way", period: "full_time", line: null, selection: "away", nikeOdd: odds[1] });
       }
       continue;
     }
@@ -135,9 +125,9 @@ function buildMarkets(matches) {
       }
     }
     if (dc1x != null && dc12 != null && dcx2 != null) {
-      markets.push({ id: `${match.id}-dc-1x`, matchId: match.id, marketType: "double_chance", period: "full_time", selection: DC_SELECTIONS[0], nikeOdd: dc1x });
-      markets.push({ id: `${match.id}-dc-12`, matchId: match.id, marketType: "double_chance", period: "full_time", selection: DC_SELECTIONS[1], nikeOdd: dc12 });
-      markets.push({ id: `${match.id}-dc-x2`, matchId: match.id, marketType: "double_chance", period: "full_time", selection: DC_SELECTIONS[2], nikeOdd: dcx2 });
+      markets.push({ id: `${match.id}-dc-1x`, matchId: match.id, marketType: "double_chance", period: "full_time", line: null, selection: DC_SELECTIONS[0], nikeOdd: dc1x });
+      markets.push({ id: `${match.id}-dc-12`, matchId: match.id, marketType: "double_chance", period: "full_time", line: null, selection: DC_SELECTIONS[1], nikeOdd: dc12 });
+      markets.push({ id: `${match.id}-dc-x2`, matchId: match.id, marketType: "double_chance", period: "full_time", line: null, selection: DC_SELECTIONS[2], nikeOdd: dcx2 });
     }
   }
   return markets;

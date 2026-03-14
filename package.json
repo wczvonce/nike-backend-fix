@@ -7,7 +7,7 @@
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
     "install:browsers": "playwright install",
-    "test": "node scripts/test-normalize.js"
+    "test": "node scripts/test-normalize.js && node scripts/test-pipeline-logic.js"
   },
   "dependencies": {
     "cors": "^2.8.5",

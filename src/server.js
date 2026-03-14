@@ -2,7 +2,21 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import { scrapeNikeSuperkurzy, debugNikeSuperkurzy } from "./scrapers/nike.js";
-import { searchFlashscoreMatch, scrapeFlashscoreDoubleChance, scrapeFlashscoreTipsportWinner2Way } from "./scrapers/flashscore.js";
+import { searchFlashscoreMatch, scrapeFlashscoreDoubleChance, scrapeFlashscoreMarketByType } from "./scrapers/flashscore.js";
+import { EXPECTED_SUPERPONUKA_SNAPSHOT, EXPECTED_SUPERPONUKA_SPORT_BY_TITLE } from "./config/superponuka.js";
+import {
+  normalizeForCompare,
+  round2,
+  compareRows,
+  validateMarketCandidate,
+  validateFinalRows,
+  isLineMarket,
+  isHomeAwayMarket,
+  mapSelectionForSwap,
+  mapLineForSwap,
+  sameLine,
+  computeMetrics
+} from "./utils/pipeline-logic.js";
 
 dotenv.config();
 const app = express();
@@ -11,48 +25,30 @@ app.use(express.json({ limit: "2mb" }));
 const PORT = Number(process.env.PORT || 3001);
 const HEADLESS = String(process.env.HEADLESS || "true") !== "false";
 const REQUEST_TIMEOUT_MS = Number(process.env.REQUEST_TIMEOUT_MS || 45000);
-const EXPECTED_SUPERPONUKA = [
-  "Chelsea vs Newcastle Utd.",
-  "Como vs AS Roma",
-  "Michalovce vs Spišská N. Ves",
-  "Sabalenka A. vs Rybakina E."
-];
-const EXPECTED_SUPERPONUKA_SPORT = {
-  "chelsea vs newcastle utd.": "football",
-  "como vs as roma": "football",
-  "michalovce vs spisska n. ves": "hockey",
-  "sabalenka a. vs rybakina e.": "tennis"
-};
-
-function normalizeForCompare(value) {
-  return String(value || "")
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
-    .replace(/\s+/g, " ")
-    .trim()
-    .toLowerCase();
-}
+const STRICT_EXPECTED_SUPERPONUKA = String(process.env.STRICT_EXPECTED_SUPERPONUKA || "true") === "true";
 
 function validateSuperponuka(matches) {
-  if (!Array.isArray(matches) || matches.length !== 4) return { ok: false, error: `Nike parser mismatch: expected 4 matches, got ${matches?.length ?? 0}` };
+  if (!Array.isArray(matches) || matches.length === 0) return { ok: false, error: "Nike parser mismatch: no matches parsed" };
   const got = matches.map((m) => normalizeForCompare(m.rawTitle));
-  const expected = EXPECTED_SUPERPONUKA.map((m) => normalizeForCompare(m));
-  for (const name of expected) {
-    if (!got.includes(name)) return { ok: false, error: `Nike parser mismatch: missing match "${name}"` };
-  }
   if (new Set(got).size !== got.length) return { ok: false, error: "Nike parser mismatch: duplicate matches found" };
   for (const m of matches) {
     const key = normalizeForCompare(m.rawTitle);
-    const expectedSport = EXPECTED_SUPERPONUKA_SPORT[key];
-    if (!expectedSport) return { ok: false, error: `Nike parser mismatch: unexpected extra match "${m.rawTitle}"` };
-    if (m.sport !== expectedSport) return { ok: false, error: `Nike parser mismatch: wrong sport for "${m.rawTitle}"` };
+    if (!m.sport || m.sport === "unknown") return { ok: false, error: `Nike parser mismatch: unknown sport for "${m.rawTitle}"` };
+    const expectedSport = EXPECTED_SUPERPONUKA_SPORT_BY_TITLE[key];
+    if (STRICT_EXPECTED_SUPERPONUKA && expectedSport && m.sport !== expectedSport) {
+      return { ok: false, error: `Nike parser mismatch: wrong sport for "${m.rawTitle}"` };
+    }
+  }
+  if (STRICT_EXPECTED_SUPERPONUKA) {
+    if (matches.length !== EXPECTED_SUPERPONUKA_SNAPSHOT.length) {
+      return { ok: false, error: `Nike parser mismatch: expected ${EXPECTED_SUPERPONUKA_SNAPSHOT.length} matches, got ${matches.length}` };
+    }
+    const expected = EXPECTED_SUPERPONUKA_SNAPSHOT.map((m) => normalizeForCompare(m));
+    for (const name of expected) {
+      if (!got.includes(name)) return { ok: false, error: `Nike parser mismatch: missing match "${name}"` };
+    }
   }
   return { ok: true };
-}
-
-function toDateTimeSortable(match) {
-  const dt = match?.kickoffAt || "";
-  return dt || "9999-12-31T23:59:59";
 }
 
 function similarity(a, b) {
@@ -74,22 +70,6 @@ function isSwappedOrientation(nikeMatch, fsMatch) {
   return swapped > straight + 0.05;
 }
 
-function mapSelectionForSwap(selection, swapped) {
-  if (!swapped) return selection;
-  if (selection === "1x") return "x2";
-  if (selection === "x2") return "1x";
-  return selection; // 12 stays 12
-}
-
-function round2(n) {
-  return Number(Number(n).toFixed(2));
-}
-
-function compareRows(a, b) {
-  if (b.probabilityEdgePp !== a.probabilityEdgePp) return b.probabilityEdgePp - a.probabilityEdgePp;
-  if (b.diff !== a.diff) return b.diff - a.diff;
-  return toDateTimeSortable(a).localeCompare(toDateTimeSortable(b));
-}
 
 function validateFlashscoreMappings(matchMappings) {
   const errors = [];
@@ -105,53 +85,6 @@ function validateFlashscoreMappings(matchMappings) {
   return { ok: errors.length === 0, errors };
 }
 
-function validateMarketCandidate(row) {
-  const allowed = new Set(["double_chance", "match_winner_2way", "over_under_2way", "btts_yes_no", "handicap_2way"]);
-  if (!allowed.has(row.marketType)) return { ok: false, reason: "market_type_not_allowed" };
-  if (row.nikeOdd == null || row.tipsportOdd == null) return { ok: false, reason: "missing_odds" };
-  if (!(row.nikeOdd > 1 && row.tipsportOdd > 1)) return { ok: false, reason: "invalid_odds_range" };
-  if (row.period !== "full_time") return { ok: false, reason: "period_mismatch" };
-  if (row.marketType === "double_chance" && !["1x", "12", "x2"].includes(row.selection)) return { ok: false, reason: "selection_mismatch" };
-  if (row.marketType === "double_chance" && !(row.nikeOdd >= 1.05 && row.nikeOdd <= 4.5 && row.tipsportOdd >= 1.05 && row.tipsportOdd <= 4.5)) {
-    return { ok: false, reason: "double_chance_odds_out_of_range" };
-  }
-  if (row.marketType === "double_chance") {
-    const marketName = normalizeForCompare(row.sourceMarketName || "");
-    if (!(marketName.includes("dvojita") || marketName.includes("double chance"))) {
-      return { ok: false, reason: "double_chance_market_name_mismatch" };
-    }
-    const labels = (row.columnLabels || []).map((x) => normalizeForCompare(x));
-    const exactDcLabels = labels.length === 3 && labels[0] === "1x" && labels[1] === "12" && labels[2] === "x2";
-    if (!exactDcLabels) {
-      return { ok: false, reason: "double_chance_column_label_mismatch" };
-    }
-    if (!Array.isArray(row.extractedOddsArray) || row.extractedOddsArray.length !== 3) {
-      return { ok: false, reason: "double_chance_row_parse_mismatch" };
-    }
-  }
-  if (row.marketType === "match_winner_2way" && !["home", "away"].includes(row.selection)) return { ok: false, reason: "selection_mismatch" };
-  if (row.marketType === "match_winner_2way") {
-    const marketName = normalizeForCompare(row.sourceMarketName || "");
-    if (!(marketName.includes("1x2") || marketName.includes("vitaz") || marketName.includes("winner"))) {
-      return { ok: false, reason: "winner_2way_market_name_mismatch" };
-    }
-  }
-  return { ok: true };
-}
-
-function validateFinalRows(rows) {
-  const errors = [];
-  for (const row of rows) {
-    if (!(row.nikeOdd > row.tipsportOdd)) errors.push(`nike_not_gt_tipsport:${row.match}:${row.selection}`);
-    if (![row.diff, row.percentDiff, row.probabilityEdgePp].every((x) => Number.isFinite(x))) {
-      errors.push(`invalid_calculation:${row.match}:${row.selection}`);
-    }
-  }
-  const sortedCopy = [...rows].sort(compareRows);
-  const sortedOk = JSON.stringify(rows) === JSON.stringify(sortedCopy);
-  if (!sortedOk) errors.push("rows_not_sorted");
-  return { ok: errors.length === 0, errors };
-}
 
 async function buildNikeTipsportPipeline() {
   const nike = await scrapeNikeSuperkurzy({ headless: HEADLESS, timeoutMs: REQUEST_TIMEOUT_MS });
@@ -189,83 +122,46 @@ async function buildNikeTipsportPipeline() {
       flashscoreAwayTeam: fsMatch.awayTeam
     });
 
-    if (match.sport === "tennis") {
-      const fsWinner = await scrapeFlashscoreTipsportWinner2Way({ matchUrl: fsMatch.href, headless: HEADLESS, timeoutMs: REQUEST_TIMEOUT_MS });
-        const tipsport = fsWinner.bookmakerRows.find((b) => normalizeForCompare(b.bookmaker).includes("tipsport"));
-      const nikeHome = nike.markets.find((m) => m.matchId === match.id && m.marketType === "match_winner_2way" && m.selection === "home");
-      const nikeAway = nike.markets.find((m) => m.matchId === match.id && m.marketType === "match_winner_2way" && m.selection === "away");
-      const tipsportHomeOdd = swapped ? tipsport?.selectionOdds?.away ?? null : tipsport?.selectionOdds?.home ?? null;
-      const tipsportAwayOdd = swapped ? tipsport?.selectionOdds?.home ?? null : tipsport?.selectionOdds?.away ?? null;
-      const pairs = [
-        { selection: "home", nikeOdd: nikeHome?.nikeOdd ?? null, tipsportOdd: tipsportHomeOdd },
-        { selection: "away", nikeOdd: nikeAway?.nikeOdd ?? null, tipsportOdd: tipsportAwayOdd }
-      ];
-      for (const p of pairs) {
+    const nikeMarketsForMatch = nike.markets.filter((m) => m.matchId === match.id);
+    const marketTypes = [...new Set(nikeMarketsForMatch.map((m) => m.marketType))];
+
+    for (const marketType of marketTypes) {
+      const fsMarket = marketType === "double_chance"
+        ? await scrapeFlashscoreDoubleChance({ matchUrl: fsMatch.href, headless: HEADLESS, timeoutMs: REQUEST_TIMEOUT_MS })
+        : await scrapeFlashscoreMarketByType({ matchUrl: fsMatch.href, marketType, headless: HEADLESS, timeoutMs: REQUEST_TIMEOUT_MS });
+      const tipsportRows = fsMarket.bookmakerRows.filter((b) => normalizeForCompare(b.bookmaker).includes("tipsport"));
+      const nikeMarketRows = nikeMarketsForMatch.filter((m) => m.marketType === marketType);
+
+      for (const nikeMarket of nikeMarketRows) {
+        let mappedSelection = nikeMarket.selection;
+        if (marketType === "double_chance") mappedSelection = mapSelectionForSwap(nikeMarket.selection, swapped);
+        else if (isHomeAwayMarket(marketType)) mappedSelection = mapSelectionForSwap(nikeMarket.selection, swapped);
+        const mappedLine = mapLineForSwap(nikeMarket.line ?? null, marketType, swapped);
+        const tipsportRow = isLineMarket(marketType)
+          ? tipsportRows.find((row) => sameLine(row.line, mappedLine))
+          : tipsportRows[0];
+        const tipsportOdd = tipsportRow?.selectionOdds?.[mappedSelection] ?? null;
         const row = {
           matchId: match.id,
           match: match.rawTitle,
           sport: match.sport,
           tournament: match.tournament,
           kickoffAt: match.kickoffAt || null,
-          marketType: "match_winner_2way",
-          period: "full_time",
-          line: null,
-          selection: p.selection,
-          nikeOdd: p.nikeOdd,
-          tipsportOdd: p.tipsportOdd,
-            flashscoreMatchUrl: fsMatch.href,
-            sourceMarketName: fsWinner.marketName || null,
-            sourcePeriodName: fsWinner.periodName || null,
-            columnLabels: fsWinner.columnLabels || [],
-            rawBookmakerRowText: tipsport?.rawRowText || "",
-            extractedOddsArray: tipsport?.extractedOddsArray || []
-        };
-        const marketValidation = validateMarketCandidate(row);
-        if (!marketValidation.ok) {
-          rejectedRows.push({ ...row, rejectReason: marketValidation.reason });
-          continue;
-        }
-        if (!(row.nikeOdd > row.tipsportOdd)) {
-          rejectedRows.push({ ...row, rejectReason: "nike_not_gt_tipsport" });
-          continue;
-        }
-        const diff = row.nikeOdd - row.tipsportOdd;
-        const percentDiff = (diff / row.tipsportOdd) * 100;
-        const probabilityEdgePp = ((1 / row.tipsportOdd) - (1 / row.nikeOdd)) * 100;
-        comparedRows.push({
-          ...row,
-          nikeOdd: round2(row.nikeOdd),
-          tipsportOdd: round2(row.tipsportOdd),
-          diff: round2(diff),
-          percentDiff: round2(percentDiff),
-          probabilityEdgePp: round2(probabilityEdgePp)
-        });
-      }
-    } else {
-      const dc = await scrapeFlashscoreDoubleChance({ matchUrl: fsMatch.href, headless: HEADLESS, timeoutMs: REQUEST_TIMEOUT_MS });
-        const tipsport = dc.bookmakerRows.find((b) => normalizeForCompare(b.bookmaker).includes("tipsport"));
-      const nikeDcMarkets = nike.markets.filter((m) => m.matchId === match.id && m.marketType === "double_chance");
-      for (const nikeMarket of nikeDcMarkets) {
-        const mappedSelection = mapSelectionForSwap(nikeMarket.selection, swapped);
-        const row = {
-          matchId: match.id,
-          match: match.rawTitle,
-          sport: match.sport,
-          tournament: match.tournament,
-          kickoffAt: match.kickoffAt || null,
-          marketType: "double_chance",
-          period: "full_time",
-          line: null,
+          marketType,
+          period: nikeMarket.period || "full_time",
+          line: nikeMarket.line ?? null,
+          sourceLine: tipsportRow?.line ?? null,
           selection: nikeMarket.selection,
+          mappedSelection,
           nikeOdd: nikeMarket.nikeOdd,
-          tipsportOdd: tipsport?.selectionOdds?.[mappedSelection] ?? null,
-            flashscoreMatchUrl: fsMatch.href,
-            sourceMarketName: dc.marketName || null,
-            sourcePeriodName: dc.periodName || null,
-            columnLabels: dc.columnLabels || [],
-            rawBookmakerRowText: tipsport?.rawRowText || "",
-            extractedOddsArray: tipsport?.extractedOddsArray || [],
-            mappedSelection: mappedSelection
+          tipsportOdd,
+          flashscoreMatchUrl: fsMatch.href,
+          sourceMarketName: fsMarket.marketName || null,
+          sourcePeriodName: fsMarket.periodName || null,
+          columnLabels: fsMarket.columnLabels || [],
+          rawBookmakerRowText: tipsportRow?.rawRowText || "",
+          extractedOddsArray: tipsportRow?.extractedOddsArray || [],
+          sourceSelection: mappedSelection
         };
         const marketValidation = validateMarketCandidate(row);
         if (!marketValidation.ok) {
@@ -276,16 +172,10 @@ async function buildNikeTipsportPipeline() {
           rejectedRows.push({ ...row, rejectReason: "nike_not_gt_tipsport" });
           continue;
         }
-        const diff = row.nikeOdd - row.tipsportOdd;
-        const percentDiff = (diff / row.tipsportOdd) * 100;
-        const probabilityEdgePp = ((1 / row.tipsportOdd) - (1 / row.nikeOdd)) * 100;
+        const metrics = computeMetrics(row.nikeOdd, row.tipsportOdd);
         comparedRows.push({
           ...row,
-          nikeOdd: round2(row.nikeOdd),
-          tipsportOdd: round2(row.tipsportOdd),
-          diff: round2(diff),
-          percentDiff: round2(percentDiff),
-          probabilityEdgePp: round2(probabilityEdgePp)
+          ...metrics
         });
       }
     }
@@ -452,6 +342,89 @@ app.get("/api/debug/compare", async (_req, res) => {
   }
 });
 
+app.get("/api/debug/full-check", async (_req, res) => {
+  try {
+    const pipeline = await buildNikeTipsportPipeline();
+    if (!pipeline.ok) return res.status(500).json({ ok: false, error: pipeline.error, stage: pipeline.stage });
+
+    const requiredNikeTitles = new Set(EXPECTED_SUPERPONUKA_SNAPSHOT);
+    const nikeTitles = pipeline.nike.matches.map((m) => m.rawTitle);
+    const nikeExactListOk =
+      nikeTitles.length === 4 &&
+      new Set(nikeTitles).size === 4 &&
+      nikeTitles.every((t) => requiredNikeTitles.has(t));
+
+    const sampleFlashscoreUrl =
+      pipeline.matchMappings.find((m) => m.matched && m.flashscoreHref)?.flashscoreHref || null;
+    const marketTypes = [
+      "double_chance",
+      "match_winner_2way",
+      "over_under_2way",
+      "asian_handicap_2way",
+      "both_teams_to_score",
+      "draw_no_bet_2way",
+      "european_handicap_2way"
+    ];
+
+    const marketSamples = [];
+    if (sampleFlashscoreUrl) {
+      for (const marketType of marketTypes) {
+        const parsed = marketType === "double_chance"
+          ? await scrapeFlashscoreDoubleChance({ matchUrl: sampleFlashscoreUrl, headless: HEADLESS, timeoutMs: REQUEST_TIMEOUT_MS })
+          : await scrapeFlashscoreMarketByType({ matchUrl: sampleFlashscoreUrl, marketType, headless: HEADLESS, timeoutMs: REQUEST_TIMEOUT_MS });
+        const tipsportRow = parsed.bookmakerRows.find((b) => normalizeForCompare(b.bookmaker).includes("tipsport")) || null;
+        marketSamples.push({
+          marketType,
+          marketName: parsed.marketName || null,
+          columnLabels: parsed.columnLabels || [],
+          rowsCount: parsed.bookmakerRows.length,
+          tipsportFound: Boolean(tipsportRow),
+          tipsportLine: tipsportRow?.line ?? null,
+          tipsportSelectionOdds: tipsportRow?.selectionOdds ?? null
+        });
+      }
+    }
+
+    const allFinalRowsNikeGtTipsport = pipeline.rows.every((r) => r.nikeOdd > r.tipsportOdd);
+    const response = {
+      ok: true,
+      status: (
+        pipeline.checks.nikeValidation.ok &&
+        nikeExactListOk &&
+        pipeline.checks.flashscoreValidation.ok &&
+        pipeline.checks.marketValidation.ok &&
+        pipeline.checks.finalComparisonValidation.ok &&
+        allFinalRowsNikeGtTipsport
+      ) ? "PASS" : "FAIL",
+      checks: {
+        nikeValidation: pipeline.checks.nikeValidation,
+        nikeExactExpectedList: nikeExactListOk,
+        strictExpectedSnapshotMode: STRICT_EXPECTED_SUPERPONUKA,
+        flashscoreValidation: pipeline.checks.flashscoreValidation,
+        marketValidation: pipeline.checks.marketValidation,
+        finalComparisonValidation: pipeline.checks.finalComparisonValidation,
+        allFinalRowsNikeGtTipsport
+      },
+      nike: {
+        count: pipeline.nike.matches.length,
+        matches: nikeTitles
+      },
+      finalRows: {
+        count: pipeline.rows.length,
+        rows: pipeline.rows
+      },
+      matchMappings: pipeline.matchMappings,
+      marketSamples,
+      hint: "Open only this endpoint for full QA summary."
+    };
+    res.json(response);
+  } catch (err) {
+    const message = normalizePlaywrightError(err?.message);
+    console.error("[debug/full-check]", err?.message);
+    res.status(500).setHeader("Content-Type", "application/json").json({ ok: false, error: message });
+  }
+});
+
 app.get("/api/flashscore/double-chance", async (req, res) => {
   const { matchUrl } = req.query;
   if (!matchUrl || !String(matchUrl).trim()) {
@@ -467,6 +440,29 @@ app.get("/api/flashscore/double-chance", async (req, res) => {
   } catch (err) {
     const message = normalizePlaywrightError(err?.message);
     console.error("[flashscore/double-chance]", err?.message);
+    res.status(500).setHeader("Content-Type", "application/json").json({ ok: false, error: message });
+  }
+});
+
+app.get("/api/flashscore/market-2way", async (req, res) => {
+  const { matchUrl, marketType } = req.query;
+  if (!matchUrl || !String(matchUrl).trim()) {
+    return res.status(400).setHeader("Content-Type", "application/json").json({ ok: false, error: "Query parameter matchUrl is required." });
+  }
+  if (!marketType || !String(marketType).trim()) {
+    return res.status(400).setHeader("Content-Type", "application/json").json({ ok: false, error: "Query parameter marketType is required." });
+  }
+  try {
+    const result = await scrapeFlashscoreMarketByType({
+      matchUrl: String(matchUrl).trim(),
+      marketType: String(marketType).trim(),
+      headless: HEADLESS,
+      timeoutMs: REQUEST_TIMEOUT_MS
+    });
+    res.json({ ok: true, result });
+  } catch (err) {
+    const message = normalizePlaywrightError(err?.message);
+    console.error("[flashscore/market-2way]", err?.message);
     res.status(500).setHeader("Content-Type", "application/json").json({ ok: false, error: message });
   }
 });

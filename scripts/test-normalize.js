@@ -59,6 +59,12 @@ console.log("--- normalizeTeamName ---");
 eq(normalizeTeamName("ŠK Slovan Bratislava"), "sk slovan bratislava", "diacritics");
 eq(normalizeTeamName("Newcastle Utd."), "newcastle united", "newcastle utd");
 eq(normalizeTeamName("B. Monchengladbach"), "borussia monchengladbach", "gladbach");
+eq(normalizeTeamName("St. Pauli"), "saint pauli", "st pauli alias");
+eq(normalizeTeamName("Spišská N. Ves"), "spisska nova ves", "spisska alias");
+eq(normalizeTeamName("HC Sparta Praha"), "sparta praha", "sparta alias");
+eq(normalizeTeamName("Rybakina E."), "rybakina", "rybakina alias");
+eq(normalizeTeamName("Svitolina E."), "svitolina", "svitolina alias");
+eq(normalizeTeamName("AS Rim"), "as roma", "as rim alias");
 
 console.log("--- normalizeText / slugifyMarket ---");
 eq(normalizeText("Double Chance"), "double chance", "normalizeText");

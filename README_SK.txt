@@ -35,6 +35,7 @@ Premenné v .env:
   HEADLESS=true          – true = bez okna, false = zobrazí sa prehliadač
   REQUEST_TIMEOUT_MS=45000 – timeout pre načítanie stránok
   ALLOWED_ORIGIN=*       – CORS (pre frontend)
+  STRICT_EXPECTED_SUPERPONUKA=true – true = striktne 4 snapshot zápasy, false = dynamická Superponuka validácia
 
 --------------------------------------------------------------------------------
 KROK 3 – Spustenie servera
@@ -68,6 +69,8 @@ API endpointy:
   GET /api/debug/flashscore                         – debug párovania Nike -> Flashscore + validácia
   GET /api/debug/compare                            – debug porovnania (ponechané/odmietnuté riadky + validácia)
   GET /api/pipeline/nike-vs-tipsport               – end-to-end pipeline (Nike Superponuka -> Flashscore -> porovnanie s Tipsport)
+  GET /api/debug/full-check                         – jeden link na full QA súhrn (PASS/FAIL + všetky hlavné kontroly)
+  GET /api/flashscore/market-2way?matchUrl=...&marketType=... – debug parser pre jednotlivé 2-way markety
   (matchUrl môže byť relatívna cesta z search, napr. /match/abc, alebo plná URL)
 
 --------------------------------------------------------------------------------
