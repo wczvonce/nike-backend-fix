@@ -424,6 +424,8 @@ app.get("/api/debug/nike", async (_req, res) => {
       extractedOddsArrays: data.debugInfo.sampleCards.map((x) => x.odds),
       parserDebug: {
         candidateCardsCount: data.debugInfo.candidateCardsCount,
+        candidateUniqueMatchCount: data.debugInfo.candidateUniqueMatchCount,
+        candidateUniqueMatches: data.debugInfo.candidateUniqueMatches,
         parsedMatchesCount: data.debugInfo.parsedMatchesCount,
         parsedMarketsCount: data.debugInfo.parsedMarketsCount
       }

@@ -410,6 +410,8 @@ async function scrapeNikeCore({ headless = true, timeoutMs = 45000, saveDebugArt
       finalUrl: extracted.finalUrl,
       firstLines: extracted.firstLines,
       candidateCardsCount: extracted.candidateCards.length,
+      candidateUniqueMatchCount: new Set(extracted.candidateCards.map((c) => `${normalizeTeamName(c.homeTeam || "")}__${normalizeTeamName(c.awayTeam || "")}`)).size,
+      candidateUniqueMatches: [...new Set(extracted.candidateCards.map((c) => `${c.homeTeam || ""} vs ${c.awayTeam || ""}`))],
       sampleCards: extracted.candidateCards.slice(0, 12),
       parsedMatchesCount: matches.length,
       parsedMarketsCount: markets.length,
