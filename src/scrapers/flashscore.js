@@ -106,6 +106,20 @@ function normalizeHeaderToken(value = "") {
     .toLowerCase();
 }
 
+export function isExactOrderedLabelSet(labels = [], expected = []) {
+  if (!Array.isArray(labels) || !Array.isArray(expected)) return false;
+  if (labels.length !== expected.length) return false;
+  return labels.every((label, idx) => normalizeHeaderToken(label) === normalizeHeaderToken(expected[idx]));
+}
+
+export function isSafeDoubleChanceLabels(labels = []) {
+  return isExactOrderedLabelSet(labels, ["1x", "12", "x2"]);
+}
+
+export function isSafeMatchWinner2WayLabels(labels = []) {
+  return isExactOrderedLabelSet(labels, ["1", "2"]);
+}
+
 function parseLineValue(value = "") {
   const text = String(value || "").trim();
   if (!text) return null;
@@ -323,10 +337,10 @@ export async function scrapeFlashscoreTipsportWinner2Way({ matchUrl, headless = 
     matchUrl,
     tabRegex: /1X2|VÍŤAZ ZÁPASU|MATCH WINNER/i,
     marketType: "match_winner_2way",
-    marketName: "Víťaz zápasu / 1X2",
+    marketName: "Víťaz zápasu 2-way",
     expectedLabels: ["1", "2"],
     labelAliases: { "1": "1", "2": "2", "home": "1", "away": "2" },
-    requireExactLabelSet: false,
+    requireExactLabelSet: true,
     expectedOddCount: 2,
     requireLine: false,
     headless,
@@ -424,9 +438,9 @@ export async function scrapeFlashscoreEuropeanHandicap2Way({ matchUrl, headless 
     tabRegex: /EUR[ÓO]PSKY HANDICAP|EUROPEAN HANDICAP/i,
     marketType: "european_handicap_2way",
     marketName: "Európsky handicap",
-    expectedLabels: ["1", "2"],
+    expectedLabels: ["handicap", "1", "2"],
     labelAliases: { "1": "1", "2": "2", home: "1", away: "2" },
-    requireExactLabelSet: false,
+    requireExactLabelSet: true,
     expectedOddCount: 2,
     requireLine: true,
     headless,

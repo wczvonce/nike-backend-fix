@@ -6,7 +6,6 @@ import { searchFlashscoreMatch, scrapeFlashscoreDoubleChance, scrapeFlashscoreMa
 import { EXPECTED_SUPERPONUKA_SNAPSHOT, EXPECTED_SUPERPONUKA_SPORT_BY_TITLE } from "./config/superponuka.js";
 import {
   normalizeForCompare,
-  round2,
   compareRows,
   validateMarketCandidate,
   validateFinalRows,
@@ -15,7 +14,9 @@ import {
   mapSelectionForSwap,
   mapLineForSwap,
   sameLine,
-  computeMetrics
+  computeMetrics,
+  E2E_COMPARE_MARKET_TYPES,
+  isNikeGreaterThanTipsport
 } from "./utils/pipeline-logic.js";
 
 dotenv.config();
@@ -126,6 +127,21 @@ async function buildNikeTipsportPipeline() {
     const marketTypes = [...new Set(nikeMarketsForMatch.map((m) => m.marketType))];
 
     for (const marketType of marketTypes) {
+      if (!E2E_COMPARE_MARKET_TYPES.has(marketType)) {
+        const disabledMarkets = nikeMarketsForMatch.filter((m) => m.marketType === marketType);
+        for (const m of disabledMarkets) {
+          rejectedRows.push({
+            matchId: match.id,
+            match: match.rawTitle,
+            marketType,
+            selection: m.selection,
+            line: m.line ?? null,
+            nikeOdd: m.nikeOdd,
+            rejectReason: "market_not_enabled_end_to_end"
+          });
+        }
+        continue;
+      }
       const fsMarket = marketType === "double_chance"
         ? await scrapeFlashscoreDoubleChance({ matchUrl: fsMatch.href, headless: HEADLESS, timeoutMs: REQUEST_TIMEOUT_MS })
         : await scrapeFlashscoreMarketByType({ matchUrl: fsMatch.href, marketType, headless: HEADLESS, timeoutMs: REQUEST_TIMEOUT_MS });
@@ -168,7 +184,7 @@ async function buildNikeTipsportPipeline() {
           rejectedRows.push({ ...row, rejectReason: marketValidation.reason });
           continue;
         }
-        if (!(row.nikeOdd > row.tipsportOdd)) {
+        if (!isNikeGreaterThanTipsport(row.nikeOdd, row.tipsportOdd)) {
           rejectedRows.push({ ...row, rejectReason: "nike_not_gt_tipsport" });
           continue;
         }
@@ -354,8 +370,23 @@ app.get("/api/debug/full-check", async (_req, res) => {
       new Set(nikeTitles).size === 4 &&
       nikeTitles.every((t) => requiredNikeTitles.has(t));
 
-    const sampleFlashscoreUrl =
-      pipeline.matchMappings.find((m) => m.matched && m.flashscoreHref)?.flashscoreHref || null;
+    const hrefByNikeTitle = new Map(
+      pipeline.matchMappings
+        .filter((m) => m.matched && m.flashscoreHref)
+        .map((m) => [m.nikeMatch, m.flashscoreHref])
+    );
+    const pickSampleUrlForMarket = (marketType) => {
+      if (marketType === "match_winner_2way") {
+        const tennisMatch = pipeline.nike.matches.find((m) => m.sport === "tennis");
+        if (tennisMatch) return hrefByNikeTitle.get(tennisMatch.rawTitle) || null;
+      }
+      if (marketType === "double_chance") {
+        const nonTennis = pipeline.nike.matches.find((m) => m.sport !== "tennis");
+        if (nonTennis) return hrefByNikeTitle.get(nonTennis.rawTitle) || null;
+      }
+      const fallback = pipeline.nike.matches.find((m) => hrefByNikeTitle.has(m.rawTitle));
+      return fallback ? hrefByNikeTitle.get(fallback.rawTitle) : null;
+    };
     const marketTypes = [
       "double_chance",
       "match_winner_2way",
@@ -367,25 +398,57 @@ app.get("/api/debug/full-check", async (_req, res) => {
     ];
 
     const marketSamples = [];
-    if (sampleFlashscoreUrl) {
-      for (const marketType of marketTypes) {
-        const parsed = marketType === "double_chance"
-          ? await scrapeFlashscoreDoubleChance({ matchUrl: sampleFlashscoreUrl, headless: HEADLESS, timeoutMs: REQUEST_TIMEOUT_MS })
-          : await scrapeFlashscoreMarketByType({ matchUrl: sampleFlashscoreUrl, marketType, headless: HEADLESS, timeoutMs: REQUEST_TIMEOUT_MS });
+    for (const marketType of marketTypes) {
+      const sampleUrl = pickSampleUrlForMarket(marketType);
+      if (!sampleUrl) {
+        marketSamples.push({
+          marketType,
+          marketName: null,
+          sampleMatchUrl: null,
+          columnLabels: [],
+          rowsCount: 0,
+          tipsportFound: false,
+          tipsportLine: null,
+          tipsportSelectionOdds: null
+        });
+        continue;
+      }
+      const parsed = marketType === "double_chance"
+        ? await scrapeFlashscoreDoubleChance({ matchUrl: sampleUrl, headless: HEADLESS, timeoutMs: REQUEST_TIMEOUT_MS })
+        : await scrapeFlashscoreMarketByType({ matchUrl: sampleUrl, marketType, headless: HEADLESS, timeoutMs: REQUEST_TIMEOUT_MS });
         const tipsportRow = parsed.bookmakerRows.find((b) => normalizeForCompare(b.bookmaker).includes("tipsport")) || null;
         marketSamples.push({
           marketType,
           marketName: parsed.marketName || null,
+          sampleMatchUrl: sampleUrl,
           columnLabels: parsed.columnLabels || [],
           rowsCount: parsed.bookmakerRows.length,
           tipsportFound: Boolean(tipsportRow),
           tipsportLine: tipsportRow?.line ?? null,
           tipsportSelectionOdds: tipsportRow?.selectionOdds ?? null
         });
-      }
     }
 
-    const allFinalRowsNikeGtTipsport = pipeline.rows.every((r) => r.nikeOdd > r.tipsportOdd);
+    const allFinalRowsNikeGtTipsport = pipeline.rows.every((r) => isNikeGreaterThanTipsport(r.nikeOdd, r.tipsportOdd));
+    const nikeEmittedByType = Object.fromEntries(
+      marketTypes.map((t) => [t, pipeline.nike.markets.filter((m) => m.marketType === t).length])
+    );
+    const supportMatrix = marketTypes.map((marketType) => {
+      const sample = marketSamples.find((m) => m.marketType === marketType) || null;
+      const nikeEmits = (nikeEmittedByType[marketType] || 0) > 0;
+      const flashscoreParses = Boolean(sample && sample.rowsCount > 0 && sample.tipsportFound);
+      const compareWired = E2E_COMPARE_MARKET_TYPES.has(marketType);
+      const tested = compareWired && nikeEmits;
+      const finalStatus = compareWired ? (nikeEmits ? "supported_e2e" : "wired_but_not_emitted_by_nike") : "disabled_compare_parser_only";
+      return {
+        marketType,
+        nikeEmits,
+        flashscoreParses,
+        compareWired,
+        tested,
+        finalStatus
+      };
+    });
     const response = {
       ok: true,
       status: (
@@ -415,6 +478,7 @@ app.get("/api/debug/full-check", async (_req, res) => {
       },
       matchMappings: pipeline.matchMappings,
       marketSamples,
+      supportMatrix,
       hint: "Open only this endpoint for full QA summary."
     };
     res.json(response);

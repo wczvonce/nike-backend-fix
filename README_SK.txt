@@ -73,6 +73,12 @@ API endpointy:
   GET /api/flashscore/market-2way?matchUrl=...&marketType=... – debug parser pre jednotlivé 2-way markety
   (matchUrl môže byť relatívna cesta z search, napr. /match/abc, alebo plná URL)
 
+Poznámka k reálnej end-to-end podpore:
+  - v produkčnom porovnaní (Nike -> Flashscore/Tipsport -> finálny ranking) sú aktuálne aktívne:
+    - double_chance
+    - match_winner_2way
+  - ostatné 2-way parsery (over_under, asian_handicap, BTTS, draw_no_bet, european_handicap) sú dostupné cez debug endpoint, ale nie sú zapnuté do finálneho compare flow, kým Nike spoľahlivo negeneruje ekvivalentné trhy.
+
 --------------------------------------------------------------------------------
 Voliteľný pomocník start.ps1
 --------------------------------------------------------------------------------

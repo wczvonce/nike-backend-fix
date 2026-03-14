@@ -47,6 +47,13 @@ Copy `.env.example` to `.env` and adjust if needed:
 | GET | `/api/debug/full-check` | One-link full QA summary (PASS/FAIL + all major checks) |
 | GET | `/api/flashscore/market-2way?matchUrl=...&marketType=...` | Debug parser for supported Flashscore 2-way market families |
 
+## Real End-to-End Market Scope
+
+- End-to-end compare (Nike -> Flashscore/Tipsport -> ranked output) is currently enabled for:
+  - `double_chance`
+  - `match_winner_2way`
+- Additional market parsers (`over_under_2way`, `asian_handicap_2way`, `both_teams_to_score`, `draw_no_bet_2way`, `european_handicap_2way`) are available via parser-debug endpoint, but are **not** enabled in final compare until Nike emits those markets with equivalent mapping certainty.
+
 ## Tests
 
 Run parsing/normalization tests (no browser):

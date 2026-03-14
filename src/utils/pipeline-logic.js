@@ -77,6 +77,15 @@ export const ALLOWED_MARKET_TYPES = new Set([
   "generic_yes_no"
 ]);
 
+export const E2E_COMPARE_MARKET_TYPES = new Set([
+  "double_chance",
+  "match_winner_2way"
+]);
+
+export function isNikeGreaterThanTipsport(nikeOdd, tipsportOdd) {
+  return Number(nikeOdd) > Number(tipsportOdd);
+}
+
 export function validateMarketCandidate(row) {
   if (!ALLOWED_MARKET_TYPES.has(row.marketType)) return { ok: false, reason: "market_type_not_allowed" };
   if (row.nikeOdd == null || row.tipsportOdd == null) return { ok: false, reason: "missing_odds" };
@@ -103,8 +112,14 @@ export function validateMarketCandidate(row) {
   if (row.marketType === "match_winner_2way" && !["home", "away"].includes(row.selection)) return { ok: false, reason: "selection_mismatch" };
   if (row.marketType === "match_winner_2way") {
     const marketName = normalizeForCompare(row.sourceMarketName || "");
-    if (!(marketName.includes("1x2") || marketName.includes("vitaz") || marketName.includes("winner"))) {
+    if (!(marketName.includes("vitaz") || marketName.includes("winner"))) {
       return { ok: false, reason: "winner_2way_market_name_mismatch" };
+    }
+    const labels = (row.columnLabels || []).map((x) => normalizeForCompare(x));
+    const exactWinnerLabels = labels.length === 2 && labels[0] === "1" && labels[1] === "2";
+    if (!exactWinnerLabels) return { ok: false, reason: "winner_2way_column_label_mismatch" };
+    if (!Array.isArray(row.extractedOddsArray) || row.extractedOddsArray.length !== 2) {
+      return { ok: false, reason: "winner_2way_row_parse_mismatch" };
     }
   }
 

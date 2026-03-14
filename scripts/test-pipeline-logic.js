@@ -8,7 +8,8 @@ import {
   sameLine,
   computeMetrics,
   compareRows,
-  validateMarketCandidate
+  validateMarketCandidate,
+  isNikeGreaterThanTipsport
 } from "../src/utils/pipeline-logic.js";
 
 let failed = 0;
@@ -105,6 +106,58 @@ const badLine = validateMarketCandidate({
   sourceSelection: "home"
 });
 eq(badLine.ok, false, "reject handicap line mismatch");
+
+const badOuLine = validateMarketCandidate({
+  marketType: "over_under_2way",
+  period: "full_time",
+  selection: "over",
+  mappedSelection: "over",
+  nikeOdd: 1.9,
+  tipsportOdd: 1.88,
+  line: 2.5,
+  sourceLine: 3.5,
+  sourceMarketName: "Over/Under",
+  columnLabels: ["Celkom", "Over", "Under"],
+  extractedOddsArray: [1.88, 1.91],
+  sourceSelection: "over"
+});
+eq(badOuLine.ok, false, "reject over 2.5 vs over 3.5 mismatch");
+
+const badPeriod = validateMarketCandidate({
+  marketType: "draw_no_bet_2way",
+  period: "first_half",
+  selection: "home",
+  mappedSelection: "home",
+  nikeOdd: 1.95,
+  tipsportOdd: 1.9,
+  line: null,
+  sourceLine: null,
+  sourceMarketName: "Stávka bez remízy",
+  columnLabels: ["1", "2"],
+  extractedOddsArray: [1.9, 1.95],
+  sourceSelection: "home"
+});
+eq(badPeriod.ok, false, "reject wrong period");
+
+const badYesNoSide = validateMarketCandidate({
+  marketType: "both_teams_to_score",
+  period: "full_time",
+  selection: "yes",
+  mappedSelection: "yes",
+  nikeOdd: 1.8,
+  tipsportOdd: 1.7,
+  line: null,
+  sourceLine: null,
+  sourceMarketName: "Obaja dajú gól",
+  columnLabels: ["Yes", "No"],
+  extractedOddsArray: [1.7, 2.1],
+  sourceSelection: "no"
+});
+eq(badYesNoSide.ok, false, "reject wrong yes/no side mapping");
+
+eq(isNikeGreaterThanTipsport(1.8, 1.7), true, "nike > tipsport filter allows row");
+eq(isNikeGreaterThanTipsport(1.7, 1.7), false, "nike == tipsport excluded");
+eq(isNikeGreaterThanTipsport(1.6, 1.7), false, "nike < tipsport excluded");
 
 if (failed > 0) {
   console.error("\nTotal failures:", failed);
