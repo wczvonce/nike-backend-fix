@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { scrapeNikeSuperkurzy, debugNikeSuperkurzy } from "./scrapers/nike.js";
-import { searchFlashscoreMatch, scrapeFlashscoreDoubleChance, scrapeFlashscoreMarketByType } from "./scrapers/flashscore.js";
+import { createFlashscoreSession, searchFlashscoreMatch, scrapeFlashscoreDoubleChance, scrapeFlashscoreMarketByType } from "./scrapers/flashscore.js";
 import { EXPECTED_SUPERPONUKA_SNAPSHOT, EXPECTED_SUPERPONUKA_SPORT_BY_TITLE } from "./config/superponuka.js";
 import { createNormalizedMarket } from "./markets/market-model.js";
 import { getAllMarketHandlers, getMarketHandler } from "./markets/handlers.js";
@@ -127,6 +127,10 @@ function selectionKeysForMarket(marketType) {
 
 
 async function buildNikeTipsportPipeline() {
+  const flashscoreSession = await createFlashscoreSession({ headless: HEADLESS, timeoutMs: REQUEST_TIMEOUT_MS });
+  const runStartedAtMs = Date.now();
+  const perMatchTimings = [];
+  try {
   const nike = await scrapeNikeSuperkurzy({ headless: HEADLESS, timeoutMs: REQUEST_TIMEOUT_MS });
   const nikeValidation = validateSuperponuka(nike.matches);
   if (!nikeValidation.ok) {
@@ -139,6 +143,7 @@ async function buildNikeTipsportPipeline() {
   const matchMappings = [];
 
   for (const match of nike.matches) {
+    const matchStartedAt = Date.now();
     const fsMatch = await searchFlashscoreMatch({
       homeTeam: match.homeTeam,
       awayTeam: match.awayTeam,
@@ -220,8 +225,8 @@ async function buildNikeTipsportPipeline() {
 
       for (const period of periods) {
         const fsMarket = marketType === "double_chance"
-          ? await scrapeFlashscoreDoubleChance({ matchUrl: fsMatch.href, period, headless: HEADLESS, timeoutMs: REQUEST_TIMEOUT_MS })
-          : await scrapeFlashscoreMarketByType({ matchUrl: fsMatch.href, marketType, period, headless: HEADLESS, timeoutMs: REQUEST_TIMEOUT_MS });
+          ? await scrapeFlashscoreDoubleChance({ matchUrl: fsMatch.href, period, session: flashscoreSession, headless: HEADLESS, timeoutMs: REQUEST_TIMEOUT_MS })
+          : await scrapeFlashscoreMarketByType({ matchUrl: fsMatch.href, marketType, period, session: flashscoreSession, headless: HEADLESS, timeoutMs: REQUEST_TIMEOUT_MS });
         const tipsportRows = fsMarket.bookmakerRows.filter((b) => normalizeForCompare(b.bookmaker).includes("tipsport"));
         const nikeRowsForPeriod = nikeMarketRows.filter((m) => (m.period || "full_time") === period);
 
@@ -272,6 +277,7 @@ async function buildNikeTipsportPipeline() {
           sourceMarketName: fsMarket.marketName || null,
           sourcePeriod: fsMarket.period || period,
           sourcePeriodName: fsMarket.periodName || null,
+          sourceType: fsMarket.sourceType || "unknown",
           columnLabels: fsMarket.columnLabels || [],
           rawBookmakerRowText: tipsportRow?.rawRowText || "",
           extractedOddsArray: tipsportRow?.extractedOddsArray || [],
@@ -383,8 +389,8 @@ async function buildNikeTipsportPipeline() {
       if (emittedTypeSet.has(marketType)) continue;
       try {
         const fsOnlyMarket = marketType === "double_chance"
-          ? await scrapeFlashscoreDoubleChance({ matchUrl: fsMatch.href, period: "full_time", headless: HEADLESS, timeoutMs: REQUEST_TIMEOUT_MS })
-          : await scrapeFlashscoreMarketByType({ matchUrl: fsMatch.href, marketType, period: "full_time", headless: HEADLESS, timeoutMs: REQUEST_TIMEOUT_MS });
+          ? await scrapeFlashscoreDoubleChance({ matchUrl: fsMatch.href, period: "full_time", session: flashscoreSession, headless: HEADLESS, timeoutMs: REQUEST_TIMEOUT_MS })
+          : await scrapeFlashscoreMarketByType({ matchUrl: fsMatch.href, marketType, period: "full_time", session: flashscoreSession, headless: HEADLESS, timeoutMs: REQUEST_TIMEOUT_MS });
         const tipsportRows = fsOnlyMarket.bookmakerRows.filter((b) => normalizeForCompare(b.bookmaker).includes("tipsport"));
         if (!tipsportRows.length) {
           controlRows.push({
@@ -444,6 +450,10 @@ async function buildNikeTipsportPipeline() {
         });
       }
     }
+    perMatchTimings.push({
+      match: match.rawTitle,
+      elapsedMs: Date.now() - matchStartedAt
+    });
   }
 
   comparedRows.sort(compareRows);
@@ -478,11 +488,24 @@ async function buildNikeTipsportPipeline() {
       marketValidation,
       finalComparisonValidation: finalValidation
     },
+    runtime: {
+      totalMs: Date.now() - runStartedAtMs,
+      flashscoreSession: {
+        browserLaunches: flashscoreSession.metrics.browserLaunches,
+        networkFirstHits: flashscoreSession.metrics.networkFirstHits,
+        domFallbackHits: flashscoreSession.metrics.domFallbackHits,
+        requestsObserved: flashscoreSession.networkLog.length
+      },
+      perMatchTimings
+    },
     matchMappings,
     rejectedRows,
     controlRows,
     rows: comparedRows
   };
+  } finally {
+    await flashscoreSession.close().catch(() => {});
+  }
 }
 
 function normalizePlaywrightError(msg) {
@@ -579,6 +602,7 @@ app.get("/api/pipeline/nike-vs-tipsport", async (_req, res) => {
         marketValidation: pipeline.checks.marketValidation,
         finalComparisonValidation: pipeline.checks.finalComparisonValidation
       },
+      runtime: pipeline.runtime,
       matchMappings: pipeline.matchMappings,
       rows: pipeline.rows
     });
@@ -732,6 +756,19 @@ app.get("/api/debug/full-check", async (_req, res) => {
         marketValidation: pipeline.checks.marketValidation,
         finalComparisonValidation: pipeline.checks.finalComparisonValidation,
         allFinalRowsNikeGtTipsport
+      },
+      runtime: pipeline.runtime,
+      sourceCoverage: {
+        finalRowsBySource: pipeline.rows.reduce((acc, row) => {
+          const key = row.sourceType || "unknown";
+          acc[key] = (acc[key] || 0) + 1;
+          return acc;
+        }, {}),
+        rejectedRowsBySource: pipeline.rejectedRows.reduce((acc, row) => {
+          const key = row.sourceType || "unknown";
+          acc[key] = (acc[key] || 0) + 1;
+          return acc;
+        }, {})
       },
       nike: {
         count: pipeline.nike.matches.length,
