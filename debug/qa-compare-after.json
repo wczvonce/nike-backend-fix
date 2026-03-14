@@ -1,0 +1,345 @@
+{
+    "ok":  true,
+    "checks":  {
+                   "nikeValidation":  {
+                                          "ok":  true
+                                      },
+                   "flashscoreValidation":  {
+                                                "ok":  true,
+                                                "errors":  [
+
+                                                           ]
+                                            },
+                   "marketValidation":  {
+                                            "ok":  false,
+                                            "errors":  [
+                                                           "Chelsea vs Newcastle Utd.:1x:missing_odds",
+                                                           "Chelsea vs Newcastle Utd.:12:missing_odds",
+                                                           "Chelsea vs Newcastle Utd.:x2:missing_odds",
+                                                           "Como vs AS Roma:1x:missing_odds",
+                                                           "Como vs AS Roma:12:missing_odds",
+                                                           "Como vs AS Roma:x2:missing_odds",
+                                                           "Michalovce vs Spiösk· N. Ves:1x:missing_odds",
+                                                           "Michalovce vs Spiösk· N. Ves:12:missing_odds",
+                                                           "Michalovce vs Spiösk· N. Ves:x2:missing_odds",
+                                                           "Sabalenka A. vs Rybakina E.:home:missing_odds",
+                                                           "Sabalenka A. vs Rybakina E.:away:missing_odds"
+                                                       ]
+                                        },
+                   "finalComparisonValidation":  {
+                                                     "ok":  true,
+                                                     "errors":  [
+
+                                                                ]
+                                                 }
+               },
+    "rowsKept":  0,
+    "rowsRejected":  11,
+    "rejectedRows":  [
+                         {
+                             "matchId":  "nike-1",
+                             "match":  "Chelsea vs Newcastle Utd.",
+                             "sport":  "football",
+                             "tournament":  "Anglicko I. liga",
+                             "kickoffAt":  null,
+                             "marketType":  "double_chance",
+                             "period":  "full_time",
+                             "line":  null,
+                             "selection":  "1x",
+                             "nikeOdd":  1.28,
+                             "tipsportOdd":  null,
+                             "flashscoreMatchUrl":  "https://www.flashscore.sk/zapas/futbal/chelsea-4fGZN2oK/newcastle-united-p6ahwuwJ/",
+                             "sourceMarketName":  "Dvojit· öanca",
+                             "sourcePeriodName":  "Z·kladn˝ Ëas",
+                             "columnLabels":  [
+                                                  "1X",
+                                                  "12",
+                                                  "X2",
+                                                  "X"
+                                              ],
+                             "rawBookmakerRowText":  "",
+                             "extractedOddsArray":  [
+
+                                                    ],
+                             "mappedSelection":  "1x",
+                             "rejectReason":  "missing_odds"
+                         },
+                         {
+                             "matchId":  "nike-1",
+                             "match":  "Chelsea vs Newcastle Utd.",
+                             "sport":  "football",
+                             "tournament":  "Anglicko I. liga",
+                             "kickoffAt":  null,
+                             "marketType":  "double_chance",
+                             "period":  "full_time",
+                             "line":  null,
+                             "selection":  "12",
+                             "nikeOdd":  1.26,
+                             "tipsportOdd":  null,
+                             "flashscoreMatchUrl":  "https://www.flashscore.sk/zapas/futbal/chelsea-4fGZN2oK/newcastle-united-p6ahwuwJ/",
+                             "sourceMarketName":  "Dvojit· öanca",
+                             "sourcePeriodName":  "Z·kladn˝ Ëas",
+                             "columnLabels":  [
+                                                  "1X",
+                                                  "12",
+                                                  "X2",
+                                                  "X"
+                                              ],
+                             "rawBookmakerRowText":  "",
+                             "extractedOddsArray":  [
+
+                                                    ],
+                             "mappedSelection":  "12",
+                             "rejectReason":  "missing_odds"
+                         },
+                         {
+                             "matchId":  "nike-1",
+                             "match":  "Chelsea vs Newcastle Utd.",
+                             "sport":  "football",
+                             "tournament":  "Anglicko I. liga",
+                             "kickoffAt":  null,
+                             "marketType":  "double_chance",
+                             "period":  "full_time",
+                             "line":  null,
+                             "selection":  "x2",
+                             "nikeOdd":  2,
+                             "tipsportOdd":  null,
+                             "flashscoreMatchUrl":  "https://www.flashscore.sk/zapas/futbal/chelsea-4fGZN2oK/newcastle-united-p6ahwuwJ/",
+                             "sourceMarketName":  "Dvojit· öanca",
+                             "sourcePeriodName":  "Z·kladn˝ Ëas",
+                             "columnLabels":  [
+                                                  "1X",
+                                                  "12",
+                                                  "X2",
+                                                  "X"
+                                              ],
+                             "rawBookmakerRowText":  "",
+                             "extractedOddsArray":  [
+
+                                                    ],
+                             "mappedSelection":  "x2",
+                             "rejectReason":  "missing_odds"
+                         },
+                         {
+                             "matchId":  "nike-2",
+                             "match":  "Como vs AS Roma",
+                             "sport":  "football",
+                             "tournament":  "Taliansko I. liga",
+                             "kickoffAt":  null,
+                             "marketType":  "double_chance",
+                             "period":  "full_time",
+                             "line":  null,
+                             "selection":  "1x",
+                             "nikeOdd":  1.31,
+                             "tipsportOdd":  null,
+                             "flashscoreMatchUrl":  "https://www.flashscore.sk/zapas/futbal/as-rim-zVqqL0ma/como-ttyLthOA/",
+                             "sourceMarketName":  "Dvojit· öanca",
+                             "sourcePeriodName":  "Z·kladn˝ Ëas",
+                             "columnLabels":  [
+                                                  "1X",
+                                                  "12",
+                                                  "X2",
+                                                  "X"
+                                              ],
+                             "rawBookmakerRowText":  "",
+                             "extractedOddsArray":  [
+
+                                                    ],
+                             "mappedSelection":  "1x",
+                             "rejectReason":  "missing_odds"
+                         },
+                         {
+                             "matchId":  "nike-2",
+                             "match":  "Como vs AS Roma",
+                             "sport":  "football",
+                             "tournament":  "Taliansko I. liga",
+                             "kickoffAt":  null,
+                             "marketType":  "double_chance",
+                             "period":  "full_time",
+                             "line":  null,
+                             "selection":  "12",
+                             "nikeOdd":  1.34,
+                             "tipsportOdd":  null,
+                             "flashscoreMatchUrl":  "https://www.flashscore.sk/zapas/futbal/as-rim-zVqqL0ma/como-ttyLthOA/",
+                             "sourceMarketName":  "Dvojit· öanca",
+                             "sourcePeriodName":  "Z·kladn˝ Ëas",
+                             "columnLabels":  [
+                                                  "1X",
+                                                  "12",
+                                                  "X2",
+                                                  "X"
+                                              ],
+                             "rawBookmakerRowText":  "",
+                             "extractedOddsArray":  [
+
+                                                    ],
+                             "mappedSelection":  "12",
+                             "rejectReason":  "missing_odds"
+                         },
+                         {
+                             "matchId":  "nike-2",
+                             "match":  "Como vs AS Roma",
+                             "sport":  "football",
+                             "tournament":  "Taliansko I. liga",
+                             "kickoffAt":  null,
+                             "marketType":  "double_chance",
+                             "period":  "full_time",
+                             "line":  null,
+                             "selection":  "x2",
+                             "nikeOdd":  1.76,
+                             "tipsportOdd":  null,
+                             "flashscoreMatchUrl":  "https://www.flashscore.sk/zapas/futbal/as-rim-zVqqL0ma/como-ttyLthOA/",
+                             "sourceMarketName":  "Dvojit· öanca",
+                             "sourcePeriodName":  "Z·kladn˝ Ëas",
+                             "columnLabels":  [
+                                                  "1X",
+                                                  "12",
+                                                  "X2",
+                                                  "X"
+                                              ],
+                             "rawBookmakerRowText":  "",
+                             "extractedOddsArray":  [
+
+                                                    ],
+                             "mappedSelection":  "x2",
+                             "rejectReason":  "missing_odds"
+                         },
+                         {
+                             "matchId":  "nike-3",
+                             "match":  "Michalovce vs Spiösk· N. Ves",
+                             "sport":  "hockey",
+                             "tournament":  "Slovensko Extraliga",
+                             "kickoffAt":  null,
+                             "marketType":  "double_chance",
+                             "period":  "full_time",
+                             "line":  null,
+                             "selection":  "1x",
+                             "nikeOdd":  1.42,
+                             "tipsportOdd":  null,
+                             "flashscoreMatchUrl":  "https://www.flashscore.sk/zapas/hokej/michalovce-hA9eSIRG/spisska-nova-ves-KrK3lUYC/",
+                             "sourceMarketName":  "Dvojit· öanca",
+                             "sourcePeriodName":  "Z·kladn˝ Ëas",
+                             "columnLabels":  [
+                                                  "1X",
+                                                  "12",
+                                                  "X2",
+                                                  "X"
+                                              ],
+                             "rawBookmakerRowText":  "",
+                             "extractedOddsArray":  [
+
+                                                    ],
+                             "mappedSelection":  "1x",
+                             "rejectReason":  "missing_odds"
+                         },
+                         {
+                             "matchId":  "nike-3",
+                             "match":  "Michalovce vs Spiösk· N. Ves",
+                             "sport":  "hockey",
+                             "tournament":  "Slovensko Extraliga",
+                             "kickoffAt":  null,
+                             "marketType":  "double_chance",
+                             "period":  "full_time",
+                             "line":  null,
+                             "selection":  "12",
+                             "nikeOdd":  1.24,
+                             "tipsportOdd":  null,
+                             "flashscoreMatchUrl":  "https://www.flashscore.sk/zapas/hokej/michalovce-hA9eSIRG/spisska-nova-ves-KrK3lUYC/",
+                             "sourceMarketName":  "Dvojit· öanca",
+                             "sourcePeriodName":  "Z·kladn˝ Ëas",
+                             "columnLabels":  [
+                                                  "1X",
+                                                  "12",
+                                                  "X2",
+                                                  "X"
+                                              ],
+                             "rawBookmakerRowText":  "",
+                             "extractedOddsArray":  [
+
+                                                    ],
+                             "mappedSelection":  "12",
+                             "rejectReason":  "missing_odds"
+                         },
+                         {
+                             "matchId":  "nike-3",
+                             "match":  "Michalovce vs Spiösk· N. Ves",
+                             "sport":  "hockey",
+                             "tournament":  "Slovensko Extraliga",
+                             "kickoffAt":  null,
+                             "marketType":  "double_chance",
+                             "period":  "full_time",
+                             "line":  null,
+                             "selection":  "x2",
+                             "nikeOdd":  1.65,
+                             "tipsportOdd":  null,
+                             "flashscoreMatchUrl":  "https://www.flashscore.sk/zapas/hokej/michalovce-hA9eSIRG/spisska-nova-ves-KrK3lUYC/",
+                             "sourceMarketName":  "Dvojit· öanca",
+                             "sourcePeriodName":  "Z·kladn˝ Ëas",
+                             "columnLabels":  [
+                                                  "1X",
+                                                  "12",
+                                                  "X2",
+                                                  "X"
+                                              ],
+                             "rawBookmakerRowText":  "",
+                             "extractedOddsArray":  [
+
+                                                    ],
+                             "mappedSelection":  "x2",
+                             "rejectReason":  "missing_odds"
+                         },
+                         {
+                             "matchId":  "nike-4",
+                             "match":  "Sabalenka A. vs Rybakina E.",
+                             "sport":  "tennis",
+                             "tournament":  "WTA Indian Wells",
+                             "kickoffAt":  null,
+                             "marketType":  "match_winner_2way",
+                             "period":  "full_time",
+                             "line":  null,
+                             "selection":  "home",
+                             "nikeOdd":  1.7,
+                             "tipsportOdd":  null,
+                             "flashscoreMatchUrl":  "https://www.flashscore.sk/zapas/tenis/rybakina-elena-UDzElXdm/sabalenka-aryna-vyhksgUB/",
+                             "sourceMarketName":  "VÌùaz z·pasu / 1X2",
+                             "sourcePeriodName":  "Z·kladn˝ Ëas",
+                             "columnLabels":  [
+                                                  "1",
+                                                  "2"
+                                              ],
+                             "rawBookmakerRowText":  "",
+                             "extractedOddsArray":  [
+
+                                                    ],
+                             "rejectReason":  "missing_odds"
+                         },
+                         {
+                             "matchId":  "nike-4",
+                             "match":  "Sabalenka A. vs Rybakina E.",
+                             "sport":  "tennis",
+                             "tournament":  "WTA Indian Wells",
+                             "kickoffAt":  null,
+                             "marketType":  "match_winner_2way",
+                             "period":  "full_time",
+                             "line":  null,
+                             "selection":  "away",
+                             "nikeOdd":  2.22,
+                             "tipsportOdd":  null,
+                             "flashscoreMatchUrl":  "https://www.flashscore.sk/zapas/tenis/rybakina-elena-UDzElXdm/sabalenka-aryna-vyhksgUB/",
+                             "sourceMarketName":  "VÌùaz z·pasu / 1X2",
+                             "sourcePeriodName":  "Z·kladn˝ Ëas",
+                             "columnLabels":  [
+                                                  "1",
+                                                  "2"
+                                              ],
+                             "rawBookmakerRowText":  "",
+                             "extractedOddsArray":  [
+
+                                                    ],
+                             "rejectReason":  "missing_odds"
+                         }
+                     ],
+    "rows":  [
+
+             ]
+}

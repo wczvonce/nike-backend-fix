@@ -1,0 +1,163 @@
+{
+    "ok":  true,
+    "source":  "live",
+    "checks":  {
+                   "nikeSuperponukaCount":  4,
+                   "nikeSuperponukaValid":  true,
+                   "flashscoreMatchedCount":  4,
+                   "flashscoreValidation":  {
+                                                "ok":  true,
+                                                "errors":  [
+
+                                                           ]
+                                            },
+                   "marketValidation":  {
+                                            "ok":  true,
+                                            "errors":  [
+
+                                                       ]
+                                        },
+                   "finalComparisonValidation":  {
+                                                     "ok":  true,
+                                                     "errors":  [
+
+                                                                ]
+                                                 }
+               },
+    "matchMappings":  [
+                          {
+                              "nikeMatch":  "Chelsea vs Newcastle Utd.",
+                              "matched":  true,
+                              "flashscoreHref":  "https://www.flashscore.sk/zapas/futbal/chelsea-4fGZN2oK/newcastle-united-p6ahwuwJ/",
+                              "confidence":  200,
+                              "orientationSwapped":  false,
+                              "flashscoreHomeTeam":  "Chelsea",
+                              "flashscoreAwayTeam":  "Newcastle United"
+                          },
+                          {
+                              "nikeMatch":  "Como vs AS Roma",
+                              "matched":  true,
+                              "flashscoreHref":  "https://www.flashscore.sk/zapas/futbal/as-rim-zVqqL0ma/como-ttyLthOA/",
+                              "confidence":  200,
+                              "orientationSwapped":  false,
+                              "flashscoreHomeTeam":  "Como",
+                              "flashscoreAwayTeam":  "AS Rím"
+                          },
+                          {
+                              "nikeMatch":  "Michalovce vs Spišská N. Ves",
+                              "matched":  true,
+                              "flashscoreHref":  "https://www.flashscore.sk/zapas/hokej/michalovce-hA9eSIRG/spisska-nova-ves-KrK3lUYC/",
+                              "confidence":  200,
+                              "orientationSwapped":  false,
+                              "flashscoreHomeTeam":  "Michalovce",
+                              "flashscoreAwayTeam":  "Spišská N. Ves"
+                          },
+                          {
+                              "nikeMatch":  "Sabalenka A. vs Rybakina E.",
+                              "matched":  true,
+                              "flashscoreHref":  "https://www.flashscore.sk/zapas/tenis/rybakina-elena-UDzElXdm/sabalenka-aryna-vyhksgUB/",
+                              "confidence":  170,
+                              "orientationSwapped":  false,
+                              "flashscoreHomeTeam":  "Sabalenka Aryna",
+                              "flashscoreAwayTeam":  "Rybakina Elena"
+                          }
+                      ],
+    "rows":  [
+                 {
+                     "matchId":  "nike-3",
+                     "match":  "Michalovce vs Spišská N. Ves",
+                     "sport":  "hockey",
+                     "tournament":  "Slovensko Extraliga",
+                     "kickoffAt":  null,
+                     "marketType":  "double_chance",
+                     "period":  "full_time",
+                     "line":  null,
+                     "selection":  "12",
+                     "nikeOdd":  1.24,
+                     "tipsportOdd":  1.21,
+                     "flashscoreMatchUrl":  "https://www.flashscore.sk/zapas/hokej/michalovce-hA9eSIRG/spisska-nova-ves-KrK3lUYC/",
+                     "sourceMarketName":  "Dvojitá šanca",
+                     "sourcePeriodName":  "Základný èas",
+                     "columnLabels":  [
+                                          "1X",
+                                          "12",
+                                          "X2",
+                                          "X"
+                                      ],
+                     "rawBookmakerRowText":  "Live Bet Icon1.461.211.62",
+                     "extractedOddsArray":  [
+                                                1.46,
+                                                1.21,
+                                                1.62
+                                            ],
+                     "mappedSelection":  "12",
+                     "diff":  0.03,
+                     "percentDiff":  2.48,
+                     "probabilityEdgePp":  2
+                 },
+                 {
+                     "matchId":  "nike-2",
+                     "match":  "Como vs AS Roma",
+                     "sport":  "football",
+                     "tournament":  "Taliansko I. liga",
+                     "kickoffAt":  null,
+                     "marketType":  "double_chance",
+                     "period":  "full_time",
+                     "line":  null,
+                     "selection":  "1x",
+                     "nikeOdd":  1.31,
+                     "tipsportOdd":  1.29,
+                     "flashscoreMatchUrl":  "https://www.flashscore.sk/zapas/futbal/as-rim-zVqqL0ma/como-ttyLthOA/",
+                     "sourceMarketName":  "Dvojitá šanca",
+                     "sourcePeriodName":  "Základný èas",
+                     "columnLabels":  [
+                                          "1X",
+                                          "12",
+                                          "X2",
+                                          "X"
+                                      ],
+                     "rawBookmakerRowText":  "Live Bet Icon1.291.351.82",
+                     "extractedOddsArray":  [
+                                                1.29,
+                                                1.35,
+                                                1.82
+                                            ],
+                     "mappedSelection":  "1x",
+                     "diff":  0.02,
+                     "percentDiff":  1.55,
+                     "probabilityEdgePp":  1.18
+                 },
+                 {
+                     "matchId":  "nike-3",
+                     "match":  "Michalovce vs Spišská N. Ves",
+                     "sport":  "hockey",
+                     "tournament":  "Slovensko Extraliga",
+                     "kickoffAt":  null,
+                     "marketType":  "double_chance",
+                     "period":  "full_time",
+                     "line":  null,
+                     "selection":  "x2",
+                     "nikeOdd":  1.65,
+                     "tipsportOdd":  1.62,
+                     "flashscoreMatchUrl":  "https://www.flashscore.sk/zapas/hokej/michalovce-hA9eSIRG/spisska-nova-ves-KrK3lUYC/",
+                     "sourceMarketName":  "Dvojitá šanca",
+                     "sourcePeriodName":  "Základný èas",
+                     "columnLabels":  [
+                                          "1X",
+                                          "12",
+                                          "X2",
+                                          "X"
+                                      ],
+                     "rawBookmakerRowText":  "Live Bet Icon1.461.211.62",
+                     "extractedOddsArray":  [
+                                                1.46,
+                                                1.21,
+                                                1.62
+                                            ],
+                     "mappedSelection":  "x2",
+                     "diff":  0.03,
+                     "percentDiff":  1.85,
+                     "probabilityEdgePp":  1.12
+                 }
+             ]
+}

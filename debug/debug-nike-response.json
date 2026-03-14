@@ -1,0 +1,416 @@
+{
+    "ok":  true,
+    "title":  "NikÈ | Kurzov· ponuka - Tipovanie z·pasov online",
+    "finalUrl":  "https://www.nike.sk/tipovanie",
+    "firstLines":  [
+                       "T·to webstr·nka pouûÌva s˙bory cookies",
+                       "Na prispÙsobenie obsahu a rekl·m, poskytovanie funkciÌ soci·lnych mÈdiÌ a anal˝zu n·vötevnosti pouûÌvame s˙bory cookie. Inform·cie o tom, ako pouûÌvate naöe webovÈ str·nky, poskytujeme aj naöim partnerom v oblasti soci·lnych mÈdiÌ, inzercie a anal˝zy. TÌto partneri mÙûu prÌsluönÈ inform·cie skombinovaù s ÔalöÌmi ˙dajmi, ktorÈ ste im poskytli alebo ktorÈ od v·s zÌskali, keÔ ste pouûÌvali ich sluûby.",
+                       "Povoliù vöetko",
+                       "PrispÙsobiù",
+                       "Odmietnuù",
+                       "Tipovanie",
+                       "Komunita",
+                       "Svet hier",
+                       "éreby",
+                       "Poker",
+                       "Registrovaù",
+                       "Prihl·siù sa",
+                       "Domov",
+                       "Kurzy",
+                       "Live",
+                       "Virtu·lky",
+                       "V˝sledky",
+                       "ZodpovednÈ hranie",
+                       "DNEäN¡ PONUKA",
+                       "V›SLEDKY",
+                       "FILTER",
+                       "KALEND¡R",
+                       "äPORTY",
+                       "F1 GP »ÕNA",
+                       "FUTBAL",
+                       "HOKEJ",
+                       "TENIS",
+                       "BASKETBAL",
+                       "H¡DZAN¡",
+                       "VOLEJBAL",
+                       "BASEBALL",
+                       "ESOCCER",
+                       "EBASKETBALL",
+                       "COUNTER-STRIKE",
+                       "DOTA 2",
+                       "LEAGUE OF LEGENDS",
+                       "CALL OF DUTY",
+                       "ALPSK… LYéOVANIE",
+                       "AUSTR¡LSKY FUTBAL",
+                       "BADMINTON",
+                       "BANDY HOKEJ",
+                       "BIATLON",
+                       "BOJOV… äPORTY",
+                       "BOX",
+                       "CURLING",
+                       "CYKLISTIKA",
+                       "FLORBAL",
+                       "FUTSAL",
+                       "KLASICK… LYéOVANIE",
+                       "KRIKET",
+                       "LAKROS",
+                       "MAL› FUTBAL",
+                       "MOTORIZMUS",
+                       "POLITIKA",
+                       "POZEMN› HOKEJ",
+                       "RUGBY",
+                       "SKOKY NA LYéIACH",
+                       "SPOLO»ENSK… ST¡VKY",
+                       "SQUASH",
+                       "STOLN› TENIS",
+                       "äÕPKY",
+                       "VODN… P”LO",
+                       "SOBOTA",
+                       "7.3",
+                       "NEDEºA",
+                       "8.3",
+                       "PONDELOK",
+                       "9.3",
+                       "UTOROK",
+                       "10.3",
+                       "STREDA",
+                       "11.3",
+                       "äTVRTOK",
+                       "12.3",
+                       "PIATOK",
+                       "13.3",
+                       "DNES",
+                       "14.3",
+                       "ZAJTRA",
+                       "15.3",
+                       "PONDELOK",
+                       "16.3",
+                       "UTOROK",
+                       "17.3",
+                       "STREDA",
+                       "18.3",
+                       "äTVRTOK",
+                       "19.3",
+                       "PIATOK",
+                       "20.3",
+                       "SOBOTA",
+                       "21.3",
+                       "NEDEºA",
+                       "22.3",
+                       "PONDELOK",
+                       "23.3",
+                       "UTOROK",
+                       "24.3",
+                       "äTVRTOK",
+                       "26.3",
+                       "PIATOK",
+                       "27.3",
+                       "NEDEºA",
+                       "29.3",
+                       "UTOROK",
+                       "31.3",
+                       "SOBOTA",
+                       "4.4",
+                       "NEDEºA",
+                       "5.4",
+                       "PONDELOK",
+                       "6.4",
+                       "NEDEºA",
+                       "12.4",
+                       "SOBOTA",
+                       "18.4",
+                       "UTOROK",
+                       "21.4",
+                       "STREDA",
+                       "22.4"
+                   ],
+    "extractedCandidateCards":  [
+                                    {
+                                        "sport":  "Futbal",
+                                        "tournament":  "Anglicko I. liga",
+                                        "participants":  "Chelsea - Newcastle Utd.",
+                                        "homeTeam":  "Chelsea",
+                                        "awayTeam":  "Newcastle Utd.",
+                                        "odds":  [
+                                                     "1.86",
+                                                     "4.10",
+                                                     "3.90",
+                                                     "1.28",
+                                                     "1.26",
+                                                     "2.00"
+                                                 ],
+                                        "rowSnippet":  "18:30270091ChelseavsNewcastle Utd.1.864.103.901.281.262.00ätatistikyZ·pas m· dostupn˙ anal˝zu v detaile podujatia+357"
+                                    },
+                                    {
+                                        "sport":  "Futbal",
+                                        "tournament":  "Taliansko I. liga",
+                                        "participants":  "Como - AS Roma",
+                                        "homeTeam":  "Como",
+                                        "awayTeam":  "AS Roma",
+                                        "odds":  [
+                                                     "2.12",
+                                                     "3.40",
+                                                     "3.65",
+                                                     "1.31",
+                                                     "1.34",
+                                                     "1.76"
+                                                 ],
+                                        "rowSnippet":  "18:00340777ComovsAS Roma2.123.403.651.311.341.76ätatistiky+326"
+                                    },
+                                    {
+                                        "sport":  "Hokej",
+                                        "tournament":  "Slovensko Extraliga",
+                                        "participants":  "Michalovce - Spiösk· N. Ves",
+                                        "homeTeam":  "Michalovce",
+                                        "awayTeam":  "Spiösk· N. Ves",
+                                        "odds":  [
+                                                     "2.21",
+                                                     "4.00",
+                                                     "2.80",
+                                                     "1.42",
+                                                     "1.24",
+                                                     "1.65"
+                                                 ],
+                                        "rowSnippet":  "16:30142144MichalovcevsSpiösk· N. Ves2.214.002.801.421.241.65ätatistiky+197"
+                                    },
+                                    {
+                                        "sport":  "Tenis",
+                                        "tournament":  "WTA Indian Wells",
+                                        "participants":  "Sabalenka A. - Rybakina E.",
+                                        "homeTeam":  "Sabalenka A.",
+                                        "awayTeam":  "Rybakina E.",
+                                        "odds":  [
+                                                     "1.70",
+                                                     "2.22"
+                                                 ],
+                                        "rowSnippet":  "19:00221488Sabalenka A.vsRybakina E.1.702.22ätatistiky+48"
+                                    },
+                                    {
+                                        "sport":  "Futbal",
+                                        "tournament":  "NikÈ liga",
+                                        "participants":  "Podbrezov· - Michalovce",
+                                        "homeTeam":  "Podbrezov·",
+                                        "awayTeam":  "Michalovce",
+                                        "odds":  [
+                                                     "1.58",
+                                                     "4.49",
+                                                     "6.12",
+                                                     "1.17",
+                                                     "1.25",
+                                                     "2.59"
+                                                 ],
+                                        "rowSnippet":  "15:30159517Podbrezov·vsMichalovce1.584.496.121.171.252.59ätatistikyZ·pas m· dostupn˙ anal˝zu v detaile podujatia+160"
+                                    },
+                                    {
+                                        "sport":  "Futbal",
+                                        "tournament":  "Anglicko I. liga",
+                                        "participants":  "Arsenal FC - Everton",
+                                        "homeTeam":  "Arsenal FC",
+                                        "awayTeam":  "Everton",
+                                        "odds":  [
+                                                     "1.45",
+                                                     "4.89",
+                                                     "8.57",
+                                                     "1.12",
+                                                     "1.23",
+                                                     "3.11"
+                                                 ],
+                                        "rowSnippet":  "18:30162089Arsenal FCvsEverton1.454.898.571.121.233.11ätatistikyZ·pas m· dostupn˙ anal˝zu v detaile podujatia+355"
+                                    },
+                                    {
+                                        "sport":  "Futbal",
+                                        "tournament":  "Nemecko I. liga",
+                                        "participants":  "Dortmund - FC Augsburg",
+                                        "homeTeam":  "Dortmund",
+                                        "awayTeam":  "FC Augsburg",
+                                        "odds":  [
+                                                     "1.55",
+                                                     "4.99",
+                                                     "6.11",
+                                                     "1.18",
+                                                     "1.23",
+                                                     "2.75"
+                                                 ],
+                                        "rowSnippet":  "15:30159471DortmundvsFC Augsburg1.554.996.111.181.232.75ätatistikyZ·pas m· dostupn˙ anal˝zu v detaile podujatia+309"
+                                    },
+                                    {
+                                        "sport":  "Futbal",
+                                        "tournament":  "Nemecko I. liga",
+                                        "participants":  "Eintracht Frankfurt - Heidenheim",
+                                        "homeTeam":  "Eintracht Frankfurt",
+                                        "awayTeam":  "Heidenheim",
+                                        "odds":  [
+                                                     "1.62",
+                                                     "4.69",
+                                                     "5.51",
+                                                     "1.20",
+                                                     "1.25",
+                                                     "2.53"
+                                                 ],
+                                        "rowSnippet":  "15:30159470Eintracht FrankfurtvsHeidenheim1.624.695.511.201.252.53ätatistikyZ·pas m· dostupn˙ anal˝zu v detaile podujatia+303"
+                                    },
+                                    {
+                                        "sport":  "Futbal",
+                                        "tournament":  "Nemecko I. liga",
+                                        "participants":  "Hoffenheim - VfL Wolfsburg",
+                                        "homeTeam":  "Hoffenheim",
+                                        "awayTeam":  "VfL Wolfsburg",
+                                        "odds":  [
+                                                     "1.45",
+                                                     "5.30",
+                                                     "7.55",
+                                                     "1.14",
+                                                     "1.21",
+                                                     "3.11"
+                                                 ],
+                                        "rowSnippet":  "15:30159469HoffenheimvsVfL Wolfsburg1.455.307.551.141.213.11ätatistikyZ·pas m· dostupn˙ anal˝zu v detaile podujatia+318"
+                                    },
+                                    {
+                                        "sport":  "Futbal",
+                                        "tournament":  "äpanielsko I. liga",
+                                        "participants":  "Atletico Madrid - Getafe",
+                                        "homeTeam":  "Atletico Madrid",
+                                        "awayTeam":  "Getafe",
+                                        "odds":  [
+                                                     "1.65",
+                                                     "3.82",
+                                                     "6.93",
+                                                     "1.15",
+                                                     "1.34",
+                                                     "2.47"
+                                                 ],
+                                        "rowSnippet":  "16:15162095Atletico MadridvsGetafe1.653.826.931.151.342.47ätatistikyZ·pas m· dostupn˙ anal˝zu v detaile podujatia+308"
+                                    },
+                                    {
+                                        "sport":  "Futbal",
+                                        "tournament":  "äpanielsko I. liga",
+                                        "participants":  "Real Madrid - Elche",
+                                        "homeTeam":  "Real Madrid",
+                                        "awayTeam":  "Elche",
+                                        "odds":  [
+                                                     "1.38",
+                                                     "5.91",
+                                                     "8.16",
+                                                     "1.12",
+                                                     "1.18",
+                                                     "3.43"
+                                                 ],
+                                        "rowSnippet":  "21:00162094Real MadridvsElche1.385.918.161.121.183.43ätatistikyZ·pas m· dostupn˙ anal˝zu v detaile podujatia+331"
+                                    },
+                                    {
+                                        "sport":  "Futbal",
+                                        "tournament":  "Taliansko I. liga",
+                                        "participants":  "Inter Milan - Atalanta",
+                                        "homeTeam":  "Inter Milan",
+                                        "awayTeam":  "Atalanta",
+                                        "odds":  [
+                                                     "1.60",
+                                                     "4.68",
+                                                     "5.90",
+                                                     "1.19",
+                                                     "1.26",
+                                                     "2.61"
+                                                 ],
+                                        "rowSnippet":  "15:00162318Inter MilanvsAtalanta1.604.685.901.191.262.61ätatistikyZ·pas m· dostupn˙ anal˝zu v detaile podujatia+337"
+                                    }
+                                ],
+    "extractedOddsArrays":  [
+                                [
+                                    "1.86",
+                                    "4.10",
+                                    "3.90",
+                                    "1.28",
+                                    "1.26",
+                                    "2.00"
+                                ],
+                                [
+                                    "2.12",
+                                    "3.40",
+                                    "3.65",
+                                    "1.31",
+                                    "1.34",
+                                    "1.76"
+                                ],
+                                [
+                                    "2.21",
+                                    "4.00",
+                                    "2.80",
+                                    "1.42",
+                                    "1.24",
+                                    "1.65"
+                                ],
+                                [
+                                    "1.70",
+                                    "2.22"
+                                ],
+                                [
+                                    "1.58",
+                                    "4.49",
+                                    "6.12",
+                                    "1.17",
+                                    "1.25",
+                                    "2.59"
+                                ],
+                                [
+                                    "1.45",
+                                    "4.89",
+                                    "8.57",
+                                    "1.12",
+                                    "1.23",
+                                    "3.11"
+                                ],
+                                [
+                                    "1.55",
+                                    "4.99",
+                                    "6.11",
+                                    "1.18",
+                                    "1.23",
+                                    "2.75"
+                                ],
+                                [
+                                    "1.62",
+                                    "4.69",
+                                    "5.51",
+                                    "1.20",
+                                    "1.25",
+                                    "2.53"
+                                ],
+                                [
+                                    "1.45",
+                                    "5.30",
+                                    "7.55",
+                                    "1.14",
+                                    "1.21",
+                                    "3.11"
+                                ],
+                                [
+                                    "1.65",
+                                    "3.82",
+                                    "6.93",
+                                    "1.15",
+                                    "1.34",
+                                    "2.47"
+                                ],
+                                [
+                                    "1.38",
+                                    "5.91",
+                                    "8.16",
+                                    "1.12",
+                                    "1.18",
+                                    "3.43"
+                                ],
+                                [
+                                    "1.60",
+                                    "4.68",
+                                    "5.90",
+                                    "1.19",
+                                    "1.26",
+                                    "2.61"
+                                ]
+                            ],
+    "parserDebug":  {
+                        "candidateCardsCount":  57,
+                        "parsedMatchesCount":  51,
+                        "parsedMarketsCount":  123
+                    }
+}

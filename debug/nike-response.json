@@ -1,0 +1,1941 @@
+{
+    "ok":  true,
+    "source":  "live",
+    "sourceUrl":  "https://www.nike.sk/tipovanie",
+    "matches":  [
+                    {
+                        "id":  "nike-1",
+                        "source":  "nike",
+                        "sport":  "football",
+                        "tournament":  "Anglicko I. liga",
+                        "rawTitle":  "Chelsea vs Newcastle Utd.",
+                        "homeTeam":  "Chelsea",
+                        "awayTeam":  "Newcastle Utd.",
+                        "homeTeamNormalized":  "chelsea",
+                        "awayTeamNormalized":  "newcastle united",
+                        "rawOdds":  [
+                                        1.86,
+                                        4.1,
+                                        3.9,
+                                        1.28,
+                                        1.26,
+                                        2
+                                    ]
+                    },
+                    {
+                        "id":  "nike-2",
+                        "source":  "nike",
+                        "sport":  "football",
+                        "tournament":  "Taliansko I. liga",
+                        "rawTitle":  "Como vs AS Roma",
+                        "homeTeam":  "Como",
+                        "awayTeam":  "AS Roma",
+                        "homeTeamNormalized":  "como",
+                        "awayTeamNormalized":  "as roma",
+                        "rawOdds":  [
+                                        2.12,
+                                        3.4,
+                                        3.65,
+                                        1.31,
+                                        1.34,
+                                        1.76
+                                    ]
+                    },
+                    {
+                        "id":  "nike-3",
+                        "source":  "nike",
+                        "sport":  "hockey",
+                        "tournament":  "Slovensko Extraliga",
+                        "rawTitle":  "Michalovce vs Spiösk· N. Ves",
+                        "homeTeam":  "Michalovce",
+                        "awayTeam":  "Spiösk· N. Ves",
+                        "homeTeamNormalized":  "michalovce",
+                        "awayTeamNormalized":  "spisska nova ves",
+                        "rawOdds":  [
+                                        2.21,
+                                        4,
+                                        2.8,
+                                        1.42,
+                                        1.24,
+                                        1.65
+                                    ]
+                    },
+                    {
+                        "id":  "nike-4",
+                        "source":  "nike",
+                        "sport":  "tennis",
+                        "tournament":  "WTA Indian Wells",
+                        "rawTitle":  "Sabalenka A. vs Rybakina E.",
+                        "homeTeam":  "Sabalenka A.",
+                        "awayTeam":  "Rybakina E.",
+                        "homeTeamNormalized":  "sabalenka a",
+                        "awayTeamNormalized":  "rybakina",
+                        "rawOdds":  [
+                                        1.7,
+                                        2.22
+                                    ]
+                    },
+                    {
+                        "id":  "nike-5",
+                        "source":  "nike",
+                        "sport":  "football",
+                        "tournament":  "NikÈ liga",
+                        "rawTitle":  "Podbrezov· vs Michalovce",
+                        "homeTeam":  "Podbrezov·",
+                        "awayTeam":  "Michalovce",
+                        "homeTeamNormalized":  "podbrezova",
+                        "awayTeamNormalized":  "michalovce",
+                        "rawOdds":  [
+                                        1.58,
+                                        4.49,
+                                        6.12,
+                                        1.17,
+                                        1.25,
+                                        2.59
+                                    ]
+                    },
+                    {
+                        "id":  "nike-6",
+                        "source":  "nike",
+                        "sport":  "football",
+                        "tournament":  "Anglicko I. liga",
+                        "rawTitle":  "Arsenal FC vs Everton",
+                        "homeTeam":  "Arsenal FC",
+                        "awayTeam":  "Everton",
+                        "homeTeamNormalized":  "arsenal fc",
+                        "awayTeamNormalized":  "everton",
+                        "rawOdds":  [
+                                        1.45,
+                                        4.89,
+                                        8.57,
+                                        1.12,
+                                        1.23,
+                                        3.11
+                                    ]
+                    },
+                    {
+                        "id":  "nike-7",
+                        "source":  "nike",
+                        "sport":  "football",
+                        "tournament":  "Nemecko I. liga",
+                        "rawTitle":  "Dortmund vs FC Augsburg",
+                        "homeTeam":  "Dortmund",
+                        "awayTeam":  "FC Augsburg",
+                        "homeTeamNormalized":  "dortmund",
+                        "awayTeamNormalized":  "fc augsburg",
+                        "rawOdds":  [
+                                        1.55,
+                                        4.99,
+                                        6.11,
+                                        1.18,
+                                        1.23,
+                                        2.75
+                                    ]
+                    },
+                    {
+                        "id":  "nike-8",
+                        "source":  "nike",
+                        "sport":  "football",
+                        "tournament":  "Nemecko I. liga",
+                        "rawTitle":  "Eintracht Frankfurt vs Heidenheim",
+                        "homeTeam":  "Eintracht Frankfurt",
+                        "awayTeam":  "Heidenheim",
+                        "homeTeamNormalized":  "eintracht frankfurt",
+                        "awayTeamNormalized":  "heidenheim",
+                        "rawOdds":  [
+                                        1.62,
+                                        4.69,
+                                        5.51,
+                                        1.2,
+                                        1.25,
+                                        2.53
+                                    ]
+                    },
+                    {
+                        "id":  "nike-9",
+                        "source":  "nike",
+                        "sport":  "football",
+                        "tournament":  "Nemecko I. liga",
+                        "rawTitle":  "Hoffenheim vs VfL Wolfsburg",
+                        "homeTeam":  "Hoffenheim",
+                        "awayTeam":  "VfL Wolfsburg",
+                        "homeTeamNormalized":  "hoffenheim",
+                        "awayTeamNormalized":  "vfl wolfsburg",
+                        "rawOdds":  [
+                                        1.45,
+                                        5.3,
+                                        7.55,
+                                        1.14,
+                                        1.21,
+                                        3.11
+                                    ]
+                    },
+                    {
+                        "id":  "nike-10",
+                        "source":  "nike",
+                        "sport":  "football",
+                        "tournament":  "äpanielsko I. liga",
+                        "rawTitle":  "Atletico Madrid vs Getafe",
+                        "homeTeam":  "Atletico Madrid",
+                        "awayTeam":  "Getafe",
+                        "homeTeamNormalized":  "atletico madrid",
+                        "awayTeamNormalized":  "getafe",
+                        "rawOdds":  [
+                                        1.65,
+                                        3.82,
+                                        6.93,
+                                        1.15,
+                                        1.34,
+                                        2.47
+                                    ]
+                    },
+                    {
+                        "id":  "nike-11",
+                        "source":  "nike",
+                        "sport":  "football",
+                        "tournament":  "äpanielsko I. liga",
+                        "rawTitle":  "Real Madrid vs Elche",
+                        "homeTeam":  "Real Madrid",
+                        "awayTeam":  "Elche",
+                        "homeTeamNormalized":  "real madrid",
+                        "awayTeamNormalized":  "elche",
+                        "rawOdds":  [
+                                        1.38,
+                                        5.91,
+                                        8.16,
+                                        1.12,
+                                        1.18,
+                                        3.43
+                                    ]
+                    },
+                    {
+                        "id":  "nike-12",
+                        "source":  "nike",
+                        "sport":  "football",
+                        "tournament":  "Taliansko I. liga",
+                        "rawTitle":  "Inter Milan vs Atalanta",
+                        "homeTeam":  "Inter Milan",
+                        "awayTeam":  "Atalanta",
+                        "homeTeamNormalized":  "inter milan",
+                        "awayTeamNormalized":  "atalanta",
+                        "rawOdds":  [
+                                        1.6,
+                                        4.68,
+                                        5.9,
+                                        1.19,
+                                        1.26,
+                                        2.61
+                                    ]
+                    },
+                    {
+                        "id":  "nike-13",
+                        "source":  "nike",
+                        "sport":  "football",
+                        "tournament":  "Taliansko I. liga",
+                        "rawTitle":  "Napoli vs Lecce",
+                        "homeTeam":  "Napoli",
+                        "awayTeam":  "Lecce",
+                        "homeTeamNormalized":  "napoli",
+                        "awayTeamNormalized":  "lecce",
+                        "rawOdds":  [
+                                        1.45,
+                                        4.78,
+                                        9.16,
+                                        1.11,
+                                        1.25,
+                                        3.15
+                                    ]
+                    },
+                    {
+                        "id":  "nike-14",
+                        "source":  "nike",
+                        "sport":  "football",
+                        "tournament":  "»esko I. liga",
+                        "rawTitle":  "FC ZlÌn vs SK Slavia Praha",
+                        "homeTeam":  "FC ZlÌn",
+                        "awayTeam":  "SK Slavia Praha",
+                        "homeTeamNormalized":  "fc zlin",
+                        "awayTeamNormalized":  "sk slavia praha",
+                        "rawOdds":  [
+                                        7.95,
+                                        4.69,
+                                        1.47,
+                                        2.95,
+                                        1.24,
+                                        1.12
+                                    ]
+                    },
+                    {
+                        "id":  "nike-15",
+                        "source":  "nike",
+                        "sport":  "football",
+                        "tournament":  "Portugalsko I. liga",
+                        "rawTitle":  "FC Arouca vs Benfica Lisabon",
+                        "homeTeam":  "FC Arouca",
+                        "awayTeam":  "Benfica Lisabon",
+                        "homeTeamNormalized":  "fc arouca",
+                        "awayTeamNormalized":  "benfica lisabon",
+                        "rawOdds":  [
+                                        9.79,
+                                        5.91,
+                                        1.34,
+                                        3.69,
+                                        1.17,
+                                        1.09
+                                    ]
+                    },
+                    {
+                        "id":  "nike-16",
+                        "source":  "nike",
+                        "sport":  "football",
+                        "tournament":  "Rumunsko I. liga",
+                        "rawTitle":  "FCSB vs Metaloglobus Bukureöù",
+                        "homeTeam":  "FCSB",
+                        "awayTeam":  "Metaloglobus Bukureöù",
+                        "homeTeamNormalized":  "fcsb",
+                        "awayTeamNormalized":  "metaloglobus bukurest",
+                        "rawOdds":  [
+                                        1.17,
+                                        7.54,
+                                        14.27,
+                                        1.02,
+                                        1.08,
+                                        4.93
+                                    ]
+                    },
+                    {
+                        "id":  "nike-17",
+                        "source":  "nike",
+                        "sport":  "football",
+                        "tournament":  "NikÈ liga",
+                        "rawTitle":  "Slovan Bratislava vs MäK éilina",
+                        "homeTeam":  "Slovan Bratislava",
+                        "awayTeam":  "MäK éilina",
+                        "homeTeamNormalized":  "slovan bratislava",
+                        "awayTeamNormalized":  "msk zilina",
+                        "rawOdds":  [
+                                        1.58,
+                                        4.59,
+                                        5.3,
+                                        1.17,
+                                        1.21,
+                                        2.46
+                                    ]
+                    },
+                    {
+                        "id":  "nike-18",
+                        "source":  "nike",
+                        "sport":  "football",
+                        "tournament":  "Slovensko II. liga",
+                        "rawTitle":  "Slovan B vs Bansk· Bystrica",
+                        "homeTeam":  "Slovan B",
+                        "awayTeam":  "Bansk· Bystrica",
+                        "homeTeamNormalized":  "slovan b",
+                        "awayTeamNormalized":  "banska bystrica",
+                        "rawOdds":  [
+                                        7.13,
+                                        4.58,
+                                        1.43,
+                                        2.79,
+                                        1.19,
+                                        1.09
+                                    ]
+                    },
+                    {
+                        "id":  "nike-19",
+                        "source":  "nike",
+                        "sport":  "football",
+                        "tournament":  "Anglicko I. liga",
+                        "rawTitle":  "FC Liverpool vs Tottenham",
+                        "homeTeam":  "FC Liverpool",
+                        "awayTeam":  "Tottenham",
+                        "homeTeamNormalized":  "fc liverpool",
+                        "awayTeamNormalized":  "tottenham",
+                        "rawOdds":  [
+                                        1.33,
+                                        6.32,
+                                        9.18,
+                                        1.09,
+                                        1.16,
+                                        3.74
+                                    ]
+                    },
+                    {
+                        "id":  "nike-20",
+                        "source":  "nike",
+                        "sport":  "football",
+                        "tournament":  "äpanielsko I. liga",
+                        "rawTitle":  "FC Barcelona vs FC Sevilla",
+                        "homeTeam":  "FC Barcelona",
+                        "awayTeam":  "FC Sevilla",
+                        "homeTeamNormalized":  "fc barcelona",
+                        "awayTeamNormalized":  "fc sevilla",
+                        "rawOdds":  [
+                                        1.32,
+                                        6.73,
+                                        9.18,
+                                        1.1,
+                                        1.15,
+                                        3.88
+                                    ]
+                    },
+                    {
+                        "id":  "nike-21",
+                        "source":  "nike",
+                        "sport":  "football",
+                        "tournament":  "Bulharsko I. liga",
+                        "rawTitle":  "Beroe Stara Zagora vs Levski Sofia",
+                        "homeTeam":  "Beroe Stara Zagora",
+                        "awayTeam":  "Levski Sofia",
+                        "homeTeamNormalized":  "beroe stara zagora",
+                        "awayTeamNormalized":  "levski sofia",
+                        "rawOdds":  [
+                                        10.19,
+                                        5.3,
+                                        1.3,
+                                        3.48,
+                                        1.15,
+                                        1.05
+                                    ]
+                    },
+                    {
+                        "id":  "nike-22",
+                        "source":  "nike",
+                        "sport":  "football",
+                        "tournament":  "»esko I. liga",
+                        "rawTitle":  "AC Sparta Praha vs 1. FC Slov·cko",
+                        "homeTeam":  "AC Sparta Praha",
+                        "awayTeam":  "1. FC Slov·cko",
+                        "homeTeamNormalized":  "ac sparta praha",
+                        "awayTeamNormalized":  "1 fc slovacko",
+                        "rawOdds":  [
+                                        1.27,
+                                        6.12,
+                                        11.21,
+                                        1.05,
+                                        1.14,
+                                        3.95
+                                    ]
+                    },
+                    {
+                        "id":  "nike-23",
+                        "source":  "nike",
+                        "sport":  "football",
+                        "tournament":  "D·nsko I. liga",
+                        "rawTitle":  "Midtjylland vs Nordsjaelland",
+                        "homeTeam":  "Midtjylland",
+                        "awayTeam":  "Nordsjaelland",
+                        "homeTeamNormalized":  "midtjylland",
+                        "awayTeamNormalized":  "nordsjaelland",
+                        "rawOdds":  [
+                                        1.49,
+                                        4.89,
+                                        5.71,
+                                        1.14,
+                                        1.18,
+                                        2.63
+                                    ]
+                    },
+                    {
+                        "id":  "nike-24",
+                        "source":  "nike",
+                        "sport":  "football",
+                        "tournament":  "Holandsko I. liga",
+                        "rawTitle":  "Feyenoord vs Excelsior Rotterdam",
+                        "homeTeam":  "Feyenoord",
+                        "awayTeam":  "Excelsior Rotterdam",
+                        "homeTeamNormalized":  "feyenoord",
+                        "awayTeamNormalized":  "excelsior rotterdam",
+                        "rawOdds":  [
+                                        1.31,
+                                        6.12,
+                                        8.77,
+                                        1.08,
+                                        1.14,
+                                        3.6
+                                    ]
+                    },
+                    {
+                        "id":  "nike-25",
+                        "source":  "nike",
+                        "sport":  "football",
+                        "tournament":  "Portugalsko I. liga",
+                        "rawTitle":  "FC Porto vs Moreirense",
+                        "homeTeam":  "FC Porto",
+                        "awayTeam":  "Moreirense",
+                        "homeTeamNormalized":  "fc porto",
+                        "awayTeamNormalized":  "moreirense",
+                        "rawOdds":  [
+                                        1.2,
+                                        6.52,
+                                        15.29,
+                                        1.02,
+                                        1.11,
+                                        4.58
+                                    ]
+                    },
+                    {
+                        "id":  "nike-26",
+                        "source":  "nike",
+                        "sport":  "football",
+                        "tournament":  "ävajËiarsko I. liga",
+                        "rawTitle":  "FC Luzern vs Winterthur",
+                        "homeTeam":  "FC Luzern",
+                        "awayTeam":  "Winterthur",
+                        "homeTeamNormalized":  "fc luzern",
+                        "awayTeamNormalized":  "winterthur",
+                        "rawOdds":  [
+                                        1.39,
+                                        5.5,
+                                        6.73,
+                                        1.11,
+                                        1.15,
+                                        3.03
+                                    ]
+                    },
+                    {
+                        "id":  "nike-27",
+                        "source":  "nike",
+                        "sport":  "football",
+                        "tournament":  "EstÛnsko I. liga",
+                        "rawTitle":  "Harju JK Laagri vs Levadia Tallinn",
+                        "homeTeam":  "Harju JK Laagri",
+                        "awayTeam":  "Levadia Tallinn",
+                        "homeTeamNormalized":  "harju jk laagri",
+                        "awayTeamNormalized":  "levadia tallinn",
+                        "rawOdds":  [
+                                        8.35,
+                                        5.71,
+                                        1.3,
+                                        3.39,
+                                        1.13,
+                                        1.06
+                                    ]
+                    },
+                    {
+                        "id":  "nike-28",
+                        "source":  "nike",
+                        "sport":  "football",
+                        "tournament":  "Litva I. liga",
+                        "rawTitle":  "FA äiauliai vs éalgiris Kauno",
+                        "homeTeam":  "FA äiauliai",
+                        "awayTeam":  "éalgiris Kauno",
+                        "homeTeamNormalized":  "fa siauliai",
+                        "awayTeamNormalized":  "zalgiris kauno",
+                        "rawOdds":  [
+                                        9.17,
+                                        5.3,
+                                        1.3,
+                                        3.36,
+                                        1.14,
+                                        1.05
+                                    ]
+                    },
+                    {
+                        "id":  "nike-29",
+                        "source":  "nike",
+                        "sport":  "hockey",
+                        "tournament":  "KHL",
+                        "rawTitle":  "Salavat Ufa vs Shanghai Dragons",
+                        "homeTeam":  "Salavat Ufa",
+                        "awayTeam":  "Shanghai Dragons",
+                        "homeTeamNormalized":  "salavat ufa",
+                        "awayTeamNormalized":  "shanghai dragons",
+                        "rawOdds":  [
+                                        1.57,
+                                        4.58,
+                                        4.79,
+                                        1.17,
+                                        1.18,
+                                        2.34
+                                    ]
+                    },
+                    {
+                        "id":  "nike-30",
+                        "source":  "nike",
+                        "sport":  "hockey",
+                        "tournament":  "Nemecko",
+                        "rawTitle":  "Bremerhaven vs Dresden",
+                        "homeTeam":  "Bremerhaven",
+                        "awayTeam":  "Dresden",
+                        "homeTeamNormalized":  "bremerhaven",
+                        "awayTeamNormalized":  "dresden",
+                        "rawOdds":  [
+                                        1.24,
+                                        6.32,
+                                        10.19,
+                                        1.04,
+                                        1.11,
+                                        3.9
+                                    ]
+                    },
+                    {
+                        "id":  "nike-31",
+                        "source":  "nike",
+                        "sport":  "hockey",
+                        "tournament":  "ävÈdsko II. liga",
+                        "rawTitle":  "Bjˆrklˆven vs Oskarshamn",
+                        "homeTeam":  "Bjˆrklˆven",
+                        "awayTeam":  "Oskarshamn",
+                        "homeTeamNormalized":  "bjorkloven",
+                        "awayTeamNormalized":  "oskarshamn",
+                        "rawOdds":  [
+                                        1.54,
+                                        4.48,
+                                        5.3,
+                                        1.14,
+                                        1.19,
+                                        2.42
+                                    ]
+                    },
+                    {
+                        "id":  "nike-32",
+                        "source":  "nike",
+                        "sport":  "unknown",
+                        "tournament":  "äpanielsko muûi I. liga",
+                        "rawTitle":  "Ciudad Real vs Huesca",
+                        "homeTeam":  "Ciudad Real",
+                        "awayTeam":  "Huesca",
+                        "homeTeamNormalized":  "ciudad real",
+                        "awayTeamNormalized":  "huesca",
+                        "rawOdds":  [
+                                        1.47,
+                                        9.78,
+                                        3.62,
+                                        1.27,
+                                        1.04,
+                                        2.64
+                                    ]
+                    },
+                    {
+                        "id":  "nike-33",
+                        "source":  "nike",
+                        "sport":  "unknown",
+                        "tournament":  "Franc˙zsko muûi I. liga",
+                        "rawTitle":  "Paris St.G. vs Toulouse",
+                        "homeTeam":  "Paris St.G.",
+                        "awayTeam":  "Toulouse",
+                        "homeTeamNormalized":  "paris st g",
+                        "awayTeamNormalized":  "toulouse",
+                        "rawOdds":  [
+                                        1.12,
+                                        14.26,
+                                        9.37,
+                                        1.04,
+                                        1.02,
+                                        5.65
+                                    ]
+                    },
+                    {
+                        "id":  "nike-34",
+                        "source":  "nike",
+                        "sport":  "tennis",
+                        "tournament":  "ATP Indian Wells",
+                        "rawTitle":  "Zverev A. vs Sinner J.",
+                        "homeTeam":  "Zverev A.",
+                        "awayTeam":  "Sinner J.",
+                        "homeTeamNormalized":  "zverev a",
+                        "awayTeamNormalized":  "sinner j",
+                        "rawOdds":  [
+                                        5.51,
+                                        1.19
+                                    ]
+                    },
+                    {
+                        "id":  "nike-35",
+                        "source":  "nike",
+                        "sport":  "tennis",
+                        "tournament":  "ATP Indian Wells",
+                        "rawTitle":  "Alcaraz C. vs Medvedev D.",
+                        "homeTeam":  "Alcaraz C.",
+                        "awayTeam":  "Medvedev D.",
+                        "homeTeamNormalized":  "alcaraz c",
+                        "awayTeamNormalized":  "medvedev d",
+                        "rawOdds":  [
+                                        1.2,
+                                        5.3
+                                    ]
+                    },
+                    {
+                        "id":  "nike-36",
+                        "source":  "nike",
+                        "sport":  "unknown",
+                        "tournament":  "Taliansko muûi I. liga",
+                        "rawTitle":  "Allianz Milano vs Verona",
+                        "homeTeam":  "Allianz Milano",
+                        "awayTeam":  "Verona",
+                        "homeTeamNormalized":  "allianz milano",
+                        "awayTeamNormalized":  "verona",
+                        "rawOdds":  [
+                                        4.79,
+                                        1.17
+                                    ]
+                    },
+                    {
+                        "id":  "nike-37",
+                        "source":  "nike",
+                        "sport":  "unknown",
+                        "tournament":  "Poæsko muûi",
+                        "rawTitle":  "PGE BelchatÛw vs Projekt Warszawa",
+                        "homeTeam":  "PGE BelchatÛw",
+                        "awayTeam":  "Projekt Warszawa",
+                        "homeTeamNormalized":  "pge belchatow",
+                        "awayTeamNormalized":  "projekt warszawa",
+                        "rawOdds":  [
+                                        2.65,
+                                        1.46
+                                    ]
+                    },
+                    {
+                        "id":  "nike-38",
+                        "source":  "nike",
+                        "sport":  "unknown",
+                        "tournament":  "Nemecko muûi I. liga",
+                        "rawTitle":  "Mitteldeutscher vs Alba Berlin",
+                        "homeTeam":  "Mitteldeutscher",
+                        "awayTeam":  "Alba Berlin",
+                        "homeTeamNormalized":  "mitteldeutscher",
+                        "awayTeamNormalized":  "alba berlin",
+                        "rawOdds":  [
+                                        4.28,
+                                        18.35,
+                                        1.34,
+                                        3.48,
+                                        1.24
+                                    ]
+                    },
+                    {
+                        "id":  "nike-39",
+                        "source":  "nike",
+                        "sport":  "football",
+                        "tournament":  "NikÈ liga",
+                        "rawTitle":  "Podbrezov· vs Michalovce",
+                        "homeTeam":  "Podbrezov·",
+                        "awayTeam":  "Michalovce",
+                        "homeTeamNormalized":  "podbrezova",
+                        "awayTeamNormalized":  "michalovce",
+                        "rawOdds":  [
+                                        1.55,
+                                        4.4,
+                                        6,
+                                        1.15,
+                                        1.23,
+                                        2.54
+                                    ]
+                    },
+                    {
+                        "id":  "nike-40",
+                        "source":  "nike",
+                        "sport":  "football",
+                        "tournament":  "NikÈ liga",
+                        "rawTitle":  "Preöov vs KFC Kom·rno",
+                        "homeTeam":  "Preöov",
+                        "awayTeam":  "KFC Kom·rno",
+                        "homeTeamNormalized":  "presov",
+                        "awayTeamNormalized":  "kfc komarno",
+                        "rawOdds":  [
+                                        2.39,
+                                        3.4,
+                                        3.05,
+                                        1.4,
+                                        1.34,
+                                        1.61
+                                    ]
+                    },
+                    {
+                        "id":  "nike-41",
+                        "source":  "nike",
+                        "sport":  "football",
+                        "tournament":  "NikÈ liga",
+                        "rawTitle":  "Ruûomberok vs FC Koöice",
+                        "homeTeam":  "Ruûomberok",
+                        "awayTeam":  "FC Koöice",
+                        "homeTeamNormalized":  "ruzomberok",
+                        "awayTeamNormalized":  "fc kosice",
+                        "rawOdds":  [
+                                        2.9,
+                                        3.5,
+                                        2.43,
+                                        1.59,
+                                        1.32,
+                                        1.43
+                                    ]
+                    },
+                    {
+                        "id":  "nike-42",
+                        "source":  "nike",
+                        "sport":  "football",
+                        "tournament":  "NikÈ liga",
+                        "rawTitle":  "AS TrenËÌn vs Skalica",
+                        "homeTeam":  "AS TrenËÌn",
+                        "awayTeam":  "Skalica",
+                        "homeTeamNormalized":  "as trencin",
+                        "awayTeamNormalized":  "skalica",
+                        "rawOdds":  [
+                                        2.32,
+                                        3.25,
+                                        3,
+                                        1.35,
+                                        1.31,
+                                        1.56
+                                    ]
+                    },
+                    {
+                        "id":  "nike-43",
+                        "source":  "nike",
+                        "sport":  "football",
+                        "tournament":  "NikÈ liga",
+                        "rawTitle":  "Slovan Bratislava vs MäK éilina",
+                        "homeTeam":  "Slovan Bratislava",
+                        "awayTeam":  "MäK éilina",
+                        "homeTeamNormalized":  "slovan bratislava",
+                        "awayTeamNormalized":  "msk zilina",
+                        "rawOdds":  [
+                                        1.55,
+                                        4.5,
+                                        5.2,
+                                        1.15,
+                                        1.19,
+                                        2.41
+                                    ]
+                    },
+                    {
+                        "id":  "nike-44",
+                        "source":  "nike",
+                        "sport":  "football",
+                        "tournament":  "Kvalifik·cia MS UEFA bar·û",
+                        "rawTitle":  "Turecko vs Rumunsko",
+                        "homeTeam":  "Turecko",
+                        "awayTeam":  "Rumunsko",
+                        "homeTeamNormalized":  "turecko",
+                        "awayTeamNormalized":  "rumunsko",
+                        "rawOdds":  [
+                                        1.51,
+                                        4.2,
+                                        5.6,
+                                        1.11,
+                                        1.19,
+                                        2.4
+                                    ]
+                    },
+                    {
+                        "id":  "nike-45",
+                        "source":  "nike",
+                        "sport":  "football",
+                        "tournament":  "Kvalifik·cia MS UEFA bar·û",
+                        "rawTitle":  "D·nsko vs SevernÈ MacedÛnsko",
+                        "homeTeam":  "D·nsko",
+                        "awayTeam":  "SevernÈ MacedÛnsko",
+                        "homeTeamNormalized":  "dansko",
+                        "awayTeamNormalized":  "severne macedonsko",
+                        "rawOdds":  [
+                                        1.28,
+                                        5.2,
+                                        9.4,
+                                        1.03,
+                                        1.13,
+                                        3.35
+                                    ]
+                    },
+                    {
+                        "id":  "nike-46",
+                        "source":  "nike",
+                        "sport":  "football",
+                        "tournament":  "Kvalifik·cia MS UEFA bar·û",
+                        "rawTitle":  "Poæsko vs Alb·nsko",
+                        "homeTeam":  "Poæsko",
+                        "awayTeam":  "Alb·nsko",
+                        "homeTeamNormalized":  "polsko",
+                        "awayTeamNormalized":  "albansko",
+                        "rawOdds":  [
+                                        1.61,
+                                        3.6,
+                                        5.4,
+                                        1.11,
+                                        1.24,
+                                        2.16
+                                    ]
+                    },
+                    {
+                        "id":  "nike-47",
+                        "source":  "nike",
+                        "sport":  "football",
+                        "tournament":  "Kvalifik·cia MS UEFA bar·û",
+                        "rawTitle":  "Slovensko vs Kosovo",
+                        "homeTeam":  "Slovensko",
+                        "awayTeam":  "Kosovo",
+                        "homeTeamNormalized":  "slovensko",
+                        "awayTeamNormalized":  "kosovo",
+                        "rawOdds":  [
+                                        1.97,
+                                        3.25,
+                                        3.75,
+                                        1.23,
+                                        1.29,
+                                        1.74
+                                    ]
+                    },
+                    {
+                        "id":  "nike-48",
+                        "source":  "nike",
+                        "sport":  "football",
+                        "tournament":  "Kvalifik·cia MS UEFA bar·û",
+                        "rawTitle":  "Taliansko vs SevernÈ Õrsko",
+                        "homeTeam":  "Taliansko",
+                        "awayTeam":  "SevernÈ Õrsko",
+                        "homeTeamNormalized":  "taliansko",
+                        "awayTeamNormalized":  "severne irsko",
+                        "rawOdds":  [
+                                        1.3,
+                                        4.9,
+                                        9,
+                                        1.03,
+                                        1.14,
+                                        3.17
+                                    ]
+                    },
+                    {
+                        "id":  "nike-49",
+                        "source":  "nike",
+                        "sport":  "football",
+                        "tournament":  "Kvalifik·cia MS UEFA bar·û",
+                        "rawTitle":  "Ukrajina vs ävÈdsko",
+                        "homeTeam":  "Ukrajina",
+                        "awayTeam":  "ävÈdsko",
+                        "homeTeamNormalized":  "ukrajina",
+                        "awayTeamNormalized":  "svedsko",
+                        "rawOdds":  [
+                                        2.8,
+                                        3.15,
+                                        2.49,
+                                        1.48,
+                                        1.32,
+                                        1.39
+                                    ]
+                    },
+                    {
+                        "id":  "nike-50",
+                        "source":  "nike",
+                        "sport":  "football",
+                        "tournament":  "Kvalifik·cia MS UEFA bar·û",
+                        "rawTitle":  "Wales vs Bosna a Hercegovina",
+                        "homeTeam":  "Wales",
+                        "awayTeam":  "Bosna a Hercegovina",
+                        "homeTeamNormalized":  "wales",
+                        "awayTeamNormalized":  "bosna a hercegovina",
+                        "rawOdds":  [
+                                        1.89,
+                                        3.25,
+                                        4.1,
+                                        1.2,
+                                        1.29,
+                                        1.81
+                                    ]
+                    },
+                    {
+                        "id":  "nike-51",
+                        "source":  "nike",
+                        "sport":  "football",
+                        "tournament":  "Kvalifik·cia MS UEFA bar·û",
+                        "rawTitle":  "»esko vs Õrsko",
+                        "homeTeam":  "»esko",
+                        "awayTeam":  "Õrsko",
+                        "homeTeamNormalized":  "cesko",
+                        "awayTeamNormalized":  "irsko",
+                        "rawOdds":  [
+                                        1.95,
+                                        3.35,
+                                        3.7,
+                                        1.23,
+                                        1.28,
+                                        1.76
+                                    ]
+                    }
+                ],
+    "markets":  [
+                    {
+                        "id":  "nike-1-dc-1x",
+                        "matchId":  "nike-1",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "1x",
+                        "nikeOdd":  1.28
+                    },
+                    {
+                        "id":  "nike-1-dc-12",
+                        "matchId":  "nike-1",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "12",
+                        "nikeOdd":  1.26
+                    },
+                    {
+                        "id":  "nike-1-dc-x2",
+                        "matchId":  "nike-1",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "x2",
+                        "nikeOdd":  2
+                    },
+                    {
+                        "id":  "nike-2-dc-1x",
+                        "matchId":  "nike-2",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "1x",
+                        "nikeOdd":  1.31
+                    },
+                    {
+                        "id":  "nike-2-dc-12",
+                        "matchId":  "nike-2",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "12",
+                        "nikeOdd":  1.34
+                    },
+                    {
+                        "id":  "nike-2-dc-x2",
+                        "matchId":  "nike-2",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "x2",
+                        "nikeOdd":  1.76
+                    },
+                    {
+                        "id":  "nike-3-dc-1x",
+                        "matchId":  "nike-3",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "1x",
+                        "nikeOdd":  1.42
+                    },
+                    {
+                        "id":  "nike-3-dc-12",
+                        "matchId":  "nike-3",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "12",
+                        "nikeOdd":  1.24
+                    },
+                    {
+                        "id":  "nike-3-dc-x2",
+                        "matchId":  "nike-3",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "x2",
+                        "nikeOdd":  1.65
+                    },
+                    {
+                        "id":  "nike-4-winner-home",
+                        "matchId":  "nike-4",
+                        "marketType":  "match_winner_2way",
+                        "period":  "full_time",
+                        "selection":  "home",
+                        "nikeOdd":  1.7
+                    },
+                    {
+                        "id":  "nike-4-winner-away",
+                        "matchId":  "nike-4",
+                        "marketType":  "match_winner_2way",
+                        "period":  "full_time",
+                        "selection":  "away",
+                        "nikeOdd":  2.22
+                    },
+                    {
+                        "id":  "nike-5-dc-1x",
+                        "matchId":  "nike-5",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "1x",
+                        "nikeOdd":  1.17
+                    },
+                    {
+                        "id":  "nike-5-dc-12",
+                        "matchId":  "nike-5",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "12",
+                        "nikeOdd":  1.25
+                    },
+                    {
+                        "id":  "nike-5-dc-x2",
+                        "matchId":  "nike-5",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "x2",
+                        "nikeOdd":  2.59
+                    },
+                    {
+                        "id":  "nike-6-dc-1x",
+                        "matchId":  "nike-6",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "1x",
+                        "nikeOdd":  1.12
+                    },
+                    {
+                        "id":  "nike-6-dc-12",
+                        "matchId":  "nike-6",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "12",
+                        "nikeOdd":  1.23
+                    },
+                    {
+                        "id":  "nike-6-dc-x2",
+                        "matchId":  "nike-6",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "x2",
+                        "nikeOdd":  3.11
+                    },
+                    {
+                        "id":  "nike-7-dc-1x",
+                        "matchId":  "nike-7",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "1x",
+                        "nikeOdd":  1.18
+                    },
+                    {
+                        "id":  "nike-7-dc-12",
+                        "matchId":  "nike-7",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "12",
+                        "nikeOdd":  1.23
+                    },
+                    {
+                        "id":  "nike-7-dc-x2",
+                        "matchId":  "nike-7",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "x2",
+                        "nikeOdd":  2.75
+                    },
+                    {
+                        "id":  "nike-8-dc-1x",
+                        "matchId":  "nike-8",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "1x",
+                        "nikeOdd":  1.2
+                    },
+                    {
+                        "id":  "nike-8-dc-12",
+                        "matchId":  "nike-8",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "12",
+                        "nikeOdd":  1.25
+                    },
+                    {
+                        "id":  "nike-8-dc-x2",
+                        "matchId":  "nike-8",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "x2",
+                        "nikeOdd":  2.53
+                    },
+                    {
+                        "id":  "nike-9-dc-1x",
+                        "matchId":  "nike-9",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "1x",
+                        "nikeOdd":  1.14
+                    },
+                    {
+                        "id":  "nike-9-dc-12",
+                        "matchId":  "nike-9",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "12",
+                        "nikeOdd":  1.21
+                    },
+                    {
+                        "id":  "nike-9-dc-x2",
+                        "matchId":  "nike-9",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "x2",
+                        "nikeOdd":  3.11
+                    },
+                    {
+                        "id":  "nike-10-dc-1x",
+                        "matchId":  "nike-10",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "1x",
+                        "nikeOdd":  1.15
+                    },
+                    {
+                        "id":  "nike-10-dc-12",
+                        "matchId":  "nike-10",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "12",
+                        "nikeOdd":  1.34
+                    },
+                    {
+                        "id":  "nike-10-dc-x2",
+                        "matchId":  "nike-10",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "x2",
+                        "nikeOdd":  2.47
+                    },
+                    {
+                        "id":  "nike-11-dc-1x",
+                        "matchId":  "nike-11",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "1x",
+                        "nikeOdd":  1.12
+                    },
+                    {
+                        "id":  "nike-11-dc-12",
+                        "matchId":  "nike-11",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "12",
+                        "nikeOdd":  1.18
+                    },
+                    {
+                        "id":  "nike-11-dc-x2",
+                        "matchId":  "nike-11",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "x2",
+                        "nikeOdd":  3.43
+                    },
+                    {
+                        "id":  "nike-12-dc-1x",
+                        "matchId":  "nike-12",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "1x",
+                        "nikeOdd":  1.19
+                    },
+                    {
+                        "id":  "nike-12-dc-12",
+                        "matchId":  "nike-12",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "12",
+                        "nikeOdd":  1.26
+                    },
+                    {
+                        "id":  "nike-12-dc-x2",
+                        "matchId":  "nike-12",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "x2",
+                        "nikeOdd":  2.61
+                    },
+                    {
+                        "id":  "nike-13-dc-1x",
+                        "matchId":  "nike-13",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "1x",
+                        "nikeOdd":  1.11
+                    },
+                    {
+                        "id":  "nike-13-dc-12",
+                        "matchId":  "nike-13",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "12",
+                        "nikeOdd":  1.25
+                    },
+                    {
+                        "id":  "nike-13-dc-x2",
+                        "matchId":  "nike-13",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "x2",
+                        "nikeOdd":  3.15
+                    },
+                    {
+                        "id":  "nike-14-dc-1x",
+                        "matchId":  "nike-14",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "1x",
+                        "nikeOdd":  2.95
+                    },
+                    {
+                        "id":  "nike-14-dc-12",
+                        "matchId":  "nike-14",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "12",
+                        "nikeOdd":  1.24
+                    },
+                    {
+                        "id":  "nike-14-dc-x2",
+                        "matchId":  "nike-14",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "x2",
+                        "nikeOdd":  1.12
+                    },
+                    {
+                        "id":  "nike-15-dc-1x",
+                        "matchId":  "nike-15",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "1x",
+                        "nikeOdd":  3.69
+                    },
+                    {
+                        "id":  "nike-15-dc-12",
+                        "matchId":  "nike-15",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "12",
+                        "nikeOdd":  1.17
+                    },
+                    {
+                        "id":  "nike-15-dc-x2",
+                        "matchId":  "nike-15",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "x2",
+                        "nikeOdd":  1.09
+                    },
+                    {
+                        "id":  "nike-17-dc-1x",
+                        "matchId":  "nike-17",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "1x",
+                        "nikeOdd":  1.17
+                    },
+                    {
+                        "id":  "nike-17-dc-12",
+                        "matchId":  "nike-17",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "12",
+                        "nikeOdd":  1.21
+                    },
+                    {
+                        "id":  "nike-17-dc-x2",
+                        "matchId":  "nike-17",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "x2",
+                        "nikeOdd":  2.46
+                    },
+                    {
+                        "id":  "nike-18-dc-1x",
+                        "matchId":  "nike-18",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "1x",
+                        "nikeOdd":  2.79
+                    },
+                    {
+                        "id":  "nike-18-dc-12",
+                        "matchId":  "nike-18",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "12",
+                        "nikeOdd":  1.19
+                    },
+                    {
+                        "id":  "nike-18-dc-x2",
+                        "matchId":  "nike-18",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "x2",
+                        "nikeOdd":  1.09
+                    },
+                    {
+                        "id":  "nike-19-dc-1x",
+                        "matchId":  "nike-19",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "1x",
+                        "nikeOdd":  1.09
+                    },
+                    {
+                        "id":  "nike-19-dc-12",
+                        "matchId":  "nike-19",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "12",
+                        "nikeOdd":  1.16
+                    },
+                    {
+                        "id":  "nike-19-dc-x2",
+                        "matchId":  "nike-19",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "x2",
+                        "nikeOdd":  3.74
+                    },
+                    {
+                        "id":  "nike-20-dc-1x",
+                        "matchId":  "nike-20",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "1x",
+                        "nikeOdd":  1.1
+                    },
+                    {
+                        "id":  "nike-20-dc-12",
+                        "matchId":  "nike-20",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "12",
+                        "nikeOdd":  1.15
+                    },
+                    {
+                        "id":  "nike-20-dc-x2",
+                        "matchId":  "nike-20",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "x2",
+                        "nikeOdd":  3.88
+                    },
+                    {
+                        "id":  "nike-21-dc-1x",
+                        "matchId":  "nike-21",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "1x",
+                        "nikeOdd":  3.48
+                    },
+                    {
+                        "id":  "nike-21-dc-12",
+                        "matchId":  "nike-21",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "12",
+                        "nikeOdd":  1.15
+                    },
+                    {
+                        "id":  "nike-21-dc-x2",
+                        "matchId":  "nike-21",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "x2",
+                        "nikeOdd":  1.05
+                    },
+                    {
+                        "id":  "nike-22-dc-1x",
+                        "matchId":  "nike-22",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "1x",
+                        "nikeOdd":  1.05
+                    },
+                    {
+                        "id":  "nike-22-dc-12",
+                        "matchId":  "nike-22",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "12",
+                        "nikeOdd":  1.14
+                    },
+                    {
+                        "id":  "nike-22-dc-x2",
+                        "matchId":  "nike-22",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "x2",
+                        "nikeOdd":  3.95
+                    },
+                    {
+                        "id":  "nike-23-dc-1x",
+                        "matchId":  "nike-23",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "1x",
+                        "nikeOdd":  1.14
+                    },
+                    {
+                        "id":  "nike-23-dc-12",
+                        "matchId":  "nike-23",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "12",
+                        "nikeOdd":  1.18
+                    },
+                    {
+                        "id":  "nike-23-dc-x2",
+                        "matchId":  "nike-23",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "x2",
+                        "nikeOdd":  2.63
+                    },
+                    {
+                        "id":  "nike-24-dc-1x",
+                        "matchId":  "nike-24",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "1x",
+                        "nikeOdd":  1.08
+                    },
+                    {
+                        "id":  "nike-24-dc-12",
+                        "matchId":  "nike-24",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "12",
+                        "nikeOdd":  1.14
+                    },
+                    {
+                        "id":  "nike-24-dc-x2",
+                        "matchId":  "nike-24",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "x2",
+                        "nikeOdd":  3.6
+                    },
+                    {
+                        "id":  "nike-26-dc-1x",
+                        "matchId":  "nike-26",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "1x",
+                        "nikeOdd":  1.11
+                    },
+                    {
+                        "id":  "nike-26-dc-12",
+                        "matchId":  "nike-26",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "12",
+                        "nikeOdd":  1.15
+                    },
+                    {
+                        "id":  "nike-26-dc-x2",
+                        "matchId":  "nike-26",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "x2",
+                        "nikeOdd":  3.03
+                    },
+                    {
+                        "id":  "nike-27-dc-1x",
+                        "matchId":  "nike-27",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "1x",
+                        "nikeOdd":  3.39
+                    },
+                    {
+                        "id":  "nike-27-dc-12",
+                        "matchId":  "nike-27",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "12",
+                        "nikeOdd":  1.13
+                    },
+                    {
+                        "id":  "nike-27-dc-x2",
+                        "matchId":  "nike-27",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "x2",
+                        "nikeOdd":  1.06
+                    },
+                    {
+                        "id":  "nike-28-dc-1x",
+                        "matchId":  "nike-28",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "1x",
+                        "nikeOdd":  3.36
+                    },
+                    {
+                        "id":  "nike-28-dc-12",
+                        "matchId":  "nike-28",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "12",
+                        "nikeOdd":  1.14
+                    },
+                    {
+                        "id":  "nike-28-dc-x2",
+                        "matchId":  "nike-28",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "x2",
+                        "nikeOdd":  1.05
+                    },
+                    {
+                        "id":  "nike-29-dc-1x",
+                        "matchId":  "nike-29",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "1x",
+                        "nikeOdd":  1.17
+                    },
+                    {
+                        "id":  "nike-29-dc-12",
+                        "matchId":  "nike-29",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "12",
+                        "nikeOdd":  1.18
+                    },
+                    {
+                        "id":  "nike-29-dc-x2",
+                        "matchId":  "nike-29",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "x2",
+                        "nikeOdd":  2.34
+                    },
+                    {
+                        "id":  "nike-31-dc-1x",
+                        "matchId":  "nike-31",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "1x",
+                        "nikeOdd":  1.14
+                    },
+                    {
+                        "id":  "nike-31-dc-12",
+                        "matchId":  "nike-31",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "12",
+                        "nikeOdd":  1.19
+                    },
+                    {
+                        "id":  "nike-31-dc-x2",
+                        "matchId":  "nike-31",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "x2",
+                        "nikeOdd":  2.42
+                    },
+                    {
+                        "id":  "nike-34-winner-home",
+                        "matchId":  "nike-34",
+                        "marketType":  "match_winner_2way",
+                        "period":  "full_time",
+                        "selection":  "home",
+                        "nikeOdd":  5.51
+                    },
+                    {
+                        "id":  "nike-34-winner-away",
+                        "matchId":  "nike-34",
+                        "marketType":  "match_winner_2way",
+                        "period":  "full_time",
+                        "selection":  "away",
+                        "nikeOdd":  1.19
+                    },
+                    {
+                        "id":  "nike-35-winner-home",
+                        "matchId":  "nike-35",
+                        "marketType":  "match_winner_2way",
+                        "period":  "full_time",
+                        "selection":  "home",
+                        "nikeOdd":  1.2
+                    },
+                    {
+                        "id":  "nike-35-winner-away",
+                        "matchId":  "nike-35",
+                        "marketType":  "match_winner_2way",
+                        "period":  "full_time",
+                        "selection":  "away",
+                        "nikeOdd":  5.3
+                    },
+                    {
+                        "id":  "nike-38-dc-1x",
+                        "matchId":  "nike-38",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "1x",
+                        "nikeOdd":  1.34
+                    },
+                    {
+                        "id":  "nike-38-dc-12",
+                        "matchId":  "nike-38",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "12",
+                        "nikeOdd":  3.48
+                    },
+                    {
+                        "id":  "nike-38-dc-x2",
+                        "matchId":  "nike-38",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "x2",
+                        "nikeOdd":  1.24
+                    },
+                    {
+                        "id":  "nike-39-dc-1x",
+                        "matchId":  "nike-39",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "1x",
+                        "nikeOdd":  1.15
+                    },
+                    {
+                        "id":  "nike-39-dc-12",
+                        "matchId":  "nike-39",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "12",
+                        "nikeOdd":  1.23
+                    },
+                    {
+                        "id":  "nike-39-dc-x2",
+                        "matchId":  "nike-39",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "x2",
+                        "nikeOdd":  2.54
+                    },
+                    {
+                        "id":  "nike-40-dc-1x",
+                        "matchId":  "nike-40",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "1x",
+                        "nikeOdd":  1.4
+                    },
+                    {
+                        "id":  "nike-40-dc-12",
+                        "matchId":  "nike-40",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "12",
+                        "nikeOdd":  1.34
+                    },
+                    {
+                        "id":  "nike-40-dc-x2",
+                        "matchId":  "nike-40",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "x2",
+                        "nikeOdd":  1.61
+                    },
+                    {
+                        "id":  "nike-41-dc-1x",
+                        "matchId":  "nike-41",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "1x",
+                        "nikeOdd":  1.59
+                    },
+                    {
+                        "id":  "nike-41-dc-12",
+                        "matchId":  "nike-41",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "12",
+                        "nikeOdd":  1.32
+                    },
+                    {
+                        "id":  "nike-41-dc-x2",
+                        "matchId":  "nike-41",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "x2",
+                        "nikeOdd":  1.43
+                    },
+                    {
+                        "id":  "nike-42-dc-1x",
+                        "matchId":  "nike-42",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "1x",
+                        "nikeOdd":  1.35
+                    },
+                    {
+                        "id":  "nike-42-dc-12",
+                        "matchId":  "nike-42",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "12",
+                        "nikeOdd":  1.31
+                    },
+                    {
+                        "id":  "nike-42-dc-x2",
+                        "matchId":  "nike-42",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "x2",
+                        "nikeOdd":  1.56
+                    },
+                    {
+                        "id":  "nike-43-dc-1x",
+                        "matchId":  "nike-43",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "1x",
+                        "nikeOdd":  1.15
+                    },
+                    {
+                        "id":  "nike-43-dc-12",
+                        "matchId":  "nike-43",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "12",
+                        "nikeOdd":  1.19
+                    },
+                    {
+                        "id":  "nike-43-dc-x2",
+                        "matchId":  "nike-43",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "x2",
+                        "nikeOdd":  2.41
+                    },
+                    {
+                        "id":  "nike-44-dc-1x",
+                        "matchId":  "nike-44",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "1x",
+                        "nikeOdd":  1.11
+                    },
+                    {
+                        "id":  "nike-44-dc-12",
+                        "matchId":  "nike-44",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "12",
+                        "nikeOdd":  1.19
+                    },
+                    {
+                        "id":  "nike-44-dc-x2",
+                        "matchId":  "nike-44",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "x2",
+                        "nikeOdd":  2.4
+                    },
+                    {
+                        "id":  "nike-46-dc-1x",
+                        "matchId":  "nike-46",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "1x",
+                        "nikeOdd":  1.11
+                    },
+                    {
+                        "id":  "nike-46-dc-12",
+                        "matchId":  "nike-46",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "12",
+                        "nikeOdd":  1.24
+                    },
+                    {
+                        "id":  "nike-46-dc-x2",
+                        "matchId":  "nike-46",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "x2",
+                        "nikeOdd":  2.16
+                    },
+                    {
+                        "id":  "nike-47-dc-1x",
+                        "matchId":  "nike-47",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "1x",
+                        "nikeOdd":  1.23
+                    },
+                    {
+                        "id":  "nike-47-dc-12",
+                        "matchId":  "nike-47",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "12",
+                        "nikeOdd":  1.29
+                    },
+                    {
+                        "id":  "nike-47-dc-x2",
+                        "matchId":  "nike-47",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "x2",
+                        "nikeOdd":  1.74
+                    },
+                    {
+                        "id":  "nike-49-dc-1x",
+                        "matchId":  "nike-49",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "1x",
+                        "nikeOdd":  1.48
+                    },
+                    {
+                        "id":  "nike-49-dc-12",
+                        "matchId":  "nike-49",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "12",
+                        "nikeOdd":  1.32
+                    },
+                    {
+                        "id":  "nike-49-dc-x2",
+                        "matchId":  "nike-49",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "x2",
+                        "nikeOdd":  1.39
+                    },
+                    {
+                        "id":  "nike-50-dc-1x",
+                        "matchId":  "nike-50",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "1x",
+                        "nikeOdd":  1.2
+                    },
+                    {
+                        "id":  "nike-50-dc-12",
+                        "matchId":  "nike-50",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "12",
+                        "nikeOdd":  1.29
+                    },
+                    {
+                        "id":  "nike-50-dc-x2",
+                        "matchId":  "nike-50",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "x2",
+                        "nikeOdd":  1.81
+                    },
+                    {
+                        "id":  "nike-51-dc-1x",
+                        "matchId":  "nike-51",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "1x",
+                        "nikeOdd":  1.23
+                    },
+                    {
+                        "id":  "nike-51-dc-12",
+                        "matchId":  "nike-51",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "12",
+                        "nikeOdd":  1.28
+                    },
+                    {
+                        "id":  "nike-51-dc-x2",
+                        "matchId":  "nike-51",
+                        "marketType":  "double_chance",
+                        "period":  "full_time",
+                        "selection":  "x2",
+                        "nikeOdd":  1.76
+                    }
+                ]
+}

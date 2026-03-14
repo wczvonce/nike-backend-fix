@@ -1,0 +1,101 @@
+{
+    "ok":  true,
+    "source":  "live",
+    "checks":  {
+                   "nikeSuperponukaCount":  4,
+                   "nikeSuperponukaValid":  true,
+                   "flashscoreMatchedCount":  4,
+                   "flashscoreValidation":  {
+                                                "ok":  true,
+                                                "errors":  [
+
+                                                           ]
+                                            },
+                   "marketValidation":  {
+                                            "ok":  true,
+                                            "errors":  [
+
+                                                       ]
+                                        },
+                   "finalComparisonValidation":  {
+                                                     "ok":  true,
+                                                     "errors":  [
+
+                                                                ]
+                                                 }
+               },
+    "matchMappings":  [
+                          {
+                              "nikeMatch":  "Chelsea vs Newcastle Utd.",
+                              "matched":  true,
+                              "flashscoreHref":  "https://www.flashscore.sk/zapas/futbal/chelsea-4fGZN2oK/newcastle-united-p6ahwuwJ/",
+                              "confidence":  200,
+                              "orientationSwapped":  false,
+                              "flashscoreHomeTeam":  "Chelsea",
+                              "flashscoreAwayTeam":  "Newcastle United"
+                          },
+                          {
+                              "nikeMatch":  "Como vs AS Roma",
+                              "matched":  true,
+                              "flashscoreHref":  "https://www.flashscore.sk/zapas/futbal/as-rim-zVqqL0ma/como-ttyLthOA/",
+                              "confidence":  200,
+                              "orientationSwapped":  false,
+                              "flashscoreHomeTeam":  "Como",
+                              "flashscoreAwayTeam":  "AS Rím"
+                          },
+                          {
+                              "nikeMatch":  "Michalovce vs Spišská N. Ves",
+                              "matched":  true,
+                              "flashscoreHref":  "https://www.flashscore.sk/zapas/hokej/michalovce-hA9eSIRG/spisska-nova-ves-KrK3lUYC/",
+                              "confidence":  200,
+                              "orientationSwapped":  false,
+                              "flashscoreHomeTeam":  "Michalovce",
+                              "flashscoreAwayTeam":  "Spišská N. Ves"
+                          },
+                          {
+                              "nikeMatch":  "Sabalenka A. vs Rybakina E.",
+                              "matched":  true,
+                              "flashscoreHref":  "https://www.flashscore.sk/zapas/tenis/rybakina-elena-UDzElXdm/sabalenka-aryna-vyhksgUB/",
+                              "confidence":  170,
+                              "orientationSwapped":  false,
+                              "flashscoreHomeTeam":  "Sabalenka Aryna",
+                              "flashscoreAwayTeam":  "Rybakina Elena"
+                          }
+                      ],
+    "rows":  [
+                 {
+                     "matchId":  "nike-4",
+                     "match":  "Sabalenka A. vs Rybakina E.",
+                     "sport":  "tennis",
+                     "tournament":  "WTA Indian Wells",
+                     "kickoffAt":  null,
+                     "marketType":  "match_winner_2way",
+                     "period":  "full_time",
+                     "line":  null,
+                     "selection":  "home",
+                     "nikeOdd":  1.7,
+                     "tipsportOdd":  1.2,
+                     "flashscoreMatchUrl":  "https://www.flashscore.sk/zapas/tenis/rybakina-elena-UDzElXdm/sabalenka-aryna-vyhksgUB/",
+                     "diff":  0.5,
+                     "percentDiff":  41.67,
+                     "probabilityEdgePp":  24.51
+                 },
+                 {
+                     "matchId":  "nike-4",
+                     "match":  "Sabalenka A. vs Rybakina E.",
+                     "sport":  "tennis",
+                     "tournament":  "WTA Indian Wells",
+                     "kickoffAt":  null,
+                     "marketType":  "match_winner_2way",
+                     "period":  "full_time",
+                     "line":  null,
+                     "selection":  "away",
+                     "nikeOdd":  2.22,
+                     "tipsportOdd":  2.16,
+                     "flashscoreMatchUrl":  "https://www.flashscore.sk/zapas/tenis/rybakina-elena-UDzElXdm/sabalenka-aryna-vyhksgUB/",
+                     "diff":  0.06,
+                     "percentDiff":  2.78,
+                     "probabilityEdgePp":  1.25
+                 }
+             ]
+}

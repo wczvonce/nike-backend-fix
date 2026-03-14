@@ -1,0 +1,440 @@
+{
+  "title": "Chelsea v Newcastle 14/03/2026, Kurzy - Flashscore.sk",
+  "url": "https://www.flashscore.sk/zapas/futbal/chelsea-4fGZN2oK/newcastle-united-p6ahwuwJ/kurzy/kurzy-1x2/zakladny-cas/",
+  "envKeys": [
+    "alternativeEvent",
+    "basenameUrl",
+    "common_feed",
+    "config",
+    "eventParticipantEncodedId",
+    "eventPreview",
+    "eventStageId",
+    "eventStageStartTime",
+    "eventStageTranslations",
+    "eventStageTypeId",
+    "event_id_c",
+    "event_info",
+    "event_stage_time",
+    "final_stage",
+    "hasLiveCentre",
+    "header",
+    "initialDataLayer",
+    "initialTab",
+    "is7Rugby",
+    "isIndexed",
+    "lastEventInfo",
+    "odds",
+    "participantsData",
+    "project_id",
+    "pushParameters",
+    "sport",
+    "sport_id",
+    "sport_name",
+    "sport_url",
+    "stats2_config",
+    "super_template_id"
+  ],
+  "oddsType": "object",
+  "oddsKeys": [
+    "bookmakerGeoGroups",
+    "bookmakersData",
+    "defaultBettingScope",
+    "defaultBettingType",
+    "evaluator",
+    "formats",
+    "geoOddsComparisonSettings",
+    "prematchOddsSettings",
+    "subTabNames",
+    "tabNames"
+  ],
+  "oddsPreview": {
+    "bookmakerGeoGroups": "object:7",
+    "bookmakersData": "object:7",
+    "defaultBettingScope": "string",
+    "defaultBettingType": "string",
+    "evaluator": "object:1",
+    "formats": "array:1",
+    "geoOddsComparisonSettings": "object:7",
+    "prematchOddsSettings": "object:2",
+    "subTabNames": "object:8",
+    "tabNames": "object:12"
+  },
+  "oddsRaw": {
+    "formats": [
+      {
+        "id": 1,
+        "ident": "eu",
+        "name_iframe": "TRANS_ODDS_FORMAT_IFRAME_EU",
+        "name_detail": "TRANS_ODDS_FORMAT_DETAIL_EU",
+        "name_title": "TRANS_ODDS_FORMAT_TITLE_EU",
+        "example": "1.50"
+      }
+    ],
+    "prematchOddsSettings": {
+      "bookmakersWithLiveOffer": {
+        "16": "y",
+        "49": "y",
+        "293": "y",
+        "411": "y"
+      },
+      "oddsBettingTypes": {
+        "1": 1,
+        "2": 3,
+        "3": 3,
+        "4": 1,
+        "5": 3,
+        "6": 3,
+        "7": 1,
+        "8": 1,
+        "9": 1,
+        "10": 1,
+        "11": 1,
+        "12": 3,
+        "13": 3,
+        "14": 3,
+        "15": 3,
+        "16": 3,
+        "17": 3,
+        "18": 3,
+        "19": 1,
+        "21": 3,
+        "22": 1,
+        "23": 101,
+        "24": 1,
+        "25": 3,
+        "26": 1,
+        "28": 3,
+        "29": 3,
+        "30": 1,
+        "31": 101,
+        "32": 101,
+        "33": 101,
+        "34": 101,
+        "35": 16,
+        "36": 3,
+        "37": 101,
+        "38": 101,
+        "39": 101,
+        "40": 101,
+        "41": 101,
+        "42": 1
+      }
+    },
+    "bookmakerGeoGroups": {
+      "default": {
+        "geo_ip": "default",
+        "clickable": "1",
+        "logo_to_text_match_summary": "0",
+        "logo_to_text_odds_comparison": "0",
+        "logo_to_text_bonus": "0",
+        "odds_background_in_odds_comparison": "1",
+        "all_bookmakers_in_odds_comparison": "0",
+        "all_prematch_bookmakers_in_match_summary": "0",
+        "all_live_bookmakers_in_match_summary": "0",
+        "show_bookmaker_logo_in_summary": "1",
+        "clickable_bookmaker_logo_in_summary": "1",
+        "show_odds_comparison_tab": "1",
+        "show_bookmaker_logo_odds_comparison": "1",
+        "clickable_bookmaker_logo_odds_comparison": "1"
+      },
+      "CZ": {
+        "geo_ip": "CZ",
+        "clickable": "1",
+        "logo_to_text_match_summary": "0",
+        "logo_to_text_odds_comparison": "0",
+        "logo_to_text_bonus": "0",
+        "odds_background_in_odds_comparison": "1",
+        "all_bookmakers_in_odds_comparison": "0",
+        "all_prematch_bookmakers_in_match_summary": "0",
+        "all_live_bookmakers_in_match_summary": "0",
+        "show_bookmaker_logo_in_summary": "1",
+        "clickable_bookmaker_logo_in_summary": "1",
+        "show_odds_comparison_tab": "1",
+        "show_bookmaker_logo_odds_comparison": "1",
+        "clickable_bookmaker_logo_odds_comparison": "1"
+      },
+      "SK": {
+        "geo_ip": "SK",
+        "clickable": "1",
+        "logo_to_text_match_summary": "0",
+        "logo_to_text_odds_comparison": "0",
+        "logo_to_text_bonus": "0",
+        "odds_background_in_odds_comparison": "1",
+        "all_bookmakers_in_odds_comparison": "0",
+        "all_prematch_bookmakers_in_match_summary": "1",
+        "all_live_bookmakers_in_match_summary": "1",
+        "show_bookmaker_logo_in_summary": "1",
+        "clickable_bookmaker_logo_in_summary": "1",
+        "show_odds_comparison_tab": "1",
+        "show_bookmaker_logo_odds_comparison": "1",
+        "clickable_bookmaker_logo_odds_comparison": "1"
+      },
+      "GR": {
+        "geo_ip": "GR",
+        "clickable": "0",
+        "logo_to_text_match_summary": "0",
+        "logo_to_text_odds_comparison": "0",
+        "logo_to_text_bonus": "0",
+        "odds_background_in_odds_comparison": "0",
+        "all_bookmakers_in_odds_comparison": "0",
+        "all_prematch_bookmakers_in_match_summary": "0",
+        "all_live_bookmakers_in_match_summary": "0",
+        "show_bookmaker_logo_in_summary": "0",
+        "clickable_bookmaker_logo_in_summary": "0",
+        "show_odds_comparison_tab": "1",
+        "show_bookmaker_logo_odds_comparison": "0",
+        "clickable_bookmaker_logo_odds_comparison": "0"
+      },
+      "HR": {
+        "geo_ip": "HR",
+        "clickable": "0",
+        "logo_to_text_match_summary": "0",
+        "logo_to_text_odds_comparison": "0",
+        "logo_to_text_bonus": "0",
+        "odds_background_in_odds_comparison": "1",
+        "all_bookmakers_in_odds_comparison": "0",
+        "all_prematch_bookmakers_in_match_summary": "0",
+        "all_live_bookmakers_in_match_summary": "0",
+        "show_bookmaker_logo_in_summary": "1",
+        "clickable_bookmaker_logo_in_summary": "1",
+        "show_odds_comparison_tab": "1",
+        "show_bookmaker_logo_odds_comparison": "1",
+        "clickable_bookmaker_logo_odds_comparison": "1"
+      },
+      "TR": {
+        "geo_ip": "TR",
+        "clickable": "0",
+        "logo_to_text_match_summary": "0",
+        "logo_to_text_odds_comparison": "0",
+        "logo_to_text_bonus": "0",
+        "odds_background_in_odds_comparison": "1",
+        "all_bookmakers_in_odds_comparison": "0",
+        "all_prematch_bookmakers_in_match_summary": "0",
+        "all_live_bookmakers_in_match_summary": "0",
+        "show_bookmaker_logo_in_summary": "0",
+        "clickable_bookmaker_logo_in_summary": "0",
+        "show_odds_comparison_tab": "0",
+        "show_bookmaker_logo_odds_comparison": "0",
+        "clickable_bookmaker_logo_odds_comparison": "0"
+      },
+      "CH": {
+        "geo_ip": "CH",
+        "clickable": "1",
+        "logo_to_text_match_summary": "0",
+        "logo_to_text_odds_comparison": "0",
+        "logo_to_text_bonus": "0",
+        "odds_background_in_odds_comparison": "1",
+        "all_bookmakers_in_odds_comparison": "0",
+        "all_prematch_bookmakers_in_match_summary": "0",
+        "all_live_bookmakers_in_match_summary": "0",
+        "show_bookmaker_logo_in_summary": "1",
+        "clickable_bookmaker_logo_in_summary": "1",
+        "show_odds_comparison_tab": "1",
+        "show_bookmaker_logo_odds_comparison": "1",
+        "clickable_bookmaker_logo_odds_comparison": "1"
+      }
+    },
+    "bookmakersData": {
+      "default": [
+        {
+          "main_bookmaker_id": "16",
+          "project_id": "7",
+          "geo_ip": "default",
+          "name": "bet365",
+          "premium_status_id": "1"
+        },
+        {
+          "main_bookmaker_id": "411",
+          "project_id": "7",
+          "geo_ip": "default",
+          "name": "Tipsport.sk",
+          "premium_status_id": "1"
+        }
+      ],
+      "CZ": [
+        {
+          "main_bookmaker_id": "49",
+          "project_id": "7",
+          "geo_ip": "CZ",
+          "name": "Tipsport.cz",
+          "premium_status_id": "1"
+        },
+        {
+          "main_bookmaker_id": "657",
+          "project_id": "7",
+          "geo_ip": "CZ",
+          "name": "Betano.cz",
+          "premium_status_id": "1"
+        },
+        {
+          "main_bookmaker_id": "46",
+          "project_id": "7",
+          "geo_ip": "CZ",
+          "name": "iFortuna.cz",
+          "premium_status_id": "2"
+        }
+      ],
+      "SK": [
+        {
+          "main_bookmaker_id": "411",
+          "project_id": "7",
+          "geo_ip": "SK",
+          "name": "Tipsport.sk",
+          "premium_status_id": "1"
+        },
+        {
+          "main_bookmaker_id": "293",
+          "project_id": "7",
+          "geo_ip": "SK",
+          "name": "Nike.sk",
+          "premium_status_id": "1"
+        }
+      ],
+      "GR": [
+        {
+          "main_bookmaker_id": "16",
+          "project_id": "7",
+          "geo_ip": "GR",
+          "name": "bet365",
+          "premium_status_id": "2"
+        }
+      ],
+      "HR": [],
+      "TR": [
+        {
+          "main_bookmaker_id": "16",
+          "project_id": "7",
+          "geo_ip": "TR",
+          "name": "bet365",
+          "premium_status_id": "2"
+        }
+      ],
+      "CH": [
+        {
+          "main_bookmaker_id": "16",
+          "project_id": "7",
+          "geo_ip": "CH",
+          "name": "bet365",
+          "premium_status_id": "1"
+        },
+        {
+          "main_bookmaker_id": "3",
+          "project_id": "7",
+          "geo_ip": "CH",
+          "name": "bet-at-home",
+          "premium_status_id": "1"
+        }
+      ]
+    },
+    "evaluator": {
+      "isSwapped": false
+    },
+    "tabNames": {
+      "1x2": {
+        "urlName": "kurzy-1x2",
+        "shortName": "1X2",
+        "fullName": "1X2"
+      },
+      "moneyline": {
+        "urlName": "home-away",
+        "shortName": "Home/Away",
+        "fullName": "Home/Away"
+      },
+      "under-over": {
+        "urlName": "over-under",
+        "shortName": "O/U",
+        "fullName": "Over/Under"
+      },
+      "european-handicap": {
+        "urlName": "europsky-handicap",
+        "shortName": "EH",
+        "fullName": "Európsky handicap"
+      },
+      "double-chance": {
+        "urlName": "dvojita-sanca",
+        "shortName": "DŠ",
+        "fullName": "Dvojitá šanca"
+      },
+      "ht-ft": {
+        "urlName": "ht-ft",
+        "shortName": "HT/FT",
+        "fullName": "Polčas/Koniec"
+      },
+      "draw-no-bet": {
+        "urlName": "draw-no-bet",
+        "shortName": "SBR",
+        "fullName": "Stávka bez remízy"
+      },
+      "correct-score": {
+        "urlName": "correct-score",
+        "shortName": "SV",
+        "fullName": "Správny výsledok"
+      },
+      "oddeven": {
+        "urlName": "odd-even",
+        "shortName": "N/P",
+        "fullName": "Nepárny/Párny"
+      },
+      "to-qualify": {
+        "urlName": "postup",
+        "shortName": "Postup",
+        "fullName": "Postup"
+      },
+      "both-teams-to-score": {
+        "urlName": "obaja-daju-gol",
+        "shortName": "ODG",
+        "fullName": "Obaja dajú gól"
+      },
+      "asian-handicap": {
+        "urlName": "azijsky-handicap",
+        "shortName": "AH",
+        "fullName": "Ázijský handicap"
+      }
+    },
+    "subTabNames": {
+      "ft": {
+        "urlName": "zakladny-cas",
+        "fullName": "Základný čas"
+      },
+      "ft-include-ot": {
+        "urlName": "vratane-predlzenia",
+        "fullName": "Vrátane predĺženia"
+      },
+      "1hf": {
+        "urlName": "1-polcas",
+        "fullName": "1. polčas"
+      },
+      "2hf": {
+        "urlName": "2-polcas",
+        "fullName": "2. polčas"
+      },
+      "1per": {
+        "urlName": "1-tretina",
+        "fullName": "1. tretina"
+      },
+      "1qrt": {
+        "urlName": "1-stvrtina",
+        "fullName": "1. štvrtina"
+      },
+      "set1": {
+        "urlName": "1-set",
+        "fullName": "1. set"
+      },
+      "set2": {
+        "urlName": "2-set",
+        "fullName": "2. set"
+      }
+    },
+    "defaultBettingType": "1x2",
+    "defaultBettingScope": "ft",
+    "geoOddsComparisonSettings": {
+      "default": true,
+      "CZ": true,
+      "SK": true,
+      "GR": true,
+      "HR": false,
+      "TR": false,
+      "CH": true
+    }
+  }
+}
