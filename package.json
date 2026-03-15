@@ -11,6 +11,7 @@
     "smoke:live": "node scripts/smoke-live.js",
     "verify:support-matrix": "node scripts/verify-support-matrix.js",
     "verify:flashscore-network": "node scripts/verify-flashscore-network.js",
+    "verify:flashscore-sources": "node scripts/verify-flashscore-network.js",
     "verify:final-output": "node scripts/verify-final-output.js",
     "verify:output": "node scripts/verify-final-output.js",
     "verify:market-safety": "node scripts/verify-market-safety.js",
@@ -18,7 +19,7 @@
     "verify:missed-edge-cases": "node scripts/verify-missed-edge-cases.js",
     "verify:qa-consistency": "node scripts/verify-qa-consistency.js",
     "verify:pushed-state": "node scripts/verify-pushed-state.js",
-    "verify:all": "npm test && npm run verify:flashscore-network && npm run verify:market-safety && npm run verify:superponuka-coverage && npm run verify:missed-edge-cases && npm run verify:support-matrix && npm run verify:final-output && npm run verify:qa-consistency"
+    "verify:all": "npm test && npm run verify:flashscore-sources && npm run verify:market-safety && npm run verify:superponuka-coverage && npm run verify:missed-edge-cases && npm run verify:support-matrix && npm run verify:final-output && npm run verify:qa-consistency"
   },
   "dependencies": {
     "cors": "^2.8.5",

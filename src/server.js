@@ -34,6 +34,14 @@ const PORT = Number(process.env.PORT || 3001);
 const HEADLESS = String(process.env.HEADLESS || "true") !== "false";
 const REQUEST_TIMEOUT_MS = Number(process.env.REQUEST_TIMEOUT_MS || 45000);
 const STRICT_EXPECTED_SUPERPONUKA = String(process.env.STRICT_EXPECTED_SUPERPONUKA || "false") === "true";
+const FLASHSCORE_ENABLE_NETWORK_FIRST = String(process.env.FLASHSCORE_ENABLE_NETWORK_FIRST || "true") !== "false";
+const FLASHSCORE_ENABLE_DOM_FALLBACK = String(process.env.FLASHSCORE_ENABLE_DOM_FALLBACK || "true") !== "false";
+const FLASHSCORE_FAIL_IF_FALLBACK_RATE_ABOVE = (() => {
+  const raw = process.env.FLASHSCORE_FAIL_IF_FALLBACK_RATE_ABOVE;
+  if (raw == null || String(raw).trim() === "") return null;
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) ? parsed : null;
+})();
 const UI_CACHE_MS = Number(process.env.UI_CACHE_MS || 10000);
 let uiPipelineCache = { pipeline: null, cachedAtMs: 0 };
 let uiPipelineInFlight = null;
@@ -225,8 +233,25 @@ async function buildNikeTipsportPipeline() {
 
       for (const period of periods) {
         const fsMarket = marketType === "double_chance"
-          ? await scrapeFlashscoreDoubleChance({ matchUrl: fsMatch.href, period, session: flashscoreSession, headless: HEADLESS, timeoutMs: REQUEST_TIMEOUT_MS })
-          : await scrapeFlashscoreMarketByType({ matchUrl: fsMatch.href, marketType, period, session: flashscoreSession, headless: HEADLESS, timeoutMs: REQUEST_TIMEOUT_MS });
+          ? await scrapeFlashscoreDoubleChance({
+            matchUrl: fsMatch.href,
+            period,
+            session: flashscoreSession,
+            enableNetworkFirst: FLASHSCORE_ENABLE_NETWORK_FIRST,
+            enableDomFallback: FLASHSCORE_ENABLE_DOM_FALLBACK,
+            headless: HEADLESS,
+            timeoutMs: REQUEST_TIMEOUT_MS
+          })
+          : await scrapeFlashscoreMarketByType({
+            matchUrl: fsMatch.href,
+            marketType,
+            period,
+            session: flashscoreSession,
+            enableNetworkFirst: FLASHSCORE_ENABLE_NETWORK_FIRST,
+            enableDomFallback: FLASHSCORE_ENABLE_DOM_FALLBACK,
+            headless: HEADLESS,
+            timeoutMs: REQUEST_TIMEOUT_MS
+          });
         const tipsportRows = fsMarket.bookmakerRows.filter((b) => normalizeForCompare(b.bookmaker).includes("tipsport"));
         const nikeRowsForPeriod = nikeMarketRows.filter((m) => (m.period || "full_time") === period);
 
@@ -245,7 +270,9 @@ async function buildNikeTipsportPipeline() {
               nikeOdd: m.nikeOdd,
               tipsportOdd: null,
               status: "NO_TIPSPORT_ROW",
-              compareReason: "tipsport_row_not_found_for_market_period"
+              compareReason: "tipsport_row_not_found_for_market_period",
+              sourceType: fsMarket.sourceType || "unknown",
+              fallbackReason: fsMarket.fallbackReason || null
             });
           }
         }
@@ -278,6 +305,9 @@ async function buildNikeTipsportPipeline() {
           sourcePeriod: fsMarket.period || period,
           sourcePeriodName: fsMarket.periodName || null,
           sourceType: fsMarket.sourceType || "unknown",
+          fallbackReason: fsMarket.fallbackReason || null,
+          sourceFailureReason: fsMarket.failureReason || null,
+          attemptedSources: fsMarket.attemptedSources || [],
           columnLabels: fsMarket.columnLabels || [],
           rawBookmakerRowText: tipsportRow?.rawRowText || "",
           extractedOddsArray: tipsportRow?.extractedOddsArray || [],
@@ -334,7 +364,9 @@ async function buildNikeTipsportPipeline() {
             nikeOdd: nikeMarket.nikeOdd,
             tipsportOdd,
             status: statusByReason[marketValidation.reason] || "REJECTED_BY_VALIDATOR",
-            compareReason: marketValidation.reason
+            compareReason: marketValidation.reason,
+            sourceType: fsMarket.sourceType || "unknown",
+            fallbackReason: fsMarket.fallbackReason || null
           });
           rejectedRows.push({ ...row, rejectReason: marketValidation.reason });
           continue;
@@ -353,7 +385,9 @@ async function buildNikeTipsportPipeline() {
             nikeOdd: nikeMarket.nikeOdd,
             tipsportOdd,
             status: "REJECTED_BY_VALIDATOR",
-            compareReason: "nike_not_gt_tipsport"
+            compareReason: "nike_not_gt_tipsport",
+            sourceType: fsMarket.sourceType || "unknown",
+            fallbackReason: fsMarket.fallbackReason || null
           });
           rejectedRows.push({ ...row, rejectReason: "nike_not_gt_tipsport" });
           continue;
@@ -372,7 +406,9 @@ async function buildNikeTipsportPipeline() {
           nikeOdd: nikeMarket.nikeOdd,
           tipsportOdd,
           status: "MATCHED",
-          compareReason: "nike_gt_tipsport"
+          compareReason: "nike_gt_tipsport",
+          sourceType: fsMarket.sourceType || "unknown",
+          fallbackReason: fsMarket.fallbackReason || null
         });
         comparedRows.push({
           ...row,
@@ -389,8 +425,25 @@ async function buildNikeTipsportPipeline() {
       if (emittedTypeSet.has(marketType)) continue;
       try {
         const fsOnlyMarket = marketType === "double_chance"
-          ? await scrapeFlashscoreDoubleChance({ matchUrl: fsMatch.href, period: "full_time", session: flashscoreSession, headless: HEADLESS, timeoutMs: REQUEST_TIMEOUT_MS })
-          : await scrapeFlashscoreMarketByType({ matchUrl: fsMatch.href, marketType, period: "full_time", session: flashscoreSession, headless: HEADLESS, timeoutMs: REQUEST_TIMEOUT_MS });
+          ? await scrapeFlashscoreDoubleChance({
+            matchUrl: fsMatch.href,
+            period: "full_time",
+            session: flashscoreSession,
+            enableNetworkFirst: FLASHSCORE_ENABLE_NETWORK_FIRST,
+            enableDomFallback: FLASHSCORE_ENABLE_DOM_FALLBACK,
+            headless: HEADLESS,
+            timeoutMs: REQUEST_TIMEOUT_MS
+          })
+          : await scrapeFlashscoreMarketByType({
+            matchUrl: fsMatch.href,
+            marketType,
+            period: "full_time",
+            session: flashscoreSession,
+            enableNetworkFirst: FLASHSCORE_ENABLE_NETWORK_FIRST,
+            enableDomFallback: FLASHSCORE_ENABLE_DOM_FALLBACK,
+            headless: HEADLESS,
+            timeoutMs: REQUEST_TIMEOUT_MS
+          });
         const tipsportRows = fsOnlyMarket.bookmakerRows.filter((b) => normalizeForCompare(b.bookmaker).includes("tipsport"));
         if (!tipsportRows.length) {
           controlRows.push({
@@ -472,9 +525,27 @@ async function buildNikeTipsportPipeline() {
     "selection_source_mismatch"
   ]);
   const blockingRows = rejectedRows.filter((r) => blockingRejectReasons.has(r.rejectReason));
+  const sourceDecisions = (
+    Number(flashscoreSession.metrics.networkFirstHits || 0) +
+    Number(flashscoreSession.metrics.domFallbackHits || 0) +
+    Number(flashscoreSession.metrics.totalFailures || 0)
+  );
+  const fallbackRate = sourceDecisions > 0
+    ? Number((Number(flashscoreSession.metrics.domFallbackHits || 0) / sourceDecisions).toFixed(4))
+    : 0;
+  const fallbackRateThresholdEnabled = FLASHSCORE_FAIL_IF_FALLBACK_RATE_ABOVE != null;
+  const fallbackRateLimitExceeded = (
+    fallbackRateThresholdEnabled &&
+    fallbackRate > FLASHSCORE_FAIL_IF_FALLBACK_RATE_ABOVE
+  );
   const marketValidation = {
-    ok: blockingRows.length === 0,
+    ok: blockingRows.length === 0 && !fallbackRateLimitExceeded,
     errors: blockingRows.map((r) => `${r.match}:${r.selection}:${r.rejectReason}`)
+      .concat(
+        fallbackRateLimitExceeded
+          ? [`fallback_rate_exceeded:${fallbackRate}>${FLASHSCORE_FAIL_IF_FALLBACK_RATE_ABOVE}`]
+          : []
+      )
   };
   const finalValidation = validateFinalRows(comparedRows);
 
@@ -491,9 +562,17 @@ async function buildNikeTipsportPipeline() {
     runtime: {
       totalMs: Date.now() - runStartedAtMs,
       flashscoreSession: {
+        networkFirstEnabled: FLASHSCORE_ENABLE_NETWORK_FIRST,
+        domFallbackEnabled: FLASHSCORE_ENABLE_DOM_FALLBACK,
+        fallbackRateThreshold: fallbackRateThresholdEnabled ? FLASHSCORE_FAIL_IF_FALLBACK_RATE_ABOVE : null,
         browserLaunches: flashscoreSession.metrics.browserLaunches,
+        networkFirstAttempts: flashscoreSession.metrics.networkFirstAttempts,
         networkFirstHits: flashscoreSession.metrics.networkFirstHits,
+        domFallbackAttempts: flashscoreSession.metrics.domFallbackAttempts,
         domFallbackHits: flashscoreSession.metrics.domFallbackHits,
+        fallbackUsedCount: flashscoreSession.metrics.fallbackUsedCount,
+        totalFailures: flashscoreSession.metrics.totalFailures,
+        fallbackRate,
         requestsObserved: flashscoreSession.networkLog.length
       },
       perMatchTimings
@@ -603,6 +682,13 @@ app.get("/api/pipeline/nike-vs-tipsport", async (_req, res) => {
         finalComparisonValidation: pipeline.checks.finalComparisonValidation
       },
       runtime: pipeline.runtime,
+      sourceCoverage: {
+        rowsBySource: pipeline.rows.reduce((acc, row) => {
+          const key = row.sourceType || "unknown";
+          acc[key] = (acc[key] || 0) + 1;
+          return acc;
+        }, {})
+      },
       matchMappings: pipeline.matchMappings,
       rows: pipeline.rows
     });
@@ -702,8 +788,21 @@ app.get("/api/debug/full-check", async (_req, res) => {
         continue;
       }
       const parsed = marketType === "double_chance"
-        ? await scrapeFlashscoreDoubleChance({ matchUrl: sampleUrl, headless: HEADLESS, timeoutMs: REQUEST_TIMEOUT_MS })
-        : await scrapeFlashscoreMarketByType({ matchUrl: sampleUrl, marketType, headless: HEADLESS, timeoutMs: REQUEST_TIMEOUT_MS });
+        ? await scrapeFlashscoreDoubleChance({
+          matchUrl: sampleUrl,
+          enableNetworkFirst: FLASHSCORE_ENABLE_NETWORK_FIRST,
+          enableDomFallback: FLASHSCORE_ENABLE_DOM_FALLBACK,
+          headless: HEADLESS,
+          timeoutMs: REQUEST_TIMEOUT_MS
+        })
+        : await scrapeFlashscoreMarketByType({
+          matchUrl: sampleUrl,
+          marketType,
+          enableNetworkFirst: FLASHSCORE_ENABLE_NETWORK_FIRST,
+          enableDomFallback: FLASHSCORE_ENABLE_DOM_FALLBACK,
+          headless: HEADLESS,
+          timeoutMs: REQUEST_TIMEOUT_MS
+        });
         const tipsportRow = parsed.bookmakerRows.find((b) => normalizeForCompare(b.bookmaker).includes("tipsport")) || null;
         marketSamples.push({
           marketType,
@@ -764,8 +863,18 @@ app.get("/api/debug/full-check", async (_req, res) => {
           acc[key] = (acc[key] || 0) + 1;
           return acc;
         }, {}),
+        finalRowsByFallbackReason: pipeline.rows.reduce((acc, row) => {
+          const key = row.fallbackReason || "none";
+          acc[key] = (acc[key] || 0) + 1;
+          return acc;
+        }, {}),
         rejectedRowsBySource: pipeline.rejectedRows.reduce((acc, row) => {
           const key = row.sourceType || "unknown";
+          acc[key] = (acc[key] || 0) + 1;
+          return acc;
+        }, {}),
+        rejectedRowsByFailureReason: pipeline.rejectedRows.reduce((acc, row) => {
+          const key = row.sourceFailureReason || "none";
           acc[key] = (acc[key] || 0) + 1;
           return acc;
         }, {})
@@ -799,6 +908,8 @@ app.get("/api/flashscore/double-chance", async (req, res) => {
   try {
     const result = await scrapeFlashscoreDoubleChance({
       matchUrl: String(matchUrl).trim(),
+      enableNetworkFirst: FLASHSCORE_ENABLE_NETWORK_FIRST,
+      enableDomFallback: FLASHSCORE_ENABLE_DOM_FALLBACK,
       headless: HEADLESS,
       timeoutMs: REQUEST_TIMEOUT_MS
     });
@@ -823,6 +934,8 @@ app.get("/api/flashscore/market-2way", async (req, res) => {
       matchUrl: String(matchUrl).trim(),
       marketType: String(marketType).trim(),
       period: String(period || "full_time").trim(),
+      enableNetworkFirst: FLASHSCORE_ENABLE_NETWORK_FIRST,
+      enableDomFallback: FLASHSCORE_ENABLE_DOM_FALLBACK,
       headless: HEADLESS,
       timeoutMs: REQUEST_TIMEOUT_MS
     });

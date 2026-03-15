@@ -31,6 +31,9 @@ Copy `.env.example` to `.env` and adjust if needed:
 - `REQUEST_TIMEOUT_MS` – page load timeout (default 45000)
 - `ALLOWED_ORIGIN` – CORS origin (e.g. `*` or your frontend URL)
 - `STRICT_EXPECTED_SUPERPONUKA` – default is `false` (recommended dynamic Superponuka parsing); set `true` only for strict historical 4-match snapshot debugging
+- `FLASHSCORE_ENABLE_NETWORK_FIRST` – default `true`; uses network payload/direct odds path as primary source
+- `FLASHSCORE_ENABLE_DOM_FALLBACK` – default `true`; keeps old DOM tab/click parsing as safety fallback
+- `FLASHSCORE_FAIL_IF_FALLBACK_RATE_ABOVE` – optional number `0..1`; when set, QA fails if fallback usage is above threshold
 
 ## Endpoints
 
@@ -62,6 +65,16 @@ Copy `.env.example` to `.env` and adjust if needed:
 - Intentionally disabled in final compare:
   - `team_to_score_yes_no` (team-scope equivalence not safely wired end-to-end yet)
   - `european_handicap_2way` (safe 2-way table evidence is inconsistent; kept disabled)
+
+## Flashscore ingestion mode
+
+Flashscore ingestion runs in **network-first hybrid** mode:
+
+1. network GraphQL payload path (`network_graphql`)
+2. direct odds HTML fetch via request context (`network_direct_html`)
+3. DOM tab/click parser fallback (`dom_fallback`)
+
+The fallback remains enabled by default to preserve currently working output coverage.
 
 ## Unified Normalized Market Schema
 

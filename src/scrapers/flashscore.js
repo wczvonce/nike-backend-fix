@@ -1,12 +1,15 @@
 import { chromium } from "playwright";
 import { normalizeTeamName, parseOdd } from "../utils/normalize.js";
-import { delay } from "../utils/delay.js";
 import { getMarketHandler } from "../markets/handlers.js";
 
 const FLASHSCORE_BASE = "https://www.flashscore.sk";
 const DEFAULT_VIEWPORT = { width: 1280, height: 1800 };
 const DEFAULT_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36";
 const FLASHCORE_RESOURCE_BLOCKLIST = new Set(["image", "media", "font"]);
+const DEFAULT_HYBRID_OPTIONS = {
+  enableNetworkFirst: true,
+  enableDomFallback: true
+};
 
 const MARKET_ODDS_ROUTE_SLUGS = {
   double_chance: "dvojita-sanca",
@@ -437,8 +440,12 @@ export async function createFlashscoreSession({ headless = true, timeoutMs = 450
   const metrics = {
     browserLaunches: 1,
     startedAtMs: Date.now(),
+    networkFirstAttempts: 0,
     networkFirstHits: 0,
-    domFallbackHits: 0
+    domFallbackAttempts: 0,
+    domFallbackHits: 0,
+    fallbackUsedCount: 0,
+    totalFailures: 0
   };
   return {
     browser,
@@ -458,34 +465,86 @@ export async function createFlashscoreSession({ headless = true, timeoutMs = 450
   };
 }
 
-async function scrapeFlashscoreMarketTable({
-  matchUrl,
-  tabRegex,
+async function tryNetworkGraphqlPath({
+  ownSession,
+  url,
+  timeoutMs,
   marketType,
   marketName,
-  expectedLabels = [],
-  labelAliases = {},
-  requireExactLabelSet = false,
+  periodConfig,
+  expectedLabels,
+  labelAliases,
+  requireExactLabelSet,
   expectedOddCount,
-  requireLine = false,
-  period = "full_time",
-  session = null,
-  headless = true,
-  timeoutMs = 45000
+  requireLine
 }) {
-  const url = normalizeMatchUrl(matchUrl);
-  const periodConfig = periodConfigFromKey(period);
-  const ownSession = session || await createFlashscoreSession({ headless, timeoutMs });
-  try {
-    // NETWORK-FIRST primary path: get event odds payload from Flashscore internal graphql endpoint.
-    const graphqlData = await getGraphqlPayloadForEvent(ownSession, url, timeoutMs).catch(() => null);
-    if (graphqlData?.payload) {
-      const snapshot = parseGraphqlOddsToSnapshot(graphqlData.payload, { marketType, period: periodConfig.period, marketName });
-      const normalizedFromGraphql = normalizeFlashscoreMarketSnapshot(
+  ownSession.metrics.networkFirstAttempts += 1;
+  const graphqlData = await getGraphqlPayloadForEvent(ownSession, url, timeoutMs).catch(() => null);
+  if (!graphqlData?.payload) {
+    return { ok: false, reason: "network_graphql_payload_missing" };
+  }
+  const snapshot = parseGraphqlOddsToSnapshot(graphqlData.payload, { marketType, period: periodConfig.period, marketName });
+  const normalizedFromGraphql = normalizeFlashscoreMarketSnapshot(
+    {
+      labels: snapshot.labels,
+      rows: snapshot.rows,
+      activeHints: snapshot.activeHints
+    },
+    {
+      marketType,
+      marketName,
+      expectedLabels,
+      labelAliases,
+      requireExactLabelSet,
+      expectedOddCount,
+      requireLine,
+      period: periodConfig.period,
+      periodName: periodConfig.periodName
+    },
+    graphqlData.graphqlUrl
+  );
+  if (!(normalizedFromGraphql.bookmakerRows || []).length) {
+    return { ok: false, reason: "network_graphql_rows_empty" };
+  }
+  ownSession.metrics.networkFirstHits += 1;
+  return {
+    ok: true,
+    result: {
+      ...normalizedFromGraphql,
+      sourceType: "network_graphql",
+      directOddsUrl: graphqlData.graphqlUrl
+    }
+  };
+}
+
+async function tryNetworkDirectHtmlPath({
+  ownSession,
+  url,
+  timeoutMs,
+  marketType,
+  marketName,
+  periodConfig,
+  expectedLabels,
+  labelAliases,
+  requireExactLabelSet,
+  expectedOddCount,
+  requireLine
+}) {
+  ownSession.metrics.networkFirstAttempts += 1;
+  const directCandidates = toDirectOddsUrls(url, marketType, periodConfig.period);
+  for (const directUrl of directCandidates) {
+    try {
+      const resp = await ownSession.request.get(directUrl, { timeout: timeoutMs });
+      if (!resp.ok()) continue;
+      const html = await resp.text();
+      if (!html || html.length < 500) continue;
+      await ownSession.parserPage.setContent(html, { waitUntil: "domcontentloaded", timeout: timeoutMs });
+      const directTable = await extractOddsTableFromPage(ownSession.parserPage);
+      const normalizedDirect = normalizeFlashscoreMarketSnapshot(
         {
-          labels: snapshot.labels,
-          rows: snapshot.rows,
-          activeHints: snapshot.activeHints
+          labels: directTable.labels,
+          rows: directTable.rows,
+          activeHints: directTable.activeHints
         },
         {
           marketType,
@@ -498,97 +557,208 @@ async function scrapeFlashscoreMarketTable({
           period: periodConfig.period,
           periodName: periodConfig.periodName
         },
-        graphqlData.graphqlUrl
+        directUrl
       );
-      if ((normalizedFromGraphql.bookmakerRows || []).length > 0) {
-        ownSession.metrics.networkFirstHits += 1;
+      if (!(normalizedDirect.bookmakerRows || []).length) continue;
+      ownSession.metrics.networkFirstHits += 1;
+      return {
+        ok: true,
+        result: {
+          ...normalizedDirect,
+          sourceType: "network_direct_html",
+          directOddsUrl: directUrl
+        }
+      };
+    } catch {
+      // continue to next direct candidate
+    }
+  }
+  return { ok: false, reason: "network_direct_html_rows_empty" };
+}
+
+async function tryDomFallbackPath({
+  ownSession,
+  url,
+  timeoutMs,
+  tabRegex,
+  marketType,
+  marketName,
+  periodConfig,
+  expectedLabels,
+  labelAliases,
+  requireExactLabelSet,
+  expectedOddCount,
+  requireLine
+}) {
+  ownSession.metrics.domFallbackAttempts += 1;
+  const page = ownSession.page;
+  await page.goto(url, { waitUntil: "domcontentloaded", timeout: timeoutMs });
+  await page.waitForLoadState("networkidle", { timeout: Math.min(timeoutMs, 10000) }).catch(() => {});
+  await page.getByText(tabRegex).first().click({ timeout: 4500 }).catch(() => {});
+  await page.getByText(periodConfig.clickRegex).first().click({ timeout: 2200 }).catch(() => {});
+  await page.waitForSelector(".ui-table__row", { timeout: 5000 }).catch(() => {});
+  const table = await extractOddsTableFromPage(page);
+  const normalizedFallback = normalizeFlashscoreMarketSnapshot(
+    {
+      labels: table.labels,
+      rows: table.rows,
+      activeHints: table.activeHints
+    },
+    {
+      marketType,
+      marketName,
+      expectedLabels,
+      labelAliases,
+      requireExactLabelSet,
+      expectedOddCount,
+      requireLine,
+      period: periodConfig.period,
+      periodName: periodConfig.periodName
+    },
+    url
+  );
+  if (!(normalizedFallback.bookmakerRows || []).length) {
+    return { ok: false, reason: "dom_fallback_rows_empty" };
+  }
+  ownSession.metrics.domFallbackHits += 1;
+  return {
+    ok: true,
+    result: {
+      ...normalizedFallback,
+      sourceType: "dom_fallback",
+      directOddsUrl: null
+    }
+  };
+}
+
+async function scrapeFlashscoreMarketTable({
+  matchUrl,
+  tabRegex,
+  marketType,
+  marketName,
+  expectedLabels = [],
+  labelAliases = {},
+  requireExactLabelSet = false,
+  expectedOddCount,
+  requireLine = false,
+  period = "full_time",
+  session = null,
+  enableNetworkFirst = DEFAULT_HYBRID_OPTIONS.enableNetworkFirst,
+  enableDomFallback = DEFAULT_HYBRID_OPTIONS.enableDomFallback,
+  headless = true,
+  timeoutMs = 45000
+}) {
+  const url = normalizeMatchUrl(matchUrl);
+  const periodConfig = periodConfigFromKey(period);
+  const ownSession = session || await createFlashscoreSession({ headless, timeoutMs });
+  try {
+    const attempts = [];
+    if (enableNetworkFirst) {
+      const graphqlAttempt = await tryNetworkGraphqlPath({
+        ownSession,
+        url,
+        timeoutMs,
+        marketType,
+        marketName,
+        periodConfig,
+        expectedLabels,
+        labelAliases,
+        requireExactLabelSet,
+        expectedOddCount,
+        requireLine
+      });
+      attempts.push({ source: "network_graphql", ok: graphqlAttempt.ok, reason: graphqlAttempt.reason || null });
+      if (graphqlAttempt.ok) {
         return {
-          ...normalizedFromGraphql,
-          sourceType: "network_graphql",
-          directOddsUrl: graphqlData.graphqlUrl,
+          ...graphqlAttempt.result,
+          fallbackReason: null,
+          failureReason: null,
+          attemptedSources: attempts,
+          networkAttempted: true,
+          networkRequests: ownSession.networkLog.slice(-20),
+          runtimeMs: Date.now() - ownSession.metrics.startedAtMs
+        };
+      }
+
+      const directAttempt = await tryNetworkDirectHtmlPath({
+        ownSession,
+        url,
+        timeoutMs,
+        marketType,
+        marketName,
+        periodConfig,
+        expectedLabels,
+        labelAliases,
+        requireExactLabelSet,
+        expectedOddCount,
+        requireLine
+      });
+      attempts.push({ source: "network_direct_html", ok: directAttempt.ok, reason: directAttempt.reason || null });
+      if (directAttempt.ok) {
+        return {
+          ...directAttempt.result,
+          fallbackReason: null,
+          failureReason: null,
+          attemptedSources: attempts,
+          networkAttempted: true,
           networkRequests: ownSession.networkLog.slice(-20),
           runtimeMs: Date.now() - ownSession.metrics.startedAtMs
         };
       }
     }
 
-    // NETWORK-FIRST: fetch direct odds page HTML with browser session cookies/request context.
-    const directCandidates = toDirectOddsUrls(url, marketType, periodConfig.period);
-    for (const directUrl of directCandidates) {
+    if (enableDomFallback) {
       try {
-        const resp = await ownSession.request.get(directUrl, { timeout: timeoutMs });
-        if (!resp.ok()) continue;
-        const html = await resp.text();
-        if (!html || html.length < 500) continue;
-        await ownSession.parserPage.setContent(html, { waitUntil: "domcontentloaded", timeout: timeoutMs });
-        const directTable = await extractOddsTableFromPage(ownSession.parserPage);
-        const normalizedDirect = normalizeFlashscoreMarketSnapshot(
-          {
-            labels: directTable.labels,
-            rows: directTable.rows,
-            activeHints: directTable.activeHints
-          },
-          {
-            marketType,
-            marketName,
-            expectedLabels,
-            labelAliases,
-            requireExactLabelSet,
-            expectedOddCount,
-            requireLine,
-            period: periodConfig.period,
-            periodName: periodConfig.periodName
-          },
-          directUrl
-        );
-        if ((normalizedDirect.bookmakerRows || []).length > 0) {
-          ownSession.metrics.networkFirstHits += 1;
+        const domAttempt = await tryDomFallbackPath({
+          ownSession,
+          url,
+          timeoutMs,
+          tabRegex,
+          marketType,
+          marketName,
+          periodConfig,
+          expectedLabels,
+          labelAliases,
+          requireExactLabelSet,
+          expectedOddCount,
+          requireLine
+        });
+        attempts.push({ source: "dom_fallback", ok: domAttempt.ok, reason: domAttempt.reason || null });
+        if (domAttempt.ok) {
+          if (enableNetworkFirst) {
+            ownSession.metrics.fallbackUsedCount += 1;
+          }
           return {
-            ...normalizedDirect,
-            sourceType: "network_direct_html",
-            directOddsUrl: directUrl,
+            ...domAttempt.result,
+            fallbackReason: enableNetworkFirst ? (attempts.find((x) => x.source !== "dom_fallback" && !x.ok)?.reason || "network_path_failed") : null,
+            failureReason: null,
+            attemptedSources: attempts,
+            networkAttempted: Boolean(enableNetworkFirst),
             networkRequests: ownSession.networkLog.slice(-20),
             runtimeMs: Date.now() - ownSession.metrics.startedAtMs
           };
         }
       } catch {
-        // Try next direct URL candidate.
+        attempts.push({ source: "dom_fallback", ok: false, reason: "dom_fallback_exception" });
       }
     }
 
-    // DOM fallback on a real page (still same browser/context/session).
-    const page = ownSession.page;
-    await page.goto(url, { waitUntil: "domcontentloaded", timeout: timeoutMs });
-    await page.waitForLoadState("networkidle", { timeout: Math.min(timeoutMs, 10000) }).catch(() => {});
-    await page.getByText(tabRegex).first().click({ timeout: 4500 }).catch(() => {});
-    await page.getByText(periodConfig.clickRegex).first().click({ timeout: 2200 }).catch(() => {});
-    await page.waitForSelector(".ui-table__row", { timeout: 5000 }).catch(() => {});
-    const table = await extractOddsTableFromPage(page);
-
-    const normalizedFallback = normalizeFlashscoreMarketSnapshot(
-      {
-        labels: table.labels,
-        rows: table.rows,
-        activeHints: table.activeHints
-      },
-      {
-        marketType,
-        marketName,
-        expectedLabels,
-        labelAliases,
-        requireExactLabelSet,
-        expectedOddCount,
-        requireLine,
-        period: periodConfig.period,
-        periodName: periodConfig.periodName
-      },
-      url
-    );
-    ownSession.metrics.domFallbackHits += 1;
+    ownSession.metrics.totalFailures += 1;
     return {
-      ...normalizedFallback,
-      sourceType: "dom_fallback",
+      marketType,
+      marketName,
+      period: periodConfig.period,
+      periodName: periodConfig.periodName,
+      matchUrl: url,
+      columnLabels: [],
+      activeHints: [],
+      bookmakerRows: [],
+      sourceType: "failed",
       directOddsUrl: null,
+      fallbackReason: null,
+      failureReason: attempts.find((x) => !x.ok)?.reason || "all_paths_failed",
+      attemptedSources: attempts,
+      networkAttempted: Boolean(enableNetworkFirst),
       networkRequests: ownSession.networkLog.slice(-20),
       runtimeMs: Date.now() - ownSession.metrics.startedAtMs
     };
@@ -748,13 +918,23 @@ function toScrapeConfigFromHandler(handler, override = {}) {
   };
 }
 
-export async function scrapeFlashscoreDoubleChance({ matchUrl, period = "full_time", session = null, headless = true, timeoutMs = 45000 }) {
+export async function scrapeFlashscoreDoubleChance({
+  matchUrl,
+  period = "full_time",
+  session = null,
+  enableNetworkFirst = DEFAULT_HYBRID_OPTIONS.enableNetworkFirst,
+  enableDomFallback = DEFAULT_HYBRID_OPTIONS.enableDomFallback,
+  headless = true,
+  timeoutMs = 45000
+}) {
   const handler = getMarketHandler("double_chance");
   const base = await scrapeFlashscoreMarketTable({
     matchUrl,
     ...toScrapeConfigFromHandler(handler),
     period,
     session,
+    enableNetworkFirst,
+    enableDomFallback,
     headless,
     timeoutMs
   });
@@ -765,13 +945,23 @@ export async function scrapeFlashscoreDoubleChance({ matchUrl, period = "full_ti
   };
 }
 
-export async function scrapeFlashscoreTipsportWinner2Way({ matchUrl, period = "full_time", session = null, headless = true, timeoutMs = 45000 }) {
+export async function scrapeFlashscoreTipsportWinner2Way({
+  matchUrl,
+  period = "full_time",
+  session = null,
+  enableNetworkFirst = DEFAULT_HYBRID_OPTIONS.enableNetworkFirst,
+  enableDomFallback = DEFAULT_HYBRID_OPTIONS.enableDomFallback,
+  headless = true,
+  timeoutMs = 45000
+}) {
   const handler = getMarketHandler("match_winner_2way");
   const base = await scrapeFlashscoreMarketTable({
     matchUrl,
     ...toScrapeConfigFromHandler(handler),
     period,
     session,
+    enableNetworkFirst,
+    enableDomFallback,
     headless,
     timeoutMs
   });
@@ -781,13 +971,23 @@ export async function scrapeFlashscoreTipsportWinner2Way({ matchUrl, period = "f
   };
 }
 
-export async function scrapeFlashscoreOverUnder2Way({ matchUrl, period = "full_time", session = null, headless = true, timeoutMs = 45000 }) {
+export async function scrapeFlashscoreOverUnder2Way({
+  matchUrl,
+  period = "full_time",
+  session = null,
+  enableNetworkFirst = DEFAULT_HYBRID_OPTIONS.enableNetworkFirst,
+  enableDomFallback = DEFAULT_HYBRID_OPTIONS.enableDomFallback,
+  headless = true,
+  timeoutMs = 45000
+}) {
   const handler = getMarketHandler("over_under_2way");
   const base = await scrapeFlashscoreMarketTable({
     matchUrl,
     ...toScrapeConfigFromHandler(handler),
     period,
     session,
+    enableNetworkFirst,
+    enableDomFallback,
     headless,
     timeoutMs
   });
@@ -800,13 +1000,23 @@ export async function scrapeFlashscoreOverUnder2Way({ matchUrl, period = "full_t
   };
 }
 
-export async function scrapeFlashscoreAsianHandicap2Way({ matchUrl, period = "full_time", session = null, headless = true, timeoutMs = 45000 }) {
+export async function scrapeFlashscoreAsianHandicap2Way({
+  matchUrl,
+  period = "full_time",
+  session = null,
+  enableNetworkFirst = DEFAULT_HYBRID_OPTIONS.enableNetworkFirst,
+  enableDomFallback = DEFAULT_HYBRID_OPTIONS.enableDomFallback,
+  headless = true,
+  timeoutMs = 45000
+}) {
   const handler = getMarketHandler("asian_handicap_2way");
   const base = await scrapeFlashscoreMarketTable({
     matchUrl,
     ...toScrapeConfigFromHandler(handler),
     period,
     session,
+    enableNetworkFirst,
+    enableDomFallback,
     headless,
     timeoutMs
   });
@@ -819,13 +1029,23 @@ export async function scrapeFlashscoreAsianHandicap2Way({ matchUrl, period = "fu
   };
 }
 
-export async function scrapeFlashscoreBttsYesNo({ matchUrl, period = "full_time", session = null, headless = true, timeoutMs = 45000 }) {
+export async function scrapeFlashscoreBttsYesNo({
+  matchUrl,
+  period = "full_time",
+  session = null,
+  enableNetworkFirst = DEFAULT_HYBRID_OPTIONS.enableNetworkFirst,
+  enableDomFallback = DEFAULT_HYBRID_OPTIONS.enableDomFallback,
+  headless = true,
+  timeoutMs = 45000
+}) {
   const handler = getMarketHandler("both_teams_to_score");
   const base = await scrapeFlashscoreMarketTable({
     matchUrl,
     ...toScrapeConfigFromHandler(handler),
     period,
     session,
+    enableNetworkFirst,
+    enableDomFallback,
     headless,
     timeoutMs
   });
@@ -835,13 +1055,23 @@ export async function scrapeFlashscoreBttsYesNo({ matchUrl, period = "full_time"
   };
 }
 
-export async function scrapeFlashscoreDrawNoBet2Way({ matchUrl, period = "full_time", session = null, headless = true, timeoutMs = 45000 }) {
+export async function scrapeFlashscoreDrawNoBet2Way({
+  matchUrl,
+  period = "full_time",
+  session = null,
+  enableNetworkFirst = DEFAULT_HYBRID_OPTIONS.enableNetworkFirst,
+  enableDomFallback = DEFAULT_HYBRID_OPTIONS.enableDomFallback,
+  headless = true,
+  timeoutMs = 45000
+}) {
   const handler = getMarketHandler("draw_no_bet_2way");
   const base = await scrapeFlashscoreMarketTable({
     matchUrl,
     ...toScrapeConfigFromHandler(handler),
     period,
     session,
+    enableNetworkFirst,
+    enableDomFallback,
     headless,
     timeoutMs
   });
@@ -851,13 +1081,23 @@ export async function scrapeFlashscoreDrawNoBet2Way({ matchUrl, period = "full_t
   };
 }
 
-export async function scrapeFlashscoreEuropeanHandicap2Way({ matchUrl, period = "full_time", session = null, headless = true, timeoutMs = 45000 }) {
+export async function scrapeFlashscoreEuropeanHandicap2Way({
+  matchUrl,
+  period = "full_time",
+  session = null,
+  enableNetworkFirst = DEFAULT_HYBRID_OPTIONS.enableNetworkFirst,
+  enableDomFallback = DEFAULT_HYBRID_OPTIONS.enableDomFallback,
+  headless = true,
+  timeoutMs = 45000
+}) {
   const handler = getMarketHandler("european_handicap_2way");
   const base = await scrapeFlashscoreMarketTable({
     matchUrl,
     ...toScrapeConfigFromHandler(handler),
     period,
     session,
+    enableNetworkFirst,
+    enableDomFallback,
     headless,
     timeoutMs
   });
@@ -867,13 +1107,25 @@ export async function scrapeFlashscoreEuropeanHandicap2Way({ matchUrl, period = 
   };
 }
 
-export async function scrapeFlashscoreGenericYesNo({ matchUrl, tabRegex, marketName = "Yes/No", period = "full_time", session = null, headless = true, timeoutMs = 45000 }) {
+export async function scrapeFlashscoreGenericYesNo({
+  matchUrl,
+  tabRegex,
+  marketName = "Yes/No",
+  period = "full_time",
+  session = null,
+  enableNetworkFirst = DEFAULT_HYBRID_OPTIONS.enableNetworkFirst,
+  enableDomFallback = DEFAULT_HYBRID_OPTIONS.enableDomFallback,
+  headless = true,
+  timeoutMs = 45000
+}) {
   const handler = getMarketHandler("generic_yes_no");
   const base = await scrapeFlashscoreMarketTable({
     matchUrl,
     ...toScrapeConfigFromHandler(handler, { tabRegex, marketName }),
     period,
     session,
+    enableNetworkFirst,
+    enableDomFallback,
     headless,
     timeoutMs
   });
@@ -883,13 +1135,23 @@ export async function scrapeFlashscoreGenericYesNo({ matchUrl, tabRegex, marketN
   };
 }
 
-export async function scrapeFlashscoreTeamToScoreYesNo({ matchUrl, period = "full_time", session = null, headless = true, timeoutMs = 45000 }) {
+export async function scrapeFlashscoreTeamToScoreYesNo({
+  matchUrl,
+  period = "full_time",
+  session = null,
+  enableNetworkFirst = DEFAULT_HYBRID_OPTIONS.enableNetworkFirst,
+  enableDomFallback = DEFAULT_HYBRID_OPTIONS.enableDomFallback,
+  headless = true,
+  timeoutMs = 45000
+}) {
   const handler = getMarketHandler("team_to_score_yes_no");
   const base = await scrapeFlashscoreMarketTable({
     matchUrl,
     ...toScrapeConfigFromHandler(handler),
     period,
     session,
+    enableNetworkFirst,
+    enableDomFallback,
     headless,
     timeoutMs
   });
@@ -902,24 +1164,33 @@ export async function scrapeFlashscoreTeamToScoreYesNo({ matchUrl, period = "ful
 /*
  * Backward-compatible wrapper kept for existing callers.
  */
-export async function scrapeFlashscoreMarketByType({ matchUrl, marketType, period = "full_time", session = null, headless = true, timeoutMs = 45000 }) {
+export async function scrapeFlashscoreMarketByType({
+  matchUrl,
+  marketType,
+  period = "full_time",
+  session = null,
+  enableNetworkFirst = DEFAULT_HYBRID_OPTIONS.enableNetworkFirst,
+  enableDomFallback = DEFAULT_HYBRID_OPTIONS.enableDomFallback,
+  headless = true,
+  timeoutMs = 45000
+}) {
   switch (marketType) {
     case "double_chance":
-      return scrapeFlashscoreDoubleChance({ matchUrl, period, session, headless, timeoutMs });
+      return scrapeFlashscoreDoubleChance({ matchUrl, period, session, enableNetworkFirst, enableDomFallback, headless, timeoutMs });
     case "match_winner_2way":
-      return scrapeFlashscoreTipsportWinner2Way({ matchUrl, period, session, headless, timeoutMs });
+      return scrapeFlashscoreTipsportWinner2Way({ matchUrl, period, session, enableNetworkFirst, enableDomFallback, headless, timeoutMs });
     case "over_under_2way":
-      return scrapeFlashscoreOverUnder2Way({ matchUrl, period, session, headless, timeoutMs });
+      return scrapeFlashscoreOverUnder2Way({ matchUrl, period, session, enableNetworkFirst, enableDomFallback, headless, timeoutMs });
     case "asian_handicap_2way":
-      return scrapeFlashscoreAsianHandicap2Way({ matchUrl, period, session, headless, timeoutMs });
+      return scrapeFlashscoreAsianHandicap2Way({ matchUrl, period, session, enableNetworkFirst, enableDomFallback, headless, timeoutMs });
     case "both_teams_to_score":
-      return scrapeFlashscoreBttsYesNo({ matchUrl, period, session, headless, timeoutMs });
+      return scrapeFlashscoreBttsYesNo({ matchUrl, period, session, enableNetworkFirst, enableDomFallback, headless, timeoutMs });
     case "draw_no_bet_2way":
-      return scrapeFlashscoreDrawNoBet2Way({ matchUrl, period, session, headless, timeoutMs });
+      return scrapeFlashscoreDrawNoBet2Way({ matchUrl, period, session, enableNetworkFirst, enableDomFallback, headless, timeoutMs });
     case "european_handicap_2way":
-      return scrapeFlashscoreEuropeanHandicap2Way({ matchUrl, period, session, headless, timeoutMs });
+      return scrapeFlashscoreEuropeanHandicap2Way({ matchUrl, period, session, enableNetworkFirst, enableDomFallback, headless, timeoutMs });
     case "team_to_score_yes_no":
-      return scrapeFlashscoreTeamToScoreYesNo({ matchUrl, period, session, headless, timeoutMs });
+      return scrapeFlashscoreTeamToScoreYesNo({ matchUrl, period, session, enableNetworkFirst, enableDomFallback, headless, timeoutMs });
     default:
       {
       const normalized = normalizeMatchUrl(matchUrl);

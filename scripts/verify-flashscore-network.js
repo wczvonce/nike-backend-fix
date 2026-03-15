@@ -15,8 +15,30 @@ const fsSession = runtime.flashscoreSession || {};
 if (Number(fsSession.browserLaunches || 0) !== 1) {
   fail(`expected one browser launch per run, got ${fsSession.browserLaunches}`);
 }
-if (Number(fsSession.networkFirstHits || 0) <= 0) {
-  fail("network-first path not used (networkFirstHits <= 0)");
+if (fsSession.networkFirstEnabled !== true) {
+  fail("network-first is not enabled");
+}
+if (fsSession.domFallbackEnabled !== true) {
+  fail("dom fallback is not enabled (safe default required)");
+}
+if (Number(fsSession.networkFirstAttempts || 0) <= 0) {
+  fail("network-first was not attempted");
+}
+
+const rows = Array.isArray(pipeline.rows) ? pipeline.rows : [];
+if (!rows.length) fail("pipeline rows are empty");
+for (const row of rows) {
+  if (!row.sourceType) fail(`row missing sourceType (${row.match} ${row.marketType})`);
+  if (!Array.isArray(row.attemptedSources)) fail(`row missing attemptedSources (${row.match} ${row.marketType})`);
+}
+
+const domRows = rows.filter((r) => r.sourceType === "dom_fallback");
+for (const row of domRows) {
+  if (!row.fallbackReason) fail(`dom fallback row missing fallbackReason (${row.match} ${row.marketType})`);
+  const firstAttemptSource = row.attemptedSources?.[0]?.source || "";
+  if (!String(firstAttemptSource).startsWith("network_")) {
+    fail(`dom fallback row was not network-attempted first (${row.match} ${row.marketType})`);
+  }
 }
 
 const full = await fetch(`${base}/api/debug/full-check`).then((r) => r.json());
@@ -25,8 +47,8 @@ const rowsBySource = full?.sourceCoverage?.finalRowsBySource || {};
 if (!Object.keys(rowsBySource).length) {
   fail("missing sourceCoverage.finalRowsBySource");
 }
-if (!rowsBySource.network_direct_html && !rowsBySource.dom_fallback) {
-  fail("source coverage does not report network/direct or dom fallback sources");
+if (!rowsBySource.network_graphql && !rowsBySource.network_direct_html) {
+  fail("source coverage does not report network-derived rows");
 }
 
-console.log(`OK: flashscore network verification passed (browserLaunches=${fsSession.browserLaunches}, networkFirstHits=${fsSession.networkFirstHits}, domFallbackHits=${fsSession.domFallbackHits})`);
+console.log(`OK: flashscore source verification passed (browserLaunches=${fsSession.browserLaunches}, networkFirstAttempts=${fsSession.networkFirstAttempts}, networkFirstHits=${fsSession.networkFirstHits}, domFallbackHits=${fsSession.domFallbackHits})`);

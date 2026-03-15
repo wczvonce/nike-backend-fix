@@ -36,6 +36,9 @@ Premenné v .env:
   REQUEST_TIMEOUT_MS=45000 – timeout pre načítanie stránok
   ALLOWED_ORIGIN=*       – CORS (pre frontend)
   STRICT_EXPECTED_SUPERPONUKA=false – false = dynamická Superponuka validácia (odporúčané), true = striktne 4 snapshot zápasy
+  FLASHSCORE_ENABLE_NETWORK_FIRST=true – primárne čítanie z network payloadov / direct odds path
+  FLASHSCORE_ENABLE_DOM_FALLBACK=true – bezpečný fallback na pôvodné DOM klikacie čítanie
+  FLASHSCORE_FAIL_IF_FALLBACK_RATE_ABOVE= – voliteľný prah 0..1; keď je nastavený, QA failne pri vysokej fallback miere
 
 --------------------------------------------------------------------------------
 KROK 3 – Spustenie servera
@@ -87,6 +90,13 @@ Poznámka k reálnej end-to-end podpore:
   - zámerne vypnuté:
     - team_to_score_yes_no (team-scope ekvivalencia nie je ešte bezpečne zapojená end-to-end)
     - european_handicap_2way (2-way bezpečnosť tabuľky nie je konzistentne dokázaná)
+
+Poznámka k architektúre Flashscore:
+  - režim je network-first hybrid:
+    1) network_graphql
+    2) network_direct_html
+    3) dom_fallback
+  - fallback je predvolene zapnutý, aby sa nestratilo aktuálne fungujúce pokrytie výstupu
 
 Jednotný normalizovaný model trhu:
   - pozri `src/markets/market-model.js`
