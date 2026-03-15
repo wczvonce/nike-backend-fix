@@ -1,6 +1,12 @@
 node_modules/
 .env
 dist/
+dist-desktop/
+dist-desktop-v2/
+dist-desktop-v3/
+debug/*.html
+debug/*.png
+debug/*.txt
 
 # OS-specific files
 .DS_Store

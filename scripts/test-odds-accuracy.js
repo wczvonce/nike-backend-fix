@@ -149,6 +149,104 @@ ok(wRow?.selectionConfidence === "explicit", "match_winner: confidence=explicit"
 ok(wRow?.selectionOdds?.home !== 2.35, "match_winner: home≠2.35 (anti-swap guard)");
 
 // ============================================================
+// FIXTURE: asian_handicap_2way — handicap object line parsing
+// Expected: line = -3.5 (home-side canonical), home=2.33, away=1.53
+// ============================================================
+const asianPayload = {
+  data: {
+    findOddsByEventId: {
+      settings: { bookmakers: [{ bookmaker: { id: 411, name: "Tipsport.sk" } }] },
+      odds: [
+        {
+          bookmakerId: 411,
+          bettingType: "HOME_DRAW_AWAY",
+          bettingScope: "FULL_TIME",
+          odds: [
+            { value: "1.84", active: true, eventParticipantId: "PID_HOME", handicap: null },
+            { value: "3.50", active: true, eventParticipantId: null, handicap: null },
+            { value: "4.20", active: true, eventParticipantId: "PID_AWAY", handicap: null }
+          ]
+        },
+        {
+          bookmakerId: 411,
+          bettingType: "ASIAN_HANDICAP",
+          bettingScope: "FULL_TIME",
+          odds: [
+            { value: "1.53", active: true, eventParticipantId: "PID_AWAY", handicap: { value: "3.5", type: "GAMES" } },
+            { value: "2.33", active: true, eventParticipantId: "PID_HOME", handicap: { value: "-3.5", type: "GAMES" } }
+          ]
+        }
+      ]
+    }
+  }
+};
+const ah = getMarketHandler("asian_handicap_2way");
+const aSnap = parseGraphqlOddsToSnapshot(asianPayload, { marketType: "asian_handicap_2way", period: "full_time", marketName: ah.displayName });
+const aNorm = normalizeFlashscoreMarketSnapshot(aSnap, {
+  marketType: "asian_handicap_2way", marketName: ah.displayName,
+  expectedLabels: ah.expectedLabels, labelAliases: ah.labelAliases,
+  requireExactLabelSet: ah.requireExactLabelSet, expectedOddCount: ah.expectedOddCount,
+  requireLine: ah.requireLine, period: "full_time"
+}, "fixture://asian");
+const aRow = aNorm.bookmakerRows[0];
+ok(!!aRow, "asian_handicap: row found");
+ok(aRow?.line === -3.5, `asian_handicap: canonical line parsed as -3.5 (got ${aRow?.line})`);
+ok(aRow?.selectionOdds?.home === 2.33, "asian_handicap: home=2.33");
+ok(aRow?.selectionOdds?.away === 1.53, "asian_handicap: away=1.53");
+ok(aRow?.selectionConfidence === "explicit", "asian_handicap: confidence=explicit");
+
+// ============================================================
+// FIXTURE: football asian handicap with opposite-sign pairing
+// Expected canonical rows:
+//  line +1.0 => home(+1)=1.07, away(-1)=9.14
+//  line -1.0 => home(-1)=3.12, away(+1)=1.39
+// ============================================================
+const footballAsianPayload = {
+  data: {
+    findOddsByEventId: {
+      settings: { bookmakers: [{ bookmaker: { id: 411, name: "Tipsport.sk" } }] },
+      odds: [
+        {
+          bookmakerId: 411,
+          bettingType: "HOME_DRAW_AWAY",
+          bettingScope: "FULL_TIME",
+          odds: [
+            { value: "2.74", active: true, eventParticipantId: "PID_HOME", handicap: null },
+            { value: "4.77", active: true, eventParticipantId: "PID_AWAY", handicap: null },
+            { value: "2.05", active: true, eventParticipantId: null, handicap: null }
+          ]
+        },
+        {
+          bookmakerId: 411,
+          bettingType: "ASIAN_HANDICAP",
+          bettingScope: "FULL_TIME",
+          odds: [
+            { value: "1.07", active: true, eventParticipantId: "PID_HOME", handicap: { value: "1.0", type: "GOALS" } },
+            { value: "1.39", active: true, eventParticipantId: "PID_AWAY", handicap: { value: "1.0", type: "GOALS" } },
+            { value: "3.12", active: true, eventParticipantId: "PID_HOME", handicap: { value: "-1.0", type: "GOALS" } },
+            { value: "9.14", active: true, eventParticipantId: "PID_AWAY", handicap: { value: "-1.0", type: "GOALS" } }
+          ]
+        }
+      ]
+    }
+  }
+};
+const fSnap = parseGraphqlOddsToSnapshot(footballAsianPayload, { marketType: "asian_handicap_2way", period: "full_time", marketName: ah.displayName });
+const fNorm = normalizeFlashscoreMarketSnapshot(fSnap, {
+  marketType: "asian_handicap_2way", marketName: ah.displayName,
+  expectedLabels: ah.expectedLabels, labelAliases: ah.labelAliases,
+  requireExactLabelSet: ah.requireExactLabelSet, expectedOddCount: ah.expectedOddCount,
+  requireLine: ah.requireLine, period: "full_time"
+}, "fixture://football-asian");
+const linePlusOne = fNorm.bookmakerRows.find(r => r.line === 1);
+const lineMinusOne = fNorm.bookmakerRows.find(r => r.line === -1);
+ok(!!linePlusOne, "football asian: line +1 row found");
+ok(linePlusOne?.selectionOdds?.home === 1.07, "football asian: line +1 home=1.07");
+ok(linePlusOne?.selectionOdds?.away === 9.14, "football asian: line +1 away=9.14 (opposite-sign paired)");
+ok(!!lineMinusOne, "football asian: line -1 row found");
+ok(lineMinusOne?.selectionOdds?.home === 3.12, "football asian: line -1 home=3.12");
+ok(lineMinusOne?.selectionOdds?.away === 1.39, "football asian: line -1 away=1.39 (opposite-sign paired)");
+// ============================================================
 // FIXTURE: first_half period — must be rejected by validateMarketCandidate
 // ============================================================
 const firstHalfCandidate = {

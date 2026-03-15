@@ -60,5 +60,4 @@ for (const row of rows) {
     if (row.swapped == null) fail(`home/away row missing swapped flag (${row.match} ${row.marketType})`);
   }
 }
-
 console.log(`OK: flashscore source verification passed (browserLaunches=${fsSession.browserLaunches}, networkFirstAttempts=${fsSession.networkFirstAttempts}, networkFirstHits=${fsSession.networkFirstHits}, domFallbackHits=${fsSession.domFallbackHits})`);

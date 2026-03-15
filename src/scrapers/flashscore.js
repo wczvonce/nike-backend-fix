@@ -236,11 +236,18 @@ function resolveParticipantRoles(oddsEntries = []) {
 }
 
 function toLineValue(value) {
-  if (value == null || value === "") return null;
-  const num = Number(String(value).replace(",", "."));
+  const raw = typeof value === "object" && value !== null
+    ? (value.value ?? value.handicap ?? "")
+    : value;
+  if (raw == null || raw === "") return null;
+  const num = Number(String(raw).replace(",", "."));
   return Number.isFinite(num) ? Number(num.toFixed(2)) : null;
 }
 
+function toLineKey(line) {
+  if (line == null || !Number.isFinite(Number(line))) return null;
+  return Number(line).toFixed(2);
+}
 export function parseGraphqlOddsToSnapshot(payload, { marketType, period, marketName }, { participantDomOrder = [] } = {}) {
   const root = payload?.data?.findOddsByEventId || {};
   const byBookmakerId = new Map(
@@ -270,15 +277,64 @@ export function parseGraphqlOddsToSnapshot(payload, { marketType, period, market
     const bookmaker = byBookmakerId.get(String(entry?.bookmakerId || "")) || `Bookmaker ${entry?.bookmakerId || ""}`;
     const items = Array.isArray(entry?.odds) ? entry.odds.filter((x) => x?.active !== false && x?.value != null) : [];
     if (!items.length) continue;
+
+    // Asian handicap often carries opposite signs per side in one logical row:
+    // home line L vs away line -L (e.g. home +1 and away -1).
+    // Build rows using explicit participant IDs to prevent mixed/overwritten pairing.
+    if (marketType === "asian_handicap_2way" && participantRoles?.homeId && participantRoles?.awayId) {
+      const oddByPidAndLine = new Map();
+      const candidateLines = new Set();
+      for (const item of items) {
+        const pid = item?.eventParticipantId;
+        const line = toLineValue(item?.handicap);
+        const odd = parseOdd(String(item?.value ?? ""), { rejectDateLike: false, rejectTimeLike: false });
+        const lineKey = toLineKey(line);
+        if (!pid || lineKey == null || odd == null) continue;
+        oddByPidAndLine.set(`${pid}|${lineKey}`, odd);
+        if (pid === participantRoles.homeId) candidateLines.add(Number(lineKey));
+      }
+      for (const line of [...candidateLines].sort((a, b) => a - b)) {
+        const homeLineKey = toLineKey(line);
+        const awayOppositeLineKey = toLineKey(-line);
+        const awaySameLineKey = toLineKey(line);
+        if (!homeLineKey || !awayOppositeLineKey || !awaySameLineKey) continue;
+
+        const homeOdd = oddByPidAndLine.get(`${participantRoles.homeId}|${homeLineKey}`) ?? null;
+        // Prefer opposite-sign away pairing (canonical asian handicap row).
+        const awayOdd = (
+          oddByPidAndLine.get(`${participantRoles.awayId}|${awayOppositeLineKey}`) ??
+          oddByPidAndLine.get(`${participantRoles.awayId}|${awaySameLineKey}`) ??
+          null
+        );
+        if (homeOdd == null || awayOdd == null) continue;
+        rows.push({
+          bookmaker,
+          bookmakerId: String(entry?.bookmakerId || ""),
+          oddTexts: [String(homeOdd), String(awayOdd)],
+          lineText: String(Number(line.toFixed(2))),
+          rawRowText: `${marketName || marketType} ${bookmaker} ${JSON.stringify({ home: homeOdd, away: awayOdd })}`,
+          _selectionOddsFromNetwork: { home: homeOdd, away: awayOdd },
+          _selectionConfidence: participantRoles.confidence
+        });
+      }
+      continue;
+    }
+
     const lineGroups = new Map();
     for (const [idx, item] of items.entries()) {
       const line = toLineValue(item?.handicap);
-      const key = line == null ? "null" : String(line);
+      const key = (
+        marketType === "asian_handicap_2way" && line != null
+          ? `abs:${Math.abs(line).toFixed(2)}`
+          : (line == null ? "null" : String(line))
+      );
       if (!lineGroups.has(key)) lineGroups.set(key, { line, entries: [] });
-      lineGroups.get(key).entries.push({ item, idx });
+      lineGroups.get(key).entries.push({ item, idx, line });
     }
     for (const group of lineGroups.values()) {
       const selectionOdds = {};
+      let homeLine = null;
+      let awayLine = null;
       let selectionConfidence = "derived";
 
       if (isHomeAwayFamily && participantRoles?.homeId && participantRoles?.awayId) {
@@ -287,8 +343,13 @@ export function parseGraphqlOddsToSnapshot(payload, { marketType, period, market
           const pid = wrapped.item?.eventParticipantId;
           const odd = parseOdd(String(wrapped.item?.value ?? ""), { rejectDateLike: false, rejectTimeLike: false });
           if (odd == null) continue;
-          if (pid === participantRoles.homeId) selectionOdds.home = odd;
-          else if (pid === participantRoles.awayId) selectionOdds.away = odd;
+          if (pid === participantRoles.homeId) {
+            selectionOdds.home = odd;
+            if (wrapped.line != null) homeLine = wrapped.line;
+          } else if (pid === participantRoles.awayId) {
+            selectionOdds.away = odd;
+            if (wrapped.line != null) awayLine = wrapped.line;
+          }
         }
         if (selectionOdds.home != null && selectionOdds.away != null) {
           selectionConfidence = participantRoles.confidence;
@@ -297,7 +358,11 @@ export function parseGraphqlOddsToSnapshot(payload, { marketType, period, market
           for (const [localIdx, wrapped] of group.entries.entries()) {
             const key = localIdx === 0 ? "home" : "away";
             const odd = parseOdd(String(wrapped.item?.value ?? ""), { rejectDateLike: false, rejectTimeLike: false });
-            if (odd != null) selectionOdds[key] = odd;
+            if (odd != null) {
+              selectionOdds[key] = odd;
+              if (key === "home" && wrapped.line != null) homeLine = wrapped.line;
+              if (key === "away" && wrapped.line != null) awayLine = wrapped.line;
+            }
           }
           selectionConfidence = "derived";
         }
@@ -311,7 +376,11 @@ export function parseGraphqlOddsToSnapshot(payload, { marketType, period, market
             if (isHomeAwayFamily) {
               const k = localIdx === 0 ? "home" : "away";
               const odd = parseOdd(String(wrapped.item?.value ?? ""), { rejectDateLike: false, rejectTimeLike: false });
-              if (odd != null) selectionOdds[k] = odd;
+              if (odd != null) {
+                selectionOdds[k] = odd;
+                if (k === "home" && wrapped.line != null) homeLine = wrapped.line;
+                if (k === "away" && wrapped.line != null) awayLine = wrapped.line;
+              }
             }
             continue;
           }
@@ -328,11 +397,18 @@ export function parseGraphqlOddsToSnapshot(payload, { marketType, period, market
         return ["home", "away"];
       })();
       const oddTexts = oddOrder.map((k) => selectionOdds[k]).filter((v) => v != null).map((v) => String(v));
+      let lineTextValue = group.line;
+      if (marketType === "asian_handicap_2way") {
+        // Canonicalize asian handicap line to the home-side sign, so both selections share one comparable line.
+        if (homeLine != null) lineTextValue = homeLine;
+        else if (awayLine != null) lineTextValue = -awayLine;
+        if (lineTextValue != null) lineTextValue = Number(Number(lineTextValue).toFixed(2));
+      }
       rows.push({
         bookmaker,
         bookmakerId: String(entry?.bookmakerId || ""),
         oddTexts,
-        lineText: group.line == null ? "" : String(group.line),
+        lineText: lineTextValue == null ? "" : String(lineTextValue),
         rawRowText: `${marketName || marketType} ${bookmaker} ${JSON.stringify(selectionOdds)}`,
         _selectionOddsFromNetwork: selectionOdds,
         _selectionConfidence: selectionConfidence

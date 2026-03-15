@@ -2,7 +2,7 @@
   "name": "nike-flash-backend",
   "version": "1.1.0",
   "type": "module",
-  "main": "src/server.js",
+  "main": "desktop/main.mjs",
   "scripts": {
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
@@ -19,12 +19,49 @@
     "verify:missed-edge-cases": "node scripts/verify-missed-edge-cases.js",
     "verify:qa-consistency": "node scripts/verify-qa-consistency.js",
     "verify:pushed-state": "node scripts/verify-pushed-state.js",
-    "verify:all": "npm test && npm run verify:flashscore-sources && npm run verify:market-safety && npm run verify:superponuka-coverage && npm run verify:missed-edge-cases && npm run verify:support-matrix && npm run verify:final-output && npm run verify:qa-consistency"
+    "verify:all": "npm test && npm run verify:flashscore-sources && npm run verify:market-safety && npm run verify:superponuka-coverage && npm run verify:missed-edge-cases && npm run verify:support-matrix && npm run verify:final-output && npm run verify:qa-consistency",
+    "desktop": "electron desktop/main.mjs",
+    "desktop:icon": "powershell -ExecutionPolicy Bypass -File scripts/create-desktop-icon.ps1",
+    "desktop:build": "set CSC_IDENTITY_AUTO_DISCOVERY=false && npm run desktop:icon && electron-builder --win nsis"
+  },
+  "build": {
+    "appId": "com.ivlik.niketipsport",
+    "productName": "Nike Tipsport Comparator",
+    "directories": {
+      "output": "dist-desktop"
+    },
+    "files": [
+      "src/**/*",
+      "public/**/*",
+      "desktop/**/*",
+      "package.json",
+      ".env.example",
+      "README.md",
+      "README_SK.txt",
+      "start.ps1"
+    ],
+    "asar": true,
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "desktop/assets/app-icon.ico",
+      "signAndEditExecutable": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true
+    }
   },
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.21.0",
     "playwright": "^1.47.0"
+  },
+  "devDependencies": {
+    "electron": "^41.0.2",
+    "electron-builder": "^26.8.1"
   }
 }

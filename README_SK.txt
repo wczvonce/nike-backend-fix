@@ -1,3 +1,22 @@
+Desktop app (Electron)
+======================
+
+Ak nechces aplikaciu v beznom prehliadaci, mozes ju spustat ako desktop okno:
+
+1) Dvojklik na `START_DESKTOP_APP.bat`
+
+To:
+- spusti backend na porte `3131`,
+- otvori natvne okno aplikacie (Electron),
+- pri zatvoreni appky ukonci aj backend.
+
+Vytvorenie Windows instalatora (.exe)
+------------------------------------
+
+1) Dvojklik na `BUILD_DESKTOP_INSTALLER.bat`
+2) Instalator sa vytvori do priecinka `dist-desktop`:
+   - `Nike Tipsport Comparator Setup 1.1.0.exe`
+
 ================================================================================
   Nike / Flashscore backend – inštalácia a spustenie (Windows)
 ================================================================================
