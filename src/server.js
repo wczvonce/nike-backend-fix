@@ -184,12 +184,16 @@ async function buildNikeTipsportPipeline() {
       continue;
     }
     const swapped = isSwappedOrientation(match, fsMatch);
+    const straightSim = similarity(match.homeTeam, fsMatch.homeTeam) + similarity(match.awayTeam, fsMatch.awayTeam);
+    const swappedSim = similarity(match.homeTeam, fsMatch.awayTeam) + similarity(match.awayTeam, fsMatch.homeTeam);
     matchMappings.push({
       nikeMatch: match.rawTitle,
       matched: true,
       flashscoreHref: fsMatch.href,
       confidence: fsMatch.confidence,
       orientationSwapped: swapped,
+      straightSimilarity: Number(straightSim.toFixed(3)),
+      swappedSimilarity: Number(swappedSim.toFixed(3)),
       flashscoreHomeTeam: fsMatch.homeTeam,
       flashscoreAwayTeam: fsMatch.awayTeam
     });
@@ -308,6 +312,12 @@ async function buildNikeTipsportPipeline() {
           fallbackReason: fsMarket.fallbackReason || null,
           sourceFailureReason: fsMarket.failureReason || null,
           attemptedSources: fsMarket.attemptedSources || [],
+          participantRoles: fsMarket.participantRoles || null,
+          participantDomOrder: fsMarket.participantDomOrder || [],
+          selectionConfidence: tipsportRow?.selectionConfidence || "derived",
+          swapped,
+          straightSimilarity: Number(straightSim.toFixed(3)),
+          swappedSimilarity: Number(swappedSim.toFixed(3)),
           columnLabels: fsMarket.columnLabels || [],
           rawBookmakerRowText: tipsportRow?.rawRowText || "",
           extractedOddsArray: tipsportRow?.extractedOddsArray || [],

@@ -7,7 +7,7 @@
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
     "install:browsers": "playwright install",
-    "test": "node scripts/test-normalize.js && node scripts/test-pipeline-logic.js && node scripts/test-flashscore-market-guards.js && node scripts/test-parser-fixtures.js && node scripts/test-flashscore-network-parser.js && node scripts/test-support-matrix.js",
+    "test": "node scripts/test-normalize.js && node scripts/test-pipeline-logic.js && node scripts/test-flashscore-market-guards.js && node scripts/test-parser-fixtures.js && node scripts/test-flashscore-network-parser.js && node scripts/test-odds-accuracy.js && node scripts/test-support-matrix.js",
     "smoke:live": "node scripts/smoke-live.js",
     "verify:support-matrix": "node scripts/verify-support-matrix.js",
     "verify:flashscore-network": "node scripts/verify-flashscore-network.js",

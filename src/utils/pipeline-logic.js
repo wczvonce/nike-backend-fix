@@ -91,6 +91,11 @@ export function validateMarketCandidate(row) {
   if (row.nikeOdd == null || row.tipsportOdd == null) return { ok: false, reason: "missing_odds" };
   if (!(row.nikeOdd > 1 && row.tipsportOdd > 1)) return { ok: false, reason: "invalid_odds_range" };
   const allowedPeriods = new Set(["full_time", "first_set", "second_set"]);
+  // first_half / second_half are recognized in Nike parser but not wired for Flashscore comparison.
+  // Explicitly reject them here with a clear reason instead of silently mismatching.
+  if (["first_half", "second_half"].includes(row.period)) {
+    return { ok: false, reason: "period_first_or_second_half_not_supported_e2e" };
+  }
   if (!allowedPeriods.has(row.period)) return { ok: false, reason: "period_mismatch" };
   const sourcePeriod = row.sourcePeriod || row.period;
   if (sourcePeriod !== row.period) return { ok: false, reason: "period_mismatch" };

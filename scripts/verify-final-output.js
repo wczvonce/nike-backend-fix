@@ -25,6 +25,8 @@ for (const row of rows) {
   }
   if (!row.sourceType) fail(`missing sourceType for ${row.match} ${row.marketType} ${row.selection}`);
   if (!Array.isArray(row.attemptedSources)) fail(`missing attemptedSources for ${row.match} ${row.marketType} ${row.selection}`);
+  if (row.swapped == null) fail(`missing swapped flag for ${row.match} ${row.marketType} ${row.selection}`);
+  if (!row.selectionConfidence) fail(`missing selectionConfidence for ${row.match} ${row.marketType} ${row.selection}`);
 }
 
 const sorted = [...rows].sort(compareRows);

@@ -51,4 +51,14 @@ if (!rowsBySource.network_graphql && !rowsBySource.network_direct_html) {
   fail("source coverage does not report network-derived rows");
 }
 
+// Verify selectionConfidence is present for home/away market rows.
+const homeAwayFamilies = new Set(["match_winner_2way", "draw_no_bet_2way", "asian_handicap_2way", "european_handicap_2way"]);
+for (const row of rows) {
+  if (homeAwayFamilies.has(row.marketType)) {
+    if (!row.selectionConfidence) fail(`home/away row missing selectionConfidence (${row.match} ${row.marketType} ${row.selection})`);
+    if (!row.attemptedSources?.length) fail(`home/away row missing attemptedSources (${row.match} ${row.marketType})`);
+    if (row.swapped == null) fail(`home/away row missing swapped flag (${row.match} ${row.marketType})`);
+  }
+}
+
 console.log(`OK: flashscore source verification passed (browserLaunches=${fsSession.browserLaunches}, networkFirstAttempts=${fsSession.networkFirstAttempts}, networkFirstHits=${fsSession.networkFirstHits}, domFallbackHits=${fsSession.domFallbackHits})`);

@@ -175,7 +175,8 @@ function parseNetworkSelectionKey(item = {}, index = 0, marketType = "") {
     return index % 2 === 0 ? "over" : "under";
   }
   if (marketType === "asian_handicap_2way" || marketType === "match_winner_2way" || marketType === "draw_no_bet_2way") {
-    return index % 2 === 0 ? "home" : "away";
+    // Never resolve home/away by index here — resolved in parseGraphqlOddsToSnapshot with participantId context.
+    return null;
   }
   if (marketType === "both_teams_to_score" || marketType === "team_to_score_yes_no") {
     if (typeof item.bothTeamsToScore === "boolean") return item.bothTeamsToScore ? "yes" : "no";
@@ -186,13 +187,61 @@ function parseNetworkSelectionKey(item = {}, index = 0, marketType = "") {
   return null;
 }
 
+/**
+ * Determine home/away mapping from a list of EventOddsItem entries using eventParticipantId.
+ *
+ * The graphql payload does NOT include team names, but the `dc_1_<eventId>` feed and the DOM
+ * participant order tells us which participantId is home.
+ *
+ * Strategy:
+ * 1. From HOME_DRAW_AWAY (3-way) entries in the same payload:
+ *    - position 0 = home, position 2 = away (draw has null participantId)
+ * 2. So: homeParticipantId = HOME_DRAW_AWAY[0].eventParticipantId
+ *         awayParticipantId = HOME_DRAW_AWAY[away_index].eventParticipantId
+ * 3. Map home/away to 2-way items using these participantIds.
+ * 4. selectionConfidence = "explicit" if resolved via participantId, "derived" if fallback used.
+ *
+ * Returns { homeId, awayId, confidence }
+ */
+function resolveParticipantRoles(oddsEntries = []) {
+  // Find a HOME_DRAW_AWAY entry with exactly 3 odds (home, draw, away) to extract IDs.
+  for (const entry of oddsEntries) {
+    if (entry?.bettingType !== "HOME_DRAW_AWAY") continue;
+    const items = (entry?.odds || []).filter(x => x?.value != null);
+    if (items.length < 2) continue;
+    // In HDA, first participant = home, last participant with non-null id = away, middle draw has null id.
+    const homeItem = items.find(i => i.eventParticipantId != null);
+    const awayItem = [...items].reverse().find(i => i.eventParticipantId != null && i.eventParticipantId !== homeItem?.eventParticipantId);
+    if (homeItem?.eventParticipantId && awayItem?.eventParticipantId) {
+      return {
+        homeId: homeItem.eventParticipantId,
+        awayId: awayItem.eventParticipantId,
+        confidence: "explicit"
+      };
+    }
+  }
+  // Try HOME_AWAY 2-way entries.
+  for (const entry of oddsEntries) {
+    if (entry?.bettingType !== "HOME_AWAY") continue;
+    const items = (entry?.odds || []).filter(x => x?.value != null && x?.eventParticipantId != null);
+    if (items.length === 2) {
+      return {
+        homeId: items[0].eventParticipantId,
+        awayId: items[1].eventParticipantId,
+        confidence: "explicit"
+      };
+    }
+  }
+  return { homeId: null, awayId: null, confidence: "derived" };
+}
+
 function toLineValue(value) {
   if (value == null || value === "") return null;
   const num = Number(String(value).replace(",", "."));
   return Number.isFinite(num) ? Number(num.toFixed(2)) : null;
 }
 
-export function parseGraphqlOddsToSnapshot(payload, { marketType, period, marketName }) {
+export function parseGraphqlOddsToSnapshot(payload, { marketType, period, marketName }, { participantDomOrder = [] } = {}) {
   const root = payload?.data?.findOddsByEventId || {};
   const byBookmakerId = new Map(
     (root?.settings?.bookmakers || []).map((x) => [String(x?.bookmaker?.id || ""), x?.bookmaker?.name || ""])
@@ -213,6 +262,9 @@ export function parseGraphqlOddsToSnapshot(payload, { marketType, period, market
     return [];
   })();
 
+  const isHomeAwayFamily = ["match_winner_2way", "draw_no_bet_2way", "asian_handicap_2way", "european_handicap_2way"].includes(marketType);
+  const participantRoles = isHomeAwayFamily ? resolveParticipantRoles(oddsEntries) : null;
+
   const rows = [];
   for (const entry of filtered) {
     const bookmaker = byBookmakerId.get(String(entry?.bookmakerId || "")) || `Bookmaker ${entry?.bookmakerId || ""}`;
@@ -227,12 +279,48 @@ export function parseGraphqlOddsToSnapshot(payload, { marketType, period, market
     }
     for (const group of lineGroups.values()) {
       const selectionOdds = {};
-      for (const [localIdx, wrapped] of group.entries.entries()) {
-        const key = parseNetworkSelectionKey(wrapped.item, localIdx, marketType);
-        const odd = parseOdd(String(wrapped.item?.value ?? ""), { rejectDateLike: false, rejectTimeLike: false });
-        if (!key || odd == null) continue;
-        selectionOdds[key] = odd;
+      let selectionConfidence = "derived";
+
+      if (isHomeAwayFamily && participantRoles?.homeId && participantRoles?.awayId) {
+        // Use explicit participantId-based mapping.
+        for (const wrapped of group.entries) {
+          const pid = wrapped.item?.eventParticipantId;
+          const odd = parseOdd(String(wrapped.item?.value ?? ""), { rejectDateLike: false, rejectTimeLike: false });
+          if (odd == null) continue;
+          if (pid === participantRoles.homeId) selectionOdds.home = odd;
+          else if (pid === participantRoles.awayId) selectionOdds.away = odd;
+        }
+        if (selectionOdds.home != null && selectionOdds.away != null) {
+          selectionConfidence = participantRoles.confidence;
+        } else {
+          // Explicit mapping incomplete — fall back to index order with "derived" confidence.
+          for (const [localIdx, wrapped] of group.entries.entries()) {
+            const key = localIdx === 0 ? "home" : "away";
+            const odd = parseOdd(String(wrapped.item?.value ?? ""), { rejectDateLike: false, rejectTimeLike: false });
+            if (odd != null) selectionOdds[key] = odd;
+          }
+          selectionConfidence = "derived";
+        }
+      } else {
+        // Non-home/away families (over_under, btts, yes/no) or no participantId available.
+        for (const [localIdx, wrapped] of group.entries.entries()) {
+          const key = parseNetworkSelectionKey(wrapped.item, localIdx, marketType);
+          if (!key) {
+            // parseNetworkSelectionKey returns null for home/away families when called without explicit participantId context.
+            // Use index-based fallback for home/away with "derived" confidence.
+            if (isHomeAwayFamily) {
+              const k = localIdx === 0 ? "home" : "away";
+              const odd = parseOdd(String(wrapped.item?.value ?? ""), { rejectDateLike: false, rejectTimeLike: false });
+              if (odd != null) selectionOdds[k] = odd;
+            }
+            continue;
+          }
+          const odd = parseOdd(String(wrapped.item?.value ?? ""), { rejectDateLike: false, rejectTimeLike: false });
+          if (odd == null) continue;
+          selectionOdds[key] = odd;
+        }
       }
+
       const oddOrder = (() => {
         if (marketType === "double_chance") return ["1x", "12", "x2"];
         if (marketType === "over_under_2way") return ["over", "under"];
@@ -246,27 +334,56 @@ export function parseGraphqlOddsToSnapshot(payload, { marketType, period, market
         oddTexts,
         lineText: group.line == null ? "" : String(group.line),
         rawRowText: `${marketName || marketType} ${bookmaker} ${JSON.stringify(selectionOdds)}`,
-        _selectionOddsFromNetwork: selectionOdds
+        _selectionOddsFromNetwork: selectionOdds,
+        _selectionConfidence: selectionConfidence
       });
     }
   }
   return {
     labels,
     activeHints: filtered.map((e) => `${e?.bettingType || ""}:${e?.bettingScope || ""}`),
-    rows
+    rows,
+    _participantRoles: participantRoles,
+    _participantDomOrder: participantDomOrder
   };
+}
+
+async function getParticipantOrderFromPage(session) {
+  try {
+    return await session.page.evaluate(() => {
+      const els = document.querySelectorAll('[class*=participantNameWrapper]');
+      return [...els].slice(0, 2).map(e => e.textContent?.trim()).filter(Boolean);
+    });
+  } catch {
+    return [];
+  }
 }
 
 async function getGraphqlPayloadForEvent(session, matchUrl, timeoutMs) {
   const key = normalizeMatchUrl(matchUrl);
   if (!session.eventCache) session.eventCache = new Map();
+  // Cache key includes the URL — per-event, not shared across market types.
+  // We always re-navigate because different pages may trigger different eventIds.
   if (session.eventCache.has(key)) return session.eventCache.get(key);
 
+  // Clear networkLog entries for this page load to avoid stale graphql URLs from previous pages.
+  const logLengthBefore = session.networkLog.length;
   await session.page.goto(key, { waitUntil: "domcontentloaded", timeout: timeoutMs });
   await session.page.waitForLoadState("networkidle", { timeout: Math.min(timeoutMs, 10000) }).catch(() => {});
-  const graphqlReq = [...session.networkLog]
+
+  // Only use graphql URLs captured AFTER this navigation started (avoid stale from previous match page).
+  const freshLog = session.networkLog.slice(logLengthBefore);
+  const graphqlReq = [...freshLog]
     .reverse()
     .find((x) => /global\.ds\.lsapp\.eu\/odds\/pq_graphql/i.test(x?.url || ""));
+
+  // Additionally capture participant DOM order for home/away disambiguation.
+  const participantDomOrder = await getParticipantOrderFromPage(session);
+
+  if (!graphqlReq?.url) {
+    session.eventCache.set(key, null);
+    return null;
+  }
   if (!graphqlReq?.url) {
     session.eventCache.set(key, null);
     return null;
@@ -295,7 +412,7 @@ async function getGraphqlPayloadForEvent(session, matchUrl, timeoutMs) {
     session.eventCache.set(key, null);
     return null;
   }
-  const data = { graphqlUrl: graphqlReq.url, payload };
+  const data = { graphqlUrl: graphqlReq.url, payload, participantDomOrder };
   session.eventCache.set(key, data);
   return data;
 }
@@ -483,7 +600,7 @@ async function tryNetworkGraphqlPath({
   if (!graphqlData?.payload) {
     return { ok: false, reason: "network_graphql_payload_missing" };
   }
-  const snapshot = parseGraphqlOddsToSnapshot(graphqlData.payload, { marketType, period: periodConfig.period, marketName });
+  const snapshot = parseGraphqlOddsToSnapshot(graphqlData.payload, { marketType, period: periodConfig.period, marketName }, { participantDomOrder: graphqlData.participantDomOrder || [] });
   const normalizedFromGraphql = normalizeFlashscoreMarketSnapshot(
     {
       labels: snapshot.labels,
@@ -512,7 +629,9 @@ async function tryNetworkGraphqlPath({
     result: {
       ...normalizedFromGraphql,
       sourceType: "network_graphql",
-      directOddsUrl: graphqlData.graphqlUrl
+      directOddsUrl: graphqlData.graphqlUrl,
+      participantRoles: snapshot._participantRoles || null,
+      participantDomOrder: snapshot._participantDomOrder || []
     }
   };
 }
@@ -830,7 +949,8 @@ export function normalizeFlashscoreMarketSnapshot(snapshot, config, matchUrl = "
       lineRaw: row.lineText || "",
       extractedOddsArray: parsedOdds,
       rawRowText: row.rawRowText || "",
-      selectionOdds: row._selectionOddsFromNetwork || null
+      selectionOdds: row._selectionOddsFromNetwork || null,
+      selectionConfidence: row._selectionConfidence || "derived"
     };
   }).filter((row) => {
     if (!row.bookmaker) return false;
