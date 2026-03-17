@@ -6,7 +6,15 @@ import { delay } from "../utils/delay.js";
 import { EXPECTED_SUPERPONUKA_SNAPSHOT, EXPECTED_SUPERPONUKA_SPORT_BY_TITLE } from "../config/superponuka.js";
 import { normalizeForCompare } from "../utils/pipeline-logic.js";
 
-const NIKE_URLS = ["https://m.nike.sk/tipovanie", "https://www.nike.sk/tipovanie"];
+const NIKE_MOBILE_URLS = [
+  "https://m.nike.sk/tipovanie/superkurzy",
+  "https://m.nike.sk/tipovanie"
+];
+const NIKE_DESKTOP_URLS = [
+  "https://www.nike.sk/tipovanie/superkurzy",
+  "https://www.nike.sk/tipovanie"
+];
+const NIKE_SITE_MODE = String(process.env.NIKE_SITE_MODE || "mobile").toLowerCase();
 const DC_SELECTIONS = ["1x", "12", "x2"];
 const STRICT_EXPECTED_SUPERPONUKA = String(process.env.STRICT_EXPECTED_SUPERPONUKA || "false") === "true";
 
@@ -15,6 +23,7 @@ function detectSportFromText(value = "") {
   if (t.includes("futbal") || t.includes("football")) return "football";
   if (t.includes("hokej") || t.includes("hockey")) return "hockey";
   if (t.includes("tenis") || t.includes("tennis")) return "tennis";
+  if (t.includes("basketbal") || t.includes("basketball") || t.includes("nba") || t.includes("bc ") || /\bbc\s/.test(t) || t.includes("euroliga") || t.includes("euroleague")) return "basketball";
   return "unknown";
 }
 
@@ -84,9 +93,15 @@ async function acceptCookies(page) {
   }
 }
 
-async function openNikePage(page, timeoutMs) {
+function getNikeUrls(siteMode = NIKE_SITE_MODE) {
+  if (siteMode === "desktop") return [...NIKE_DESKTOP_URLS, ...NIKE_MOBILE_URLS];
+  if (siteMode === "mobile") return [...NIKE_MOBILE_URLS, ...NIKE_DESKTOP_URLS];
+  return [...NIKE_MOBILE_URLS, ...NIKE_DESKTOP_URLS];
+}
+
+async function openNikePage(page, timeoutMs, siteMode = NIKE_SITE_MODE) {
   let lastError = null;
-  for (const url of NIKE_URLS) {
+  for (const url of getNikeUrls(siteMode)) {
     try {
       await page.goto(url, { waitUntil: "domcontentloaded", timeout: timeoutMs });
       return page.url();
@@ -282,7 +297,7 @@ function dedupeMarkets(markets = []) {
   return result;
 }
 
-async function scrapeNikeCore({ headless = true, timeoutMs = 45000, saveDebugArtifacts = false } = {}) {
+async function scrapeNikeCore({ headless = true, timeoutMs = 45000, saveDebugArtifacts = false, siteMode = NIKE_SITE_MODE } = {}) {
   const browser = await chromium.launch({ headless });
   try {
     const context = await browser.newContext({
@@ -290,7 +305,7 @@ async function scrapeNikeCore({ headless = true, timeoutMs = 45000, saveDebugArt
       userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36"
     });
     const page = await context.newPage();
-    await openNikePage(page, timeoutMs);
+    await openNikePage(page, timeoutMs, siteMode);
     await acceptCookies(page);
     await delay(4000);
 
@@ -309,16 +324,35 @@ async function scrapeNikeCore({ headless = true, timeoutMs = 45000, saveDebugArt
 
       const rows = Array.from(document.querySelectorAll("[data-game-state]"))
         .filter((row) => row.querySelector('[data-atid="bets-opponents"]'));
+      const isSuperkurzyPage = /\/tipovanie\/superkurzy/i.test(location.pathname || "");
+      const detectSectionForRow = (row, rowEl) => {
+        const directBlob = clean(`${row?.textContent || ""} ${rowEl?.textContent || ""}`).toLowerCase();
+        if (/super\s*ponuka|superponuka/i.test(directBlob)) return "super_ponuka";
+        if (/super\s*š?anca|supersanca/i.test(directBlob)) {
+          // On /superkurzy mobile page these are still the core promoted rows we want to compare.
+          // Keep them in super_ponuka bucket to avoid false "secondary section" classification.
+          if (isSuperkurzyPage) return "super_ponuka";
+          return "super_sanca";
+        }
+        let cursor = row;
+        for (let i = 0; i < 8 && cursor; i++) {
+          cursor = cursor.previousElementSibling;
+          const siblingText = clean(cursor?.textContent || "").toLowerCase();
+          if (!siblingText) continue;
+          if (/super\s*ponuka|superponuka/i.test(siblingText)) return "super_ponuka";
+          if (/super\s*š?anca|supersanca/i.test(siblingText)) {
+            if (isSuperkurzyPage) return "super_ponuka";
+            return "super_sanca";
+          }
+        }
+        return "super_ponuka";
+      };
       const candidateCards = [];
       for (const row of rows) {
-        const rowText = clean(row.textContent || "").toLowerCase();
-        const rowTitle = clean(row.querySelector("[title]")?.getAttribute("title") || "").toLowerCase();
-        const boundaryParticipants = clean(row.querySelector('[data-atid="bets-opponents"]')?.getAttribute("data-participants") || "").toLowerCase();
-        const boundaryBlob = `${rowText} ${rowTitle} ${boundaryParticipants}`;
-        if (/super\s*š?anca/i.test(boundaryBlob)) break;
         const btn = row.querySelector('[data-atid="bets-opponents"]');
         if (!btn) continue;
         const rowEl = btn.closest("[data-game-state]") || btn.closest("li") || btn.parentElement?.parentElement || btn.parentElement;
+        const section = detectSectionForRow(row, rowEl);
         const oddEls = rowEl ? Array.from(rowEl.querySelectorAll('[data-atid$="bet-odd"], [data-atid*="bet-odd"]')) : [];
         const odds = oddEls.map((el) => clean(el.textContent)).filter(Boolean);
 
@@ -328,10 +362,18 @@ async function scrapeNikeCore({ headless = true, timeoutMs = 45000, saveDebugArt
         const homeTeam = divParts[0] || "";
         const awayTeam = divParts[1] || "";
         const metaTitle = clean(btn.getAttribute("title") || rowEl?.querySelector("[title]")?.getAttribute("title") || "");
-        const dateMatch = metaTitle.match(/(\d{2})\.(\d{2})\.(\d{4})\s+(\d{2}):(\d{2})/);
-        const kickoffAt = dateMatch ? `${dateMatch[3]}-${dateMatch[2]}-${dateMatch[1]}T${dateMatch[4]}:${dateMatch[5]}:00` : null;
+        const rowSnippet = clean(rowEl?.textContent || "").slice(0, 500);
+        let dateMatch = metaTitle.match(/(\d{2})\.(\d{2})\.(\d{4})\s+(\d{2}):(\d{2})/);
+        if (!dateMatch && rowSnippet) {
+          dateMatch = rowSnippet.match(/(\d{2})\.(\d{2})\.(\d{4})\s+(\d{2}):(\d{2})/);
+          if (!dateMatch) dateMatch = rowSnippet.match(/(\d{1,2})\.\s*(\d{1,2})\.\s*(\d{4})\s+(\d{2}):(\d{2})/);
+        }
+        const kickoffAt = dateMatch && dateMatch.length >= 6
+          ? `${dateMatch[3]}-${String(dateMatch[2]).padStart(2, "0")}-${String(dateMatch[1]).padStart(2, "0")}T${dateMatch[4]}:${dateMatch[5]}:00`
+          : null;
 
         candidateCards.push({
+          section,
           sport: clean(btn.getAttribute("data-sport") || rowEl?.querySelector("[data-sport]")?.getAttribute("data-sport") || ""),
           tournament: clean(btn.getAttribute("data-tournament") || ""),
           participants,
@@ -340,9 +382,9 @@ async function scrapeNikeCore({ headless = true, timeoutMs = 45000, saveDebugArt
           kickoffAt,
           metaTitle,
           odds,
-          rowSnippet: clean(rowEl?.textContent || "").slice(0, 500)
+          rowSnippet
         });
-        if (candidateCards.length > 20) break; // hard stop; Superponuka has only a few top rows
+        if (candidateCards.length > 80) break;
       }
 
       return {
@@ -371,7 +413,8 @@ async function scrapeNikeCore({ headless = true, timeoutMs = 45000, saveDebugArt
       matches.push({
         id: `nike-${matchId++}`,
         source: "nike",
-        sport: detectSportFromText(card.sport || card.tournament),
+        section: card.section || "super_ponuka",
+        sport: detectSportFromText(card.sport || card.tournament || card.rowSnippet || ""),
         tournament: card.tournament || null,
         kickoffAt: card.kickoffAt || null,
         rawTitle: `${homeTeam} vs ${awayTeam}`,
@@ -383,9 +426,15 @@ async function scrapeNikeCore({ headless = true, timeoutMs = 45000, saveDebugArt
       });
     }
 
-    validateSuperponukaMatches(matches);
+    const superPonukaMatches = matches.filter((m) => m.section === "super_ponuka");
+    validateSuperponukaMatches(STRICT_EXPECTED_SUPERPONUKA ? superPonukaMatches : matches);
     const detailMarketsByMatch = {};
     for (const match of matches) {
+      if (match.section === "super_sanca") {
+        // Super sanca can contain many rows; keep extraction fast by using row-level fallback odds.
+        detailMarketsByMatch[match.id] = [];
+        continue;
+      }
       const rowBtn = page
         .locator('[data-atid="bets-opponents"]')
         .filter({ hasText: match.homeTeam })
@@ -437,17 +486,17 @@ async function scrapeNikeCore({ headless = true, timeoutMs = 45000, saveDebugArt
       detailMarketsByMatch
     };
 
-    return { sourceUrl: extracted.finalUrl, matches, markets, debugInfo };
+    return { sourceUrl: extracted.finalUrl, sourceSiteMode: siteMode, matches, markets, debugInfo };
   } finally {
     await browser.close();
   }
 }
 
-export async function scrapeNikeSuperkurzy({ headless = true, timeoutMs = 45000 } = {}) {
-  const result = await scrapeNikeCore({ headless, timeoutMs, saveDebugArtifacts: false });
-  return { sourceUrl: result.sourceUrl, matches: result.matches, markets: result.markets };
+export async function scrapeNikeSuperkurzy({ headless = true, timeoutMs = 45000, siteMode = NIKE_SITE_MODE } = {}) {
+  const result = await scrapeNikeCore({ headless, timeoutMs, saveDebugArtifacts: false, siteMode });
+  return { sourceUrl: result.sourceUrl, sourceSiteMode: result.sourceSiteMode, matches: result.matches, markets: result.markets };
 }
 
-export async function debugNikeSuperkurzy({ headless = true, timeoutMs = 45000 } = {}) {
-  return scrapeNikeCore({ headless, timeoutMs, saveDebugArtifacts: true });
+export async function debugNikeSuperkurzy({ headless = true, timeoutMs = 45000, siteMode = NIKE_SITE_MODE } = {}) {
+  return scrapeNikeCore({ headless, timeoutMs, saveDebugArtifacts: true, siteMode });
 }

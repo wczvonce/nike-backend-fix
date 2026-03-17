@@ -163,3 +163,149 @@ th {
   background: #111827;
 }
 
+/* Margin badges */
+.margin-badge {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-weight: bold;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.margin-low {
+  background: #14532d;
+  color: #4ade80;
+}
+
+.margin-mid {
+  background: #713f12;
+  color: #fbbf24;
+}
+
+.margin-high {
+  background: #7c2d12;
+  color: #fb923c;
+}
+
+.margin-very-high {
+  background: #450a0a;
+  color: #f87171;
+}
+
+.margin-na {
+  color: #6b7280;
+  font-size: 11px;
+}
+
+.margin-diff-neg {
+  background: #14532d;
+  color: #4ade80;
+}
+
+.margin-diff-pos {
+  background: #450a0a;
+  color: #f87171;
+}
+
+.margin-note {
+  cursor: help;
+  font-size: 11px;
+  color: #fbbf24;
+  margin-left: 2px;
+}
+
+.opp-loading-note {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-bottom: 6px;
+  min-height: 16px;
+}
+
+/* Flashscore-style odds trend arrows */
+.odd-arrow {
+  margin-left: 4px;
+  font-size: 0.85em;
+  font-weight: 700;
+}
+.odd-up {
+  color: #22c55e;
+}
+.odd-down {
+  color: #ef4444;
+}
+.odd-same {
+  color: #9ca3af;
+}
+
+.card-clickable {
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.card-clickable:hover {
+  background: #374151;
+}
+
+.match-list-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.match-list-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+}
+.match-list-content {
+  position: relative;
+  background: #1f2937;
+  border: 1px solid #374151;
+  border-radius: 8px;
+  max-width: 420px;
+  width: 100%;
+  max-height: 70vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.match-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid #374151;
+}
+.match-list-header h3 {
+  margin: 0;
+  font-size: 14px;
+}
+.match-list-close {
+  background: transparent;
+  color: #9ca3af;
+  font-size: 22px;
+  line-height: 1;
+  padding: 0 6px;
+  cursor: pointer;
+}
+.match-list-close:hover {
+  color: #fff;
+}
+.match-list {
+  margin: 0;
+  padding: 10px 14px 14px;
+  list-style: none;
+  overflow: auto;
+  font-size: 13px;
+}
+.match-list li {
+  padding: 4px 0;
+  border-bottom: 1px solid #374151;
+}
+.match-list li:last-child {
+  border-bottom: none;
+}
+

@@ -30,6 +30,7 @@
       <section class="tabs">
         <button class="tab-btn active" data-tab="edges">Final Edges</button>
         <button class="tab-btn" data-tab="control">Control Table</button>
+        <button class="tab-btn" data-tab="opportunities">All 2-Way Opportunities</button>
       </section>
 
       <section id="edgesTab" class="tab-panel active">
@@ -49,8 +50,8 @@
                 <th>Selection</th>
                 <th>Period</th>
                 <th>Line</th>
-                <th>Nike</th>
-                <th>Tipsport</th>
+                <th title="Kurz z Flashscore (bookmaker Nike); ▲ kurz rástol, ▼ kurz klesol (vs opening)">Nike (▲▼)</th>
+                <th title="▲ kurz rástol, ▼ kurz klesol (vs opening)">Tipsport (▲▼)</th>
                 <th>Edge (pp)</th>
                 <th>Diff</th>
               </tr>
@@ -73,10 +74,43 @@
                 <th>Selection</th>
                 <th>Period</th>
                 <th>Line</th>
-                <th>Nike</th>
-                <th>Tipsport</th>
+                <th title="Kurz z Flashscore (bookmaker Nike); ▲ kurz rástol, ▼ kurz klesol (vs opening)">Nike (▲▼)</th>
+                <th title="Kurz z Flashscore; ▲ kurz rástol, ▼ kurz klesol (vs opening)">Tipsport (▲▼)</th>
                 <th>Status</th>
                 <th>Compare reason</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+      <section id="opportunitiesTab" class="tab-panel">
+        <div class="filters">
+          <input id="oppSearch" placeholder="Search match..." />
+          <select id="oppSport"><option value="">All sports</option></select>
+          <select id="oppMarket"><option value="">All markets</option></select>
+        </div>
+        <div id="oppLoading" class="opp-loading-note">Klikni Refresh pre načítanie dát.</div>
+        <div class="table-wrap">
+          <table id="opportunitiesTable">
+            <thead>
+              <tr>
+                <th>Match</th>
+                <th>Date/Time</th>
+                <th>Sport</th>
+                <th>MarketType</th>
+                <th>RawMarketName</th>
+                <th>Selection</th>
+                <th>Period</th>
+                <th>Line</th>
+                <th title="Kurz z Flashscore (bookmaker Nike); ▲ kurz rástol, ▼ kurz klesol (vs opening)">Nike odd (▲▼)</th>
+                <th title="▲ kurz rástol, ▼ kurz klesol (vs opening)">Tipsport odd (▲▼)</th>
+                <th>Nike Margin %</th>
+                <th>Tips Margin %</th>
+                <th>Margin Diff</th>
+                <th>Status</th>
+                <th>Compare reason</th>
+                <th>Source</th>
               </tr>
             </thead>
             <tbody></tbody>

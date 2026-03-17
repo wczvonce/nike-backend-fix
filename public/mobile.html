@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="sk">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Nike Tipsport Comparator</title>
+    <style>
+      :root { --bg: #121826; --card: #1c2438; --text: #e2e8f0; --muted: #94a3b8; --accent: #4caf50; --err: #f87171; }
+      * { box-sizing: border-box; }
+      body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 16px; min-height: 100vh; }
+      h1 { font-size: 1.25rem; margin: 0 0 8px; }
+      p { color: var(--muted); font-size: 0.9rem; margin: 0 0 16px; }
+      label { display: block; font-size: 0.85rem; margin-bottom: 6px; color: var(--muted); }
+      input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #334155; background: var(--card); color: var(--text); font-size: 1rem; }
+      .btn { display: inline-block; padding: 12px 20px; margin: 8px 8px 8px 0; border: none; border-radius: 8px; font-size: 1rem; cursor: pointer; }
+      .btn-primary { background: var(--accent); color: #fff; }
+      .btn-secondary { background: #334155; color: var(--text); }
+      .error { margin-top: 16px; padding: 12px; border-radius: 8px; background: rgba(248,113,113,0.15); color: var(--err); font-size: 0.9rem; }
+      .tip { margin-top: 20px; padding: 12px; border-radius: 8px; background: var(--card); font-size: 0.85rem; color: var(--muted); }
+      .tip strong { color: var(--text); }
+      .tip code { background: #0f172a; padding: 2px 6px; border-radius: 4px; }
+      .ok { color: var(--accent); margin-top: 12px; }
+    </style>
+  </head>
+  <body>
+    <h1>Nike Tipsport Comparator</h1>
+    <p>Nastav URL backendu a otvor mobilnu verziu aplikacie.</p>
+
+    <label for="backendUrl">Backend URL</label>
+    <input type="url" id="backendUrl" placeholder="https://... alebo http://192.168.1.120:3201" autocomplete="url" />
+
+    <div>
+      <button type="button" class="btn btn-primary" id="btnSave">Ulozit URL</button>
+      <button type="button" class="btn btn-secondary" id="btnOpen">Otvorit appku</button>
+      <button type="button" class="btn btn-secondary" id="btnReset">Reset URL</button>
+    </div>
+
+    <div id="message"></div>
+
+    <div class="tip">
+      <strong>Tip:</strong><br />
+      Na fyzickom mobile pouzi IP tvojej PC v rovnakej Wi-Fi sieti. Napr.: <code>http://192.168.1.120:3201</code><br />
+      Na emulatore funguje <code>http://10.0.2.2:3201</code><br />
+      Ak pouzivas ngrok, zadaj celu URL vratane <code>.dev</code> alebo <code>.app</code>.
+    </div>
+
+    <script>
+      const STORAGE_KEY = "nike_backend_url";
+
+      function normalizeUrl(raw) {
+        let s = String(raw || "").trim();
+        if (!s) return "";
+        // Common typo fixes from mobile keyboard / copy-paste.
+        s = s.replace(/\s+/g, "");
+        s = s.replace(/,ngrok-free\./gi, ".ngrok-free.");
+        s = s.replace(/ngrok-free,\./gi, "ngrok-free.");
+        s = s.replace(/,$/, "");
+        if (!/^https?:\/\//i.test(s)) s = "http://" + s;
+        try {
+          const u = new URL(s);
+          u.hostname = u.hostname.replace(/,/g, ".");
+          u.search = "";
+          u.hash = "";
+          s = u.toString();
+        } catch (_) {}
+        if (s.endsWith("/")) s = s.slice(0, -1);
+        if (s.includes("ngrok-free.") && !s.includes(".dev") && !s.includes(".app")) s = s + "dev";
+        return s;
+      }
+
+      function getSavedUrl() {
+        try {
+          return localStorage.getItem(STORAGE_KEY) || "";
+        } catch (_) {
+          return "";
+        }
+      }
+
+      function getCurrentOriginUrl() {
+        try {
+          return normalizeUrl(window.location.origin || "");
+        } catch (_) {
+          return "";
+        }
+      }
+
+      function setMessage(html, isError) {
+        const el = document.getElementById("message");
+        el.innerHTML = html;
+        el.className = isError ? "error" : "ok";
+      }
+
+      async function checkHealth(baseUrl) {
+        const url = baseUrl + "/health";
+        const ctrl = new AbortController();
+        const t = setTimeout(() => ctrl.abort(), 10000);
+        try {
+          const res = await fetch(url, {
+            method: "GET",
+            signal: ctrl.signal,
+            headers: { "ngrok-skip-browser-warning": "true" }
+          });
+          clearTimeout(t);
+          const text = await res.text();
+          if (text.includes("ERR_NGROK_6024")) {
+            return { ok: true, ngrokWarning: true };
+          }
+          try {
+            const data = JSON.parse(text);
+            return { ok: res.ok && data && data.ok === true, ngrokWarning: false };
+          } catch (_) {
+            return { ok: false, ngrokWarning: false };
+          }
+        } catch (_) {
+          clearTimeout(t);
+          return { ok: false, ngrokWarning: false };
+        }
+      }
+
+      const currentOriginUrl = getCurrentOriginUrl();
+      const isCurrentOriginNgrok = currentOriginUrl.includes(".ngrok-free.dev") || currentOriginUrl.includes(".ngrok-free.app");
+      const savedUrl = normalizeUrl(getSavedUrl());
+      let initialUrl = savedUrl || currentOriginUrl;
+      // If page is opened through ngrok, prefer current origin (usually the active tunnel).
+      if (isCurrentOriginNgrok && currentOriginUrl && savedUrl !== currentOriginUrl) {
+        initialUrl = currentOriginUrl;
+      }
+      document.getElementById("backendUrl").value = initialUrl;
+      if (initialUrl) {
+        try { localStorage.setItem(STORAGE_KEY, initialUrl); } catch (_) {}
+      }
+
+      document.getElementById("btnSave").onclick = async () => {
+        const raw = document.getElementById("backendUrl").value;
+        const url = normalizeUrl(raw);
+        if (!url) {
+          setMessage("Zadaj platnu URL.", true);
+          return;
+        }
+        document.getElementById("backendUrl").value = url;
+        try {
+          localStorage.setItem(STORAGE_KEY, url);
+        } catch (_) {}
+        setMessage("Kontrolujem dostupnost...", false);
+        const result = await checkHealth(url);
+        if (result.ok && result.ngrokWarning) {
+          setMessage("Backend je dostupny cez ngrok, ale ngrok vracia warning page v browseri. Po otvoreni appky potvrď warning alebo pouzi lokalnu IP PC v rovnakej Wi-Fi.", false);
+        } else if (result.ok) {
+          setMessage("Backend je dostupny. Mozes otvorit appku.", false);
+        } else {
+          setMessage("Backend nedostupny: " + url + "<br><br>Skontroluj, ci backend bezi na PC a ci si zadal spravnu URL (IP v rovnakej Wi-Fi alebo platnu ngrok URL).", true);
+        }
+      };
+
+      document.getElementById("btnOpen").onclick = () => {
+        const url = getSavedUrl() || normalizeUrl(document.getElementById("backendUrl").value);
+        if (!url) {
+          setMessage("Najprv uloz URL backendu.", true);
+          return;
+        }
+        window.location.href = url;
+      };
+
+      document.getElementById("btnReset").onclick = () => {
+        try { localStorage.removeItem(STORAGE_KEY); } catch (_) {}
+        document.getElementById("backendUrl").value = "";
+        setMessage("URL bola resetovana. Zadaj novu URL backendu a uloz ju.", false);
+      };
+    </script>
+  </body>
+</html>
