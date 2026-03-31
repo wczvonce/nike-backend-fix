@@ -19,7 +19,8 @@
     "verify:missed-edge-cases": "node scripts/verify-missed-edge-cases.js",
     "verify:qa-consistency": "node scripts/verify-qa-consistency.js",
     "verify:pushed-state": "node scripts/verify-pushed-state.js",
-    "verify:all": "npm test && npm run verify:flashscore-sources && npm run verify:market-safety && npm run verify:superponuka-coverage && npm run verify:missed-edge-cases && npm run verify:support-matrix && npm run verify:final-output && npm run verify:qa-consistency",
+    "verify:all-2way": "node scripts/verify-all-2way-opportunities.js",
+    "verify:all": "npm test && npm run verify:all-2way && npm run verify:flashscore-sources && npm run verify:market-safety && npm run verify:superponuka-coverage && npm run verify:missed-edge-cases && npm run verify:support-matrix && npm run verify:final-output && npm run verify:qa-consistency",
     "desktop": "electron desktop/main.mjs",
     "desktop:icon": "powershell -ExecutionPolicy Bypass -File scripts/create-desktop-icon.ps1",
     "desktop:build": "set CSC_IDENTITY_AUTO_DISCOVERY=false && npm run desktop:icon && electron-builder --win nsis"

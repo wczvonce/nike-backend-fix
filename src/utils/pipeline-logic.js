@@ -146,6 +146,33 @@ export function validateMarketCandidate(row) {
   return { ok: true };
 }
 
+export function compute2WayMarginPercent(odd1, odd2) {
+  if (!(odd1 > 1) || !(odd2 > 1)) return null;
+  return round2(((1 / odd1) + (1 / odd2) - 1) * 100);
+}
+
+export function compute3WayMarginPercent(odd1, odd2, odd3) {
+  if (!(odd1 > 1) || !(odd2 > 1) || !(odd3 > 1)) return null;
+  // Standard overround: (sum of 1/odd_i - 1) * 100
+  return round2(((1 / odd1) + (1 / odd2) + (1 / odd3) - 1) * 100);
+}
+
+export function getPairSelectionsForMarket(marketType) {
+  if (["match_winner_2way", "draw_no_bet_2way", "asian_handicap_2way", "european_handicap_2way"].includes(marketType)) {
+    return { type: "home_away", keys: ["home", "away"] };
+  }
+  if (marketType === "over_under_2way") {
+    return { type: "over_under", keys: ["over", "under"] };
+  }
+  if (["both_teams_to_score", "team_to_score_yes_no", "generic_yes_no"].includes(marketType)) {
+    return { type: "yes_no", keys: ["yes", "no"] };
+  }
+  if (marketType === "double_chance") {
+    return { type: "double_chance_3way", keys: ["1x", "12", "x2"] };
+  }
+  return null;
+}
+
 export function validateFinalRows(rows) {
   const errors = [];
   for (const row of rows) {

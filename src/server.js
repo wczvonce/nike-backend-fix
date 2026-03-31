@@ -22,6 +22,7 @@ import {
   E2E_COMPARE_MARKET_TYPES,
   isNikeGreaterThanTipsport
 } from "./utils/pipeline-logic.js";
+import { build2WayOpportunities } from "./utils/all-2way-builder.js";
 
 dotenv.config();
 const app = express();
@@ -52,7 +53,7 @@ function validateSuperponuka(matches) {
   if (new Set(got).size !== got.length) return { ok: false, error: "Nike parser mismatch: duplicate matches found" };
   for (const m of matches) {
     const key = normalizeForCompare(m.rawTitle);
-    if (!m.sport || m.sport === "unknown") return { ok: false, error: `Nike parser mismatch: unknown sport for "${m.rawTitle}"` };
+    if (!m.sport || m.sport === "unknown") continue; // skip unknown sports, don't fail entire pipeline
     const expectedSport = EXPECTED_SUPERPONUKA_SPORT_BY_TITLE[key];
     if (STRICT_EXPECTED_SUPERPONUKA && expectedSport && m.sport !== expectedSport) {
       return { ok: false, error: `Nike parser mismatch: wrong sport for "${m.rawTitle}"` };
@@ -140,6 +141,13 @@ async function buildNikeTipsportPipeline() {
   const perMatchTimings = [];
   try {
   const nike = await scrapeNikeSuperkurzy({ headless: HEADLESS, timeoutMs: REQUEST_TIMEOUT_MS });
+  // Only process Superkurzy (super_ponuka) matches — NOT Superšanca (super_sanca).
+  // Superšanca has many low-value matches that slow down the pipeline and aren't the target.
+  const superkurzyMatches = nike.matches.filter((m) => m.section === "super_ponuka");
+  const superkurzyMarketIds = new Set(superkurzyMatches.map((m) => m.id));
+  nike.markets = nike.markets.filter((m) => superkurzyMarketIds.has(m.matchId));
+  nike.matches = superkurzyMatches;
+
   const nikeValidation = validateSuperponuka(nike.matches);
   if (!nikeValidation.ok) {
     return { ok: false, error: nikeValidation.error, stage: "nike_validation" };
@@ -157,6 +165,7 @@ async function buildNikeTipsportPipeline() {
       awayTeam: match.awayTeam,
       sport: match.sport,
       tournament: match.tournament || "",
+      kickoffAt: match.kickoffAt || null,
       headless: HEADLESS,
       timeoutMs: REQUEST_TIMEOUT_MS
     });
@@ -177,6 +186,7 @@ async function buildNikeTipsportPipeline() {
           line: m.line ?? null,
           nikeOdd: m.nikeOdd,
           tipsportOdd: null,
+          tipsportOddTrend: null,
           status: "NIKE_ONLY",
           compareReason: "flashscore_match_not_found"
         });
@@ -217,6 +227,7 @@ async function buildNikeTipsportPipeline() {
             line: m.line ?? null,
             nikeOdd: m.nikeOdd,
             tipsportOdd: null,
+            tipsportOddTrend: null,
             status: "DISABLED",
             compareReason: "market_not_enabled_end_to_end"
           });
@@ -273,6 +284,7 @@ async function buildNikeTipsportPipeline() {
               line: m.line ?? null,
               nikeOdd: m.nikeOdd,
               tipsportOdd: null,
+              tipsportOddTrend: null,
               status: "NO_TIPSPORT_ROW",
               compareReason: "tipsport_row_not_found_for_market_period",
               sourceType: fsMarket.sourceType || "unknown",
@@ -281,15 +293,28 @@ async function buildNikeTipsportPipeline() {
           }
         }
 
+        // Use participantDomOrder (from the actual odds page) for swap detection
+        // for ALL team-relative markets (DC + home/away). The search-level
+        // isSwappedOrientation can disagree with the actual page ordering.
+        let marketSwapped = swapped;
+        if (fsMarket.participantDomOrder?.length >= 2) {
+          const domStraight = similarity(match.homeTeam, fsMarket.participantDomOrder[0])
+            + similarity(match.awayTeam, fsMarket.participantDomOrder[1]);
+          const domSwappedSim = similarity(match.homeTeam, fsMarket.participantDomOrder[1])
+            + similarity(match.awayTeam, fsMarket.participantDomOrder[0]);
+          marketSwapped = domSwappedSim > domStraight + 0.05;
+        }
+
         for (const nikeMarket of nikeRowsForPeriod) {
         let mappedSelection = nikeMarket.selection;
-        if (marketType === "double_chance") mappedSelection = mapSelectionForSwap(nikeMarket.selection, swapped);
-        else if (isHomeAwayMarket(marketType)) mappedSelection = mapSelectionForSwap(nikeMarket.selection, swapped);
-        const mappedLine = mapLineForSwap(nikeMarket.line ?? null, marketType, swapped);
+        if (marketType === "double_chance") mappedSelection = mapSelectionForSwap(nikeMarket.selection, marketSwapped);
+        else if (isHomeAwayMarket(marketType)) mappedSelection = mapSelectionForSwap(nikeMarket.selection, marketSwapped);
+        const mappedLine = mapLineForSwap(nikeMarket.line ?? null, marketType, marketSwapped);
         const tipsportRow = isLineMarket(marketType)
           ? tipsportRows.find((row) => sameLine(row.line, mappedLine))
           : tipsportRows[0];
         const tipsportOdd = tipsportRow?.selectionOdds?.[mappedSelection] ?? null;
+        const tipsportOddTrend = tipsportRow?.selectionTrend?.[mappedSelection] ?? null;
         const row = {
           matchId: match.id,
           match: match.rawTitle,
@@ -304,6 +329,7 @@ async function buildNikeTipsportPipeline() {
           mappedSelection,
           nikeOdd: nikeMarket.nikeOdd,
           tipsportOdd,
+          tipsportOddTrend,
           flashscoreMatchUrl: fsMatch.href,
           sourceMarketName: fsMarket.marketName || null,
           sourcePeriod: fsMarket.period || period,
@@ -315,7 +341,7 @@ async function buildNikeTipsportPipeline() {
           participantRoles: fsMarket.participantRoles || null,
           participantDomOrder: fsMarket.participantDomOrder || [],
           selectionConfidence: tipsportRow?.selectionConfidence || "derived",
-          swapped,
+          swapped: marketSwapped,
           straightSimilarity: Number(straightSim.toFixed(3)),
           swappedSimilarity: Number(swappedSim.toFixed(3)),
           columnLabels: fsMarket.columnLabels || [],
@@ -373,6 +399,7 @@ async function buildNikeTipsportPipeline() {
             line: nikeMarket.line ?? null,
             nikeOdd: nikeMarket.nikeOdd,
             tipsportOdd,
+            tipsportOddTrend: row.tipsportOddTrend,
             status: statusByReason[marketValidation.reason] || "REJECTED_BY_VALIDATOR",
             compareReason: marketValidation.reason,
             sourceType: fsMarket.sourceType || "unknown",
@@ -394,6 +421,7 @@ async function buildNikeTipsportPipeline() {
             line: nikeMarket.line ?? null,
             nikeOdd: nikeMarket.nikeOdd,
             tipsportOdd,
+            tipsportOddTrend: row.tipsportOddTrend,
             status: "REJECTED_BY_VALIDATOR",
             compareReason: "nike_not_gt_tipsport",
             sourceType: fsMarket.sourceType || "unknown",
@@ -403,6 +431,30 @@ async function buildNikeTipsportPipeline() {
           continue;
         }
         const metrics = computeMetrics(row.nikeOdd, row.tipsportOdd);
+        // Sanity check: edges > 15pp are almost certainly parser bugs (inverted home/away,
+        // wrong line match, etc.). Real Nike vs Tipsport differences are typically 0.5-5pp.
+        if (metrics.probabilityEdgePp > 15) {
+          controlRows.push({
+            matchId: match.id,
+            match: match.rawTitle,
+            kickoffAt: match.kickoffAt || null,
+            sport: match.sport,
+            marketType,
+            rawMarketName: fsMarket.marketName || marketType,
+            selection: nikeMarket.selection,
+            period: nikeMarket.period || "full_time",
+            line: nikeMarket.line ?? null,
+            nikeOdd: nikeMarket.nikeOdd,
+            tipsportOdd,
+            tipsportOddTrend: row.tipsportOddTrend,
+            status: "REJECTED_BY_VALIDATOR",
+            compareReason: "edge_too_large_likely_parser_bug",
+            sourceType: fsMarket.sourceType || "unknown",
+            fallbackReason: fsMarket.fallbackReason || null
+          });
+          rejectedRows.push({ ...row, rejectReason: "edge_too_large_likely_parser_bug" });
+          continue;
+        }
         controlRows.push({
           matchId: match.id,
           match: match.rawTitle,
@@ -415,6 +467,7 @@ async function buildNikeTipsportPipeline() {
           line: nikeMarket.line ?? null,
           nikeOdd: nikeMarket.nikeOdd,
           tipsportOdd,
+          tipsportOddTrend: row.tipsportOddTrend,
           status: "MATCHED",
           compareReason: "nike_gt_tipsport",
           sourceType: fsMarket.sourceType || "unknown",
@@ -468,6 +521,7 @@ async function buildNikeTipsportPipeline() {
             line: null,
             nikeOdd: null,
             tipsportOdd: null,
+            tipsportOddTrend: null,
             status: "UNSUPPORTED",
             compareReason: "nike_not_emitted_and_no_tipsport_rows_found"
           });
@@ -490,6 +544,7 @@ async function buildNikeTipsportPipeline() {
               line: row.line ?? null,
               nikeOdd: null,
               tipsportOdd,
+              tipsportOddTrend: row.selectionTrend?.[selectionKey] ?? null,
               status: "TIPSPORT_ONLY",
               compareReason: "nike_market_not_emitted_for_match"
             });
@@ -508,6 +563,7 @@ async function buildNikeTipsportPipeline() {
           line: null,
           nikeOdd: null,
           tipsportOdd: null,
+          tipsportOddTrend: null,
           status: "UNSUPPORTED",
           compareReason: "flashscore_probe_failed_for_non_emitted_market"
         });
@@ -614,6 +670,22 @@ app.use((req, _res, next) => {
   next();
 });
 
+const publicDir = path.resolve(__dirname, "..", "public");
+const indexPath = path.join(publicDir, "index.html");
+
+app.get("/", (req, res) => {
+  res.sendFile(indexPath, (err) => {
+    if (err) {
+      console.error("[GET /] sendFile error:", err?.message);
+      res.status(500).setHeader("Content-Type", "application/json").json({
+        ok: false,
+        error: "index.html not found",
+        hint: "Spúšťaj server z priečinka projektu (npm start)."
+      });
+    }
+  });
+});
+
 app.get("/health", (_req, res) => {
   res.json({ ok: true, service: "nike-flash-backend", headless: HEADLESS, port: PORT });
 });
@@ -655,7 +727,7 @@ app.get("/api/debug/nike", async (_req, res) => {
 });
 
 app.get("/api/flashscore/search", async (req, res) => {
-  const { homeTeam, awayTeam, sport, tournament } = req.query;
+  const { homeTeam, awayTeam, sport, tournament, kickoffAt } = req.query;
   if (!homeTeam || !awayTeam) {
     return res.status(400).setHeader("Content-Type", "application/json").json({ ok: false, error: "Query parameters homeTeam and awayTeam are required." });
   }
@@ -665,6 +737,7 @@ app.get("/api/flashscore/search", async (req, res) => {
       awayTeam: String(awayTeam).trim(),
       sport: sport || "football",
       tournament: tournament || "",
+      kickoffAt: kickoffAt || null,
       headless: HEADLESS,
       timeoutMs: REQUEST_TIMEOUT_MS
     });
@@ -1036,6 +1109,53 @@ app.get("/api/ui/snapshot", async (req, res) => {
     const message = normalizePlaywrightError(err?.message);
     res.status(500).json({ ok: false, error: message });
   }
+});
+
+app.get("/api/ui/all-2way-opportunities", async (req, res) => {
+  try {
+    const force = String(req.query?.force || "") === "1";
+    const pipeline = await getUiPipeline({ force });
+    if (!pipeline.ok) return res.status(500).json({ ok: false, error: pipeline.error, stage: pipeline.stage });
+    const rows = build2WayOpportunities(pipeline);
+    res.json({ ok: true, updatedAt: new Date().toISOString(), count: rows.length, rows });
+  } catch (err) {
+    const message = normalizePlaywrightError(err?.message);
+    console.error("[ui/all-2way-opportunities]", err?.message);
+    res.status(500).json({ ok: false, error: message });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Flashscore Monitor proxy — forward /fs/* to Python dashboard on port 8500
+// ---------------------------------------------------------------------------
+import http from "node:http";
+
+const FS_MONITOR_PORT = 8500;
+
+app.use("/fs", (req, res) => {
+  // Rewrite path: /fs/scan?sport=football → /scan?sport=football
+  const targetPath = req.url === "/" || req.url === "" ? "/" : req.url;
+  const options = {
+    hostname: "127.0.0.1",
+    port: FS_MONITOR_PORT,
+    path: targetPath,
+    method: req.method,
+    headers: { ...req.headers, host: `127.0.0.1:${FS_MONITOR_PORT}` },
+  };
+
+  const proxyReq = http.request(options, (proxyRes) => {
+    res.writeHead(proxyRes.statusCode, proxyRes.headers);
+    // Stream response (important for SSE /events endpoint)
+    proxyRes.pipe(res, { end: true });
+  });
+
+  proxyReq.on("error", () => {
+    if (!res.headersSent) {
+      res.status(502).json({ ok: false, error: "Flashscore Monitor is not running (port 8500)" });
+    }
+  });
+
+  req.pipe(proxyReq, { end: true });
 });
 
 app.use((_req, res) => {

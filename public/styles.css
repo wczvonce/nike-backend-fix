@@ -163,3 +163,87 @@ th {
   background: #111827;
 }
 
+/* Margin badges */
+.margin-badge {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-weight: bold;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.margin-low {
+  background: #14532d;
+  color: #4ade80;
+}
+
+.margin-mid {
+  background: #713f12;
+  color: #fbbf24;
+}
+
+.margin-high {
+  background: #7c2d12;
+  color: #fb923c;
+}
+
+.margin-very-high {
+  background: #450a0a;
+  color: #f87171;
+}
+
+.margin-na {
+  color: #6b7280;
+  font-size: 11px;
+}
+
+.margin-diff-neg {
+  background: #14532d;
+  color: #4ade80;
+}
+
+.margin-diff-pos {
+  background: #450a0a;
+  color: #f87171;
+}
+
+.margin-note {
+  cursor: help;
+  font-size: 11px;
+  color: #fbbf24;
+  margin-left: 2px;
+}
+
+.opp-loading-note {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-bottom: 6px;
+  min-height: 16px;
+}
+
+/* Flashscore-style odds trend arrows */
+.odd-arrow {
+  margin-left: 4px;
+  font-size: 0.85em;
+  font-weight: 700;
+}
+.odd-up {
+  color: #22c55e;
+}
+.odd-down {
+  color: #ef4444;
+}
+.odd-same {
+  color: #9ca3af;
+}
+
+/* Flashscore Monitor tab button */
+.tab-fs {
+  background: linear-gradient(135deg, #ff6b35, #e85d2a) !important;
+  color: #fff !important;
+}
+.tab-fs.active {
+  background: linear-gradient(135deg, #ff6b35, #f7c948) !important;
+}
+
