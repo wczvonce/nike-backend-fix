@@ -868,8 +868,14 @@ async function extractOddsTableFromPage(page) {
         let stripped = fullText;
         for (const odd of oddTexts) stripped = stripped.replace(odd, "");
         stripped = stripped.replace(bookmaker, "").replace(/Live Bet Icon/gi, "").replace(/[a-záčďéíĺľňóôŕšťúýžA-ZÁČĎÉÍĹĽŇÓÔŔŠŤÚÝŽ]+/g, "").trim();
-        const lineMatch = stripped.match(/([-+]?\d+(?:[.,]\d+)?)/);
-        if (lineMatch) lineText = lineMatch[1];
+        // Skip split/asian lines like "-1.5, -2" (contains comma between numbers)
+        // These are quarter-lines that don't match Nike's whole/half lines
+        if (/[-+]?\d+(?:[.,]\d+)?\s*,\s*[-+]?\d/.test(stripped)) {
+          lineText = "__SPLIT_LINE__";
+        } else {
+          const lineMatch = stripped.match(/([-+]?\d+(?:[.,]\d+)?)/);
+          if (lineMatch) lineText = lineMatch[1];
+        }
       }
       return {
         bookmaker,
