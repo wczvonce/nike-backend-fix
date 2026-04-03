@@ -258,7 +258,7 @@ function renderEdges() {
   edgesTbody.innerHTML = rows
     .map((r) => `
       <tr>
-        <td>${toText(r.match)}</td>
+        <td>${r.flashscoreMatchUrl ? `<a href="${r.flashscoreMatchUrl}" target="_blank" style="color:#60a5fa;text-decoration:none">${toText(r.match)}</a>` : toText(r.match)}</td>
         <td>${formatKickoff(r.kickoffAt)}</td>
         <td>${toText(r.sport)}</td>
         <td>${toText(r.marketType)}</td>
@@ -408,7 +408,7 @@ function renderViewFromSnapshot(snapshot) {
   edgesTbody.innerHTML = edgeRows
     .map((r) => `
       <tr>
-        <td>${toText(r.match)}</td>
+        <td>${r.flashscoreMatchUrl ? `<a href="${r.flashscoreMatchUrl}" target="_blank" style="color:#60a5fa;text-decoration:none">${toText(r.match)}</a>` : toText(r.match)}</td>
         <td>${formatKickoff(r.kickoffAt)}</td>
         <td>${toText(r.sport)}</td>
         <td>${toText(r.marketType)}</td>

@@ -585,7 +585,7 @@
         const edgeVal = parseFloat(r.probabilityEdgePp) || 0;
         const edgeCls = edgeVal > 0 ? "edge-positive" : edgeVal < 0 ? "edge-negative" : "edge-neutral";
         return `<div class="edge-card">
-          <div class="match-name">${esc(r.match)}</div>
+          <div class="match-name">${r.flashscoreMatchUrl ? `<a href="${esc(r.flashscoreMatchUrl)}" target="_blank" style="color:var(--accent);text-decoration:none">${esc(r.match)}</a>` : esc(r.match)}</div>
           <div class="meta">
             <span class="tag sport">${esc(r.sport)}</span>
             <span class="tag">${esc(r.marketType)}</span>
