@@ -139,7 +139,12 @@ export function validateMarketCandidate(row) {
   if (isLineMarket(row.marketType) && row.line == null) return { ok: false, reason: "line_missing" };
   if (isLineMarket(row.marketType) && row.sourceLine == null) return { ok: false, reason: "line_missing_source" };
   if (isLineMarket(row.marketType) && !sameLine(row.line, row.sourceLine)) return { ok: false, reason: "line_mismatch" };
-  if (row.sourceSelection && row.sourceSelection !== row.mappedSelection && row.sourceSelection !== row.selection) {
+  // sourceSelection is confirmed from Tipsport selectionOdds (null if key not found).
+  // If null, the mapped selection doesn't exist in the source → reject.
+  if (row.sourceSelection === null && row.tipsportOdd != null) {
+    return { ok: false, reason: "selection_not_in_source" };
+  }
+  if (row.sourceSelection && row.sourceSelection !== row.mappedSelection) {
     return { ok: false, reason: "selection_source_mismatch" };
   }
 

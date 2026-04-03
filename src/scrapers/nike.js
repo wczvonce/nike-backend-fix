@@ -256,12 +256,18 @@ function parseNikeDetailMarketsForMatch(match, detailMarkets = []) {
     ) {
       for (const row of rows) {
         const odds = (row.odds || []).map((v) => parseOdd(v, { rejectDateLike: false, rejectTimeLike: false })).filter((v) => v !== null);
-        const lines = [...String(row.text || "").matchAll(/([+-]\d+(?:[.,](?:0|5))?)/g)]
+        // Support all decimal lines (not just .0/.5) — e.g. +1.25, -2.75
+        const lines = [...String(row.text || "").matchAll(/([+-]\d+(?:[.,]\d+)?)/g)]
           .map((m) => sanitizeLine(parseLineToken(m[1])))
           .filter((x) => x != null);
+        // Group lines into unique absolute values for pairing with odds
+        const uniqueAbsLines = [...new Set(lines.map((l) => Math.abs(l)))].sort((a, b) => a - b);
         const pairs = Math.floor(odds.length / 2);
         for (let i = 0; i < pairs; i++) {
-          const line = sanitizeLine(lines[i * 2] ?? lines[i] ?? null);
+          // Use the i-th unique absolute line. If not available, skip (reject unreliable pairing).
+          const absLine = uniqueAbsLines[i];
+          if (absLine == null) continue;
+          const line = sanitizeLine(absLine);
           if (line == null) continue;
           const homeOdd = odds[i * 2];
           const awayOdd = odds[i * 2 + 1];
@@ -314,9 +320,11 @@ function dedupeMarkets(markets = []) {
     // For non-line markets (DNB, DC, winner, BTTS), deduplicate by matchId+type+period+selection
     // to keep only the FIRST occurrence (most reliable). Including nikeOdd in the key would
     // allow duplicates with different odds from different Nike detail sections.
+    // Dedupe by logical market identity only — never include nikeOdd in the key.
+    // Including nikeOdd allows duplicates with different odds from fallback vs detail scrape.
     const isLineMarket = ["asian_handicap_2way", "over_under_2way", "european_handicap_2way"].includes(m.marketType);
     const key = isLineMarket
-      ? [m.matchId, m.marketType, m.period || "full_time", m.line ?? "null", m.selection, m.nikeOdd].join("|")
+      ? [m.matchId, m.marketType, m.period || "full_time", m.line ?? "null", m.selection].join("|")
       : [m.matchId, m.marketType, m.period || "full_time", m.selection].join("|");
     if (seen.has(key)) continue;
     seen.add(key);
@@ -464,6 +472,8 @@ async function scrapeNikeCore({ headless = true, timeoutMs = 45000, saveDebugArt
         : splitParticipants(card.participants);
       const homeTeam = teams.homeTeam?.trim();
       const awayTeam = teams.awayTeam?.trim();
+      // IMPORTANT: Do NOT dedup/Set parsedOdds — order is positional (1X2 + DC mapping).
+      // Duplicate values (e.g. two odds of 1.85) are valid and must be preserved.
       const parsedOdds = card.odds.map((v) => parseOdd(v, { rejectDateLike: false, rejectTimeLike: false })).filter((v) => v !== null);
       if (!homeTeam || !awayTeam || parsedOdds.length < 2) continue;
       const dedupKey = `${normalizeTeamName(homeTeam)}__${normalizeTeamName(awayTeam)}__${card.tournament || ""}`;

@@ -347,7 +347,9 @@ async function buildNikeTipsportPipeline() {
           columnLabels: fsMarket.columnLabels || [],
           rawBookmakerRowText: tipsportRow?.rawRowText || "",
           extractedOddsArray: tipsportRow?.extractedOddsArray || [],
-          sourceSelection: mappedSelection
+          // sourceSelection = confirmed key from Tipsport selectionOdds, or null if not found.
+          // This must NOT be self-assigned from mappedSelection — validation compares these.
+          sourceSelection: (tipsportRow?.selectionOdds && mappedSelection in tipsportRow.selectionOdds) ? mappedSelection : null
         };
         row.normalizedNikeMarket = createNormalizedMarket({
           matchId: match.id,
