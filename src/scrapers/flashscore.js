@@ -861,20 +861,25 @@ async function extractOddsTableFromPage(page) {
       });
       // Try multiple selectors for line value — Flashscore O/U has line in various elements
       let lineText = clean(row.querySelector(".oddsCell__noOddsCell, .oddsCell__line")?.textContent || "");
-      // Fallback: extract line from row text by removing bookmaker name and odds
+      // Fallback: extract line from row text before the odds values.
+      // Flashscore DOM row text format: "Live Bet Icon{line}{odd1}{odd2}"
+      // e.g. "Live Bet Icon-1.52.521.51" where line=-1.5, odds=[2.52, 1.51]
       if (!lineText || lineText === "-") {
         const fullText = clean(row.textContent || "");
-        // Remove odds values and bookmaker-related text to isolate the line number
-        let stripped = fullText;
-        for (const odd of oddTexts) stripped = stripped.replace(odd, "");
-        stripped = stripped.replace(bookmaker, "").replace(/Live Bet Icon/gi, "").replace(/[a-záčďéíĺľňóôŕšťúýžA-ZÁČĎÉÍĹĽŇÓÔŔŠŤÚÝŽ]+/g, "").trim();
-        // Skip split/asian lines like "-1.5, -2" (contains comma between numbers)
-        // These are quarter-lines that don't match Nike's whole/half lines
-        if (/[-+]?\d+(?:[.,]\d+)?\s*,\s*[-+]?\d/.test(stripped)) {
-          lineText = "__SPLIT_LINE__";
-        } else {
-          const lineMatch = stripped.match(/([-+]?\d+(?:[.,]\d+)?)/);
-          if (lineMatch) lineText = lineMatch[1];
+        // Strategy: find the line BETWEEN "Live Bet Icon" (or bookmaker) and the first odd
+        const firstOdd = oddTexts[0] || "";
+        const iconEnd = fullText.replace(/Live Bet Icon/gi, "\x00").indexOf("\x00");
+        const oddStart = firstOdd ? fullText.indexOf(firstOdd, Math.max(0, iconEnd)) : -1;
+        if (oddStart > 0) {
+          // Extract text between icon/bookmaker and first odd
+          const beforeOdds = fullText.substring(0, oddStart).replace(/Live Bet Icon/gi, "").replace(bookmaker, "").replace(/[a-záčďéíĺľňóôŕšťúýžA-ZÁČĎÉÍĹĽŇÓÔŔŠŤÚÝŽ]+/gi, "").trim();
+          // Skip split/asian lines like "-1.5, -2"
+          if (/[-+]?\d+(?:[.,]\d+)?\s*,\s*[-+]?\d/.test(beforeOdds)) {
+            lineText = "__SPLIT_LINE__";
+          } else {
+            const lineMatch = beforeOdds.match(/([-+]?\d+(?:[.,]\d+)?)/);
+            if (lineMatch) lineText = lineMatch[1];
+          }
         }
       }
       return {
