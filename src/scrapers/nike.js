@@ -3,7 +3,6 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { normalizeTeamName, parseOdd } from "../utils/normalize.js";
 import { delay } from "../utils/delay.js";
-import { EXPECTED_SUPERPONUKA_SNAPSHOT, EXPECTED_SUPERPONUKA_SPORT_BY_TITLE } from "../config/superponuka.js";
 import { normalizeForCompare } from "../utils/pipeline-logic.js";
 
 const NIKE_MOBILE_URLS = [
@@ -16,7 +15,6 @@ const NIKE_DESKTOP_URLS = [
 ];
 const NIKE_SITE_MODE = String(process.env.NIKE_SITE_MODE || "mobile").toLowerCase();
 const DC_SELECTIONS = ["1x", "12", "x2"];
-const STRICT_EXPECTED_SUPERPONUKA = String(process.env.STRICT_EXPECTED_SUPERPONUKA || "false") === "true";
 
 function detectSportFromText(value = "") {
   const t = String(value || "").toLowerCase();
@@ -46,32 +44,7 @@ function normalizeMatchLabel(rawTitle = "") {
   return `${normalizeTeamName(split.homeTeam)}__${normalizeTeamName(split.awayTeam)}`;
 }
 
-function validateSuperponukaMatches(matches) {
-  if (!Array.isArray(matches) || matches.length === 0) {
-    throw new Error("Nike Superponuka validation failed: no matches");
-  }
-  const got = matches.map((m) => normalizeMatchLabel(m.rawTitle));
-  if (new Set(got).size !== got.length) {
-    throw new Error("Nike Superponuka validation failed: duplicates found");
-  }
-  for (const match of matches) {
-    const expectedSport = EXPECTED_SUPERPONUKA_SPORT_BY_TITLE[normalizeForCompare(match.rawTitle)];
-    if (expectedSport && match.sport !== expectedSport && STRICT_EXPECTED_SUPERPONUKA) {
-      throw new Error(`Nike Superponuka validation failed: wrong sport for "${match.rawTitle}" (expected ${expectedSport}, got ${match.sport})`);
-    }
-  }
-  if (STRICT_EXPECTED_SUPERPONUKA) {
-    if (matches.length !== EXPECTED_SUPERPONUKA_SNAPSHOT.length) {
-      throw new Error(`Nike Superponuka validation failed: expected ${EXPECTED_SUPERPONUKA_SNAPSHOT.length} matches, got ${matches.length}`);
-    }
-    const expected = EXPECTED_SUPERPONUKA_SNAPSHOT.map((m) => normalizeMatchLabel(m));
-    for (const label of expected) {
-      if (!got.includes(label)) {
-        throw new Error(`Nike Superponuka validation failed: missing expected match "${label}"`);
-      }
-    }
-  }
-}
+// validateSuperponukaMatches removed — validation moved to server.js validateSuperkurzy()
 
 async function acceptCookies(page) {
   const selectors = [
@@ -495,8 +468,7 @@ async function scrapeNikeCore({ headless = true, timeoutMs = 45000, saveDebugArt
       });
     }
 
-    const superPonukaMatches = matches.filter((m) => m.section === "super_ponuka");
-    validateSuperponukaMatches(STRICT_EXPECTED_SUPERPONUKA ? superPonukaMatches : matches);
+    // No validation here — server.js validates after section filtering
     const detailMarketsByMatch = {};
     for (const match of matches) {
       if (match.section === "super_sanca") {

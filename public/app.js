@@ -210,7 +210,7 @@ function showMatchListModal(title, matchTitles) {
 
 function renderSummary(summary) {
   lastSummary = summary;
-  const superPonukaCount = summary.superponukaMatches ?? 0;
+  const superPonukaCount = summary.superkurzyMatches ?? 0;
   const superSancaCount = summary.superSancaMatches ?? 0;
   const items = [
     ["Super ponuka matches", superPonukaCount, "superPonuka"],

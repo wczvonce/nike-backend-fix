@@ -5,7 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { scrapeNikeSuperkurzy, debugNikeSuperkurzy } from "./scrapers/nike.js";
 import { createFlashscoreSession, searchFlashscoreMatch, scrapeFlashscoreDoubleChance, scrapeFlashscoreMarketByType } from "./scrapers/flashscore.js";
-import { EXPECTED_SUPERPONUKA_SNAPSHOT, EXPECTED_SUPERPONUKA_SPORT_BY_TITLE } from "./config/superponuka.js";
+// superponuka.js removed — production uses only Superkurzy section
 import { createNormalizedMarket } from "./markets/market-model.js";
 import { getAllMarketHandlers, getMarketHandler } from "./markets/handlers.js";
 import {
@@ -34,7 +34,7 @@ app.use(express.static(path.join(__dirname, "..", "public")));
 const PORT = Number(process.env.PORT || 3001);
 const HEADLESS = String(process.env.HEADLESS || "true") !== "false";
 const REQUEST_TIMEOUT_MS = Number(process.env.REQUEST_TIMEOUT_MS || 45000);
-const STRICT_EXPECTED_SUPERPONUKA = String(process.env.STRICT_EXPECTED_SUPERPONUKA || "false") === "true";
+// STRICT_EXPECTED_SUPERPONUKA removed — no longer used
 const FLASHSCORE_ENABLE_NETWORK_FIRST = String(process.env.FLASHSCORE_ENABLE_NETWORK_FIRST || "true") !== "false";
 const FLASHSCORE_ENABLE_DOM_FALLBACK = String(process.env.FLASHSCORE_ENABLE_DOM_FALLBACK || "true") !== "false";
 const FLASHSCORE_FAIL_IF_FALLBACK_RATE_ABOVE = (() => {
@@ -47,26 +47,12 @@ const UI_CACHE_MS = Number(process.env.UI_CACHE_MS || 10000);
 let uiPipelineCache = { pipeline: null, cachedAtMs: 0 };
 let uiPipelineInFlight = null;
 
-function validateSuperponuka(matches) {
-  if (!Array.isArray(matches) || matches.length === 0) return { ok: false, error: "Nike parser mismatch: no matches parsed" };
+function validateSuperkurzy(matches) {
+  if (!Array.isArray(matches) || matches.length === 0) return { ok: false, error: "Nike Superkurzy: no matches parsed" };
   const got = matches.map((m) => normalizeForCompare(m.rawTitle));
-  if (new Set(got).size !== got.length) return { ok: false, error: "Nike parser mismatch: duplicate matches found" };
+  if (new Set(got).size !== got.length) return { ok: false, error: "Nike Superkurzy: duplicate matches found" };
   for (const m of matches) {
-    const key = normalizeForCompare(m.rawTitle);
-    if (!m.sport || m.sport === "unknown") continue; // skip unknown sports, don't fail entire pipeline
-    const expectedSport = EXPECTED_SUPERPONUKA_SPORT_BY_TITLE[key];
-    if (STRICT_EXPECTED_SUPERPONUKA && expectedSport && m.sport !== expectedSport) {
-      return { ok: false, error: `Nike parser mismatch: wrong sport for "${m.rawTitle}"` };
-    }
-  }
-  if (STRICT_EXPECTED_SUPERPONUKA) {
-    if (matches.length !== EXPECTED_SUPERPONUKA_SNAPSHOT.length) {
-      return { ok: false, error: `Nike parser mismatch: expected ${EXPECTED_SUPERPONUKA_SNAPSHOT.length} matches, got ${matches.length}` };
-    }
-    const expected = EXPECTED_SUPERPONUKA_SNAPSHOT.map((m) => normalizeForCompare(m));
-    for (const name of expected) {
-      if (!got.includes(name)) return { ok: false, error: `Nike parser mismatch: missing match "${name}"` };
-    }
+    if (!m.sport || m.sport === "unknown") continue;
   }
   return { ok: true };
 }
@@ -148,7 +134,7 @@ async function buildNikeTipsportPipeline() {
   nike.markets = nike.markets.filter((m) => superkurzyMarketIds.has(m.matchId));
   nike.matches = superkurzyMatches;
 
-  const nikeValidation = validateSuperponuka(nike.matches);
+  const nikeValidation = validateSuperkurzy(nike.matches);
   if (!nikeValidation.ok) {
     return { ok: false, error: nikeValidation.error, stage: "nike_validation" };
   }
@@ -759,8 +745,8 @@ app.get("/api/pipeline/nike-vs-tipsport", async (_req, res) => {
       ok: true,
       source: pipeline.source,
       checks: {
-        nikeSuperponukaCount: pipeline.nike.matches.length,
-        nikeSuperponukaValid: pipeline.checks.nikeValidation.ok,
+        nikeSuperkurzyCount: pipeline.nike.matches.length,
+        nikeSuperkurzyValid: pipeline.checks.nikeValidation.ok,
         flashscoreMatchedCount: pipeline.matchMappings.filter((m) => m.matched).length,
         flashscoreValidation: pipeline.checks.flashscoreValidation,
         marketValidation: pipeline.checks.marketValidation,
@@ -827,15 +813,8 @@ app.get("/api/debug/full-check", async (_req, res) => {
     const pipeline = await buildNikeTipsportPipeline();
     if (!pipeline.ok) return res.status(500).json({ ok: false, error: pipeline.error, stage: pipeline.stage });
 
-    const requiredNikeTitles = new Set(EXPECTED_SUPERPONUKA_SNAPSHOT);
     const nikeTitles = pipeline.nike.matches.map((m) => m.rawTitle);
-    const nikeExactListOk = STRICT_EXPECTED_SUPERPONUKA
-      ? (
-        nikeTitles.length === EXPECTED_SUPERPONUKA_SNAPSHOT.length &&
-        new Set(nikeTitles).size === EXPECTED_SUPERPONUKA_SNAPSHOT.length &&
-        nikeTitles.every((t) => requiredNikeTitles.has(t))
-      )
-      : true;
+    const nikeExactListOk = true; // strict snapshot mode removed — Superkurzy-only
 
     const hrefByNikeTitle = new Map(
       pipeline.matchMappings
@@ -935,7 +914,7 @@ app.get("/api/debug/full-check", async (_req, res) => {
       checks: {
         nikeValidation: pipeline.checks.nikeValidation,
         nikeExactExpectedList: nikeExactListOk,
-        strictExpectedSnapshotMode: STRICT_EXPECTED_SUPERPONUKA,
+        strictExpectedSnapshotMode: false,
         flashscoreValidation: pipeline.checks.flashscoreValidation,
         marketValidation: pipeline.checks.marketValidation,
         finalComparisonValidation: pipeline.checks.finalComparisonValidation,
@@ -1040,7 +1019,7 @@ app.get("/api/ui/summary", async (_req, res) => {
     res.json({
       ok: true,
       updatedAt: new Date().toISOString(),
-      superponukaMatches: pipeline.nike.matches.length,
+      superkurzyMatches: pipeline.nike.matches.length,
       nikeEmittedMarkets: pipeline.nike.markets.length,
       matchedComparedRows: pipeline.controlRows.filter((r) => r.status === "MATCHED").length,
       finalEdgeRows: pipeline.rows.length
@@ -1091,7 +1070,7 @@ app.get("/api/ui/snapshot", async (req, res) => {
       summary: {
         ok: true,
         updatedAt,
-        superponukaMatches: pipeline.nike.matches.length,
+        superkurzyMatches: pipeline.nike.matches.length,
         nikeEmittedMarkets: pipeline.nike.markets.length,
         matchedComparedRows: pipeline.controlRows.filter((r) => r.status === "MATCHED").length,
         finalEdgeRows: pipeline.rows.length

@@ -549,7 +549,7 @@
     function renderSummary(s) {
       if (!s) { $summarySection.innerHTML = ""; return; }
       summaryData = s;
-      const sp = s.superponukaMatches ?? 0;
+      const sp = s.superkurzyMatches ?? 0;
       const ss = s.superSancaMatches ?? 0;
       $summarySection.innerHTML = `
         <div class="summary-card"><div class="label">Super ponuka</div><div class="value">${sp}</div></div>
