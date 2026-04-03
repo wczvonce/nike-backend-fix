@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#0f172a" />
+  <title>Nike vs Tipsport Mobile</title>
+  <link rel="manifest" href="/manifest.json" />
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --border: #334155;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --accent: #3b82f6;
+      --green: #22c55e;
+      --red: #ef4444;
+      --yellow: #eab308;
+      --orange: #f97316;
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 12px;
+      padding-top: calc(12px + var(--safe-top));
+      padding-bottom: calc(70px + var(--safe-bottom));
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .header h1 { font-size: 1.1rem; font-weight: 700; }
+    .header .status {
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-align: right;
+      max-width: 50%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* Loading */
+    .loading-bar-wrap {
+      height: 4px;
+      background: var(--card);
+      border-radius: 2px;
+      margin-bottom: 12px;
+      overflow: hidden;
+      display: none;
+    }
+    .loading-bar-wrap.active { display: block; }
+    .loading-bar-inner {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent), #22d3ee);
+      border-radius: 2px;
+      transition: width 300ms ease;
+    }
+    .loading-text {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-bottom: 8px;
+      display: none;
+    }
+    .loading-text.active { display: block; }
+
+    /* Summary cards */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .summary-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px;
+      text-align: center;
+    }
+    .summary-card .label {
+      font-size: 0.65rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      margin-bottom: 4px;
+    }
+    .summary-card .value {
+      font-size: 1.3rem;
+      font-weight: 700;
+    }
+    .summary-card.span2 { grid-column: span 2; }
+
+    /* Tabs (bottom nav) */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #1a2332;
+      border-top: 1px solid var(--border);
+      display: flex;
+      padding-bottom: var(--safe-bottom);
+      z-index: 100;
+    }
+    .nav-btn {
+      flex: 1;
+      padding: 10px 4px 8px;
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 0.7rem;
+      text-align: center;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+    .nav-btn .icon { font-size: 1.2rem; }
+    .nav-btn.active { color: var(--accent); }
+
+    /* Tab panels */
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* Toolbar */
+    .toolbar {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .toolbar button {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      color: #fff;
+    }
+    .toolbar .btn-refresh { background: var(--accent); }
+    .toolbar .btn-update { background: #475569; }
+    .toolbar button:disabled { opacity: 0.5; }
+
+    /* Search */
+    .search-box {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--card);
+      color: var(--text);
+      font-size: 0.9rem;
+      margin-bottom: 10px;
+    }
+    .search-box::placeholder { color: var(--muted); }
+
+    /* Filter pills */
+    .filter-row {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 10px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .filter-row select {
+      padding: 6px 10px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: var(--card);
+      color: var(--text);
+      font-size: 0.8rem;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    /* Edge cards */
+    .edge-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 8px;
+    }
+    .edge-card .match-name {
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+      line-height: 1.3;
+    }
+    .edge-card .meta {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+    .edge-card .tag {
+      font-size: 0.7rem;
+      padding: 2px 8px;
+      border-radius: 10px;
+      background: rgba(59,130,246,0.15);
+      color: var(--accent);
+    }
+    .edge-card .tag.sport { background: rgba(34,197,94,0.15); color: var(--green); }
+    .edge-card .tag.time { background: rgba(148,163,184,0.1); color: var(--muted); }
+
+    .odds-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+    .odd-box {
+      flex: 1;
+      text-align: center;
+      padding: 8px 4px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.04);
+    }
+    .odd-box .odd-label {
+      font-size: 0.65rem;
+      color: var(--muted);
+      margin-bottom: 2px;
+      text-transform: uppercase;
+    }
+    .odd-box .odd-value {
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+    .odd-up { color: var(--green); }
+    .odd-down { color: var(--red); }
+    .odd-same { color: var(--muted); }
+
+    .edge-badge {
+      text-align: center;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 1rem;
+    }
+    .edge-positive { background: rgba(34,197,94,0.15); color: var(--green); }
+    .edge-negative { background: rgba(239,68,68,0.15); color: var(--red); }
+    .edge-neutral { background: rgba(148,163,184,0.1); color: var(--muted); }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px 12px;
+      margin-top: 8px;
+      font-size: 0.78rem;
+    }
+    .detail-grid .dl { color: var(--muted); }
+    .detail-grid .dv { text-align: right; }
+
+    /* Margin badges */
+    .m-badge {
+      display: inline-block;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-weight: 600;
+      font-size: 0.75rem;
+    }
+    .m-low { background: #14532d; color: #4ade80; }
+    .m-mid { background: #713f12; color: #fbbf24; }
+    .m-high { background: #7c2d12; color: #fb923c; }
+    .m-vhigh { background: #450a0a; color: #f87171; }
+    .m-diff-neg { background: #14532d; color: #4ade80; }
+    .m-diff-pos { background: #450a0a; color: #f87171; }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--muted);
+    }
+    .empty-state .icon { font-size: 2rem; margin-bottom: 8px; }
+
+    /* Settings panel */
+    .settings-group {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+    .settings-group label {
+      display: block;
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .settings-group input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 0.9rem;
+      margin-bottom: 8px;
+    }
+    .settings-group .btn-save {
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      background: var(--accent);
+      color: #fff;
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+    .settings-msg {
+      margin-top: 8px;
+      font-size: 0.8rem;
+      padding: 8px;
+      border-radius: 6px;
+    }
+    .settings-msg.ok { background: rgba(34,197,94,0.15); color: var(--green); }
+    .settings-msg.err { background: rgba(239,68,68,0.15); color: var(--red); }
+
+    /* Pull to refresh hint */
+    .pull-hint {
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--muted);
+      padding: 4px;
+      margin-bottom: 4px;
+    }
+
+    /* Count badge */
+    .count-badge {
+      font-size: 0.7rem;
+      background: var(--accent);
+      color: #fff;
+      padding: 1px 6px;
+      border-radius: 8px;
+      margin-left: 4px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1>Nike vs Tipsport</h1>
+    <div class="status" id="statusText">-</div>
+  </div>
+
+  <div class="loading-bar-wrap" id="loadingWrap">
+    <div class="loading-bar-inner" id="loadingBar"></div>
+  </div>
+  <div class="loading-text" id="loadingText"></div>
+
+  <div id="summarySection" class="summary-grid"></div>
+
+  <!-- Tab panels -->
+  <div id="panelEdges" class="tab-panel active">
+    <div class="toolbar">
+      <button class="btn-refresh" id="btnRefresh">Refresh</button>
+      <button class="btn-update" id="btnUpdateOdds">Update kurzy</button>
+    </div>
+    <input class="search-box" id="edgeSearch" placeholder="Hladat zapas..." />
+    <div class="filter-row">
+      <select id="edgeSport"><option value="">Vsetky sporty</option></select>
+      <select id="edgeMarket"><option value="">Vsetky markety</option></select>
+    </div>
+    <div id="edgesList"></div>
+  </div>
+
+  <div id="panelOpportunities" class="tab-panel">
+    <input class="search-box" id="oppSearch" placeholder="Hladat zapas..." />
+    <div class="filter-row">
+      <select id="oppSport"><option value="">Vsetky sporty</option></select>
+      <select id="oppMarket"><option value="">Vsetky markety</option></select>
+    </div>
+    <div id="oppList"></div>
+  </div>
+
+  <div id="panelControl" class="tab-panel">
+    <input class="search-box" id="ctrlSearch" placeholder="Hladat zapas..." />
+    <div id="ctrlList"></div>
+  </div>
+
+  <div id="panelLubos" class="tab-panel">
+    <iframe src="https://lubosnemec.sk/flashscore/" style="width:100%;height:calc(100vh - 130px);border:none;border-radius:8px;"></iframe>
+  </div>
+
+  <div id="panelSettings" class="tab-panel">
+    <div class="settings-group">
+      <label>Backend URL</label>
+      <input type="url" id="settingsUrl" placeholder="http://192.168.1.120:3201" />
+      <button class="btn-save" id="btnSaveUrl">Ulozit a otestovat</button>
+      <div id="settingsMsg"></div>
+    </div>
+    <div class="settings-group">
+      <label>Info</label>
+      <p style="font-size:0.8rem;color:var(--muted);line-height:1.5;">
+        Ak si na inej sieti, pouzi <strong>ngrok</strong> URL z PC.<br/>
+        Na rovnakej Wi-Fi pouzi IP pocitaca, napr. <code style="background:#0f172a;padding:2px 5px;border-radius:3px;">http://192.168.1.120:3201</code><br/><br/>
+        Na PC spusti: <code style="background:#0f172a;padding:2px 5px;border-radius:3px;">start-backend-and-ngrok.bat</code>
+      </p>
+    </div>
+  </div>
+
+  <!-- Bottom navigation -->
+  <nav class="bottom-nav">
+    <button class="nav-btn active" data-tab="panelEdges">
+      <span class="icon">&#9889;</span>
+      <span>Edges <span class="count-badge" id="edgeCount">0</span></span>
+    </button>
+    <button class="nav-btn" data-tab="panelOpportunities">
+      <span class="icon">&#128200;</span>
+      <span>2-Way <span class="count-badge" id="oppCount">0</span></span>
+    </button>
+    <button class="nav-btn" data-tab="panelControl">
+      <span class="icon">&#128221;</span>
+      <span>Control</span>
+    </button>
+    <button class="nav-btn" data-tab="panelLubos">
+      <span class="icon">&#9917;</span>
+      <span>Lubos</span>
+    </button>
+    <button class="nav-btn" data-tab="panelSettings">
+      <span class="icon">&#9881;</span>
+      <span>Nastavenia</span>
+    </button>
+  </nav>
+
+  <script>
+    const STORAGE_KEY = "nike_backend_url";
+    const SNAPSHOT_KEY = "mobile_snapshot_v1";
+
+    // --- Backend URL management ---
+    function getBackendUrl() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) return saved;
+      // If opened directly from backend, use current origin
+      const origin = window.location.origin;
+      if (origin && !origin.includes("file://")) return origin;
+      return "";
+    }
+
+    function apiUrl(path) {
+      const base = getBackendUrl();
+      if (!base) return path;
+      return base + path;
+    }
+
+    async function apiFetch(path, opts = {}) {
+      const url = apiUrl(path);
+      const ctrl = new AbortController();
+      const timeout = opts.timeout || 120000;
+      const t = setTimeout(() => ctrl.abort(), timeout);
+      try {
+        const res = await fetch(url, {
+          ...opts,
+          signal: ctrl.signal,
+          headers: {
+            "ngrok-skip-browser-warning": "true",
+            "Cache-Control": "no-cache, no-store",
+            "Pragma": "no-cache",
+            ...(opts.headers || {})
+          }
+        });
+        clearTimeout(t);
+        return await res.json();
+      } catch (err) {
+        clearTimeout(t);
+        throw err;
+      }
+    }
+
+    // --- State ---
+    let edgesRows = [];
+    let oppRows = [];
+    let controlRows = [];
+    let summaryData = null;
+
+    // --- DOM refs ---
+    const $loadingWrap = document.getElementById("loadingWrap");
+    const $loadingBar = document.getElementById("loadingBar");
+    const $loadingText = document.getElementById("loadingText");
+    const $statusText = document.getElementById("statusText");
+    const $summarySection = document.getElementById("summarySection");
+    const $edgesList = document.getElementById("edgesList");
+    const $oppList = document.getElementById("oppList");
+    const $ctrlList = document.getElementById("ctrlList");
+    const $btnRefresh = document.getElementById("btnRefresh");
+    const $btnUpdateOdds = document.getElementById("btnUpdateOdds");
+    const $edgeCount = document.getElementById("edgeCount");
+    const $oppCount = document.getElementById("oppCount");
+
+    // --- Loading ---
+    function setLoading(pct, text) {
+      $loadingWrap.classList.toggle("active", pct < 100);
+      $loadingText.classList.toggle("active", pct < 100);
+      $loadingBar.style.width = Math.min(100, Math.max(0, pct)) + "%";
+      if (text) $loadingText.textContent = text;
+    }
+
+    // --- Format helpers ---
+    function formatDate(iso) {
+      if (!iso) return "-";
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return "-";
+      return `${String(d.getDate()).padStart(2,"0")}.${String(d.getMonth()+1).padStart(2,"0")} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
+    }
+
+    function trendArrow(trend) {
+      if (trend === "up") return ' <span class="odd-up">&#9650;</span>';
+      if (trend === "down") return ' <span class="odd-down">&#9660;</span>';
+      return "";
+    }
+
+    function esc(s) {
+      if (s == null) return "";
+      return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+    }
+
+    function marginBadge(val) {
+      if (val == null) return '<span style="color:var(--muted)">-</span>';
+      const cls = val < 5 ? "m-low" : val < 10 ? "m-mid" : val < 15 ? "m-high" : "m-vhigh";
+      return `<span class="m-badge ${cls}">${val.toFixed(1)}%</span>`;
+    }
+
+    function marginDiffBadge(val) {
+      if (val == null) return '<span style="color:var(--muted)">-</span>';
+      const cls = val <= 0 ? "m-diff-neg" : "m-diff-pos";
+      const sign = val > 0 ? "+" : "";
+      return `<span class="m-badge ${cls}">${sign}${val.toFixed(1)}%</span>`;
+    }
+
+    // --- Render summary ---
+    function renderSummary(s) {
+      if (!s) { $summarySection.innerHTML = ""; return; }
+      summaryData = s;
+      const sp = s.superponukaMatches ?? 0;
+      const ss = s.superSancaMatches ?? 0;
+      $summarySection.innerHTML = `
+        <div class="summary-card"><div class="label">Super ponuka</div><div class="value">${sp}</div></div>
+        <div class="summary-card"><div class="label">Super sanca</div><div class="value">${ss}</div></div>
+        <div class="summary-card"><div class="label">Final edges</div><div class="value">${s.finalEdgeRows ?? 0}</div></div>
+      `;
+    }
+
+    // --- Render edges ---
+    function renderEdgeFilters() {
+      const sports = [...new Set(edgesRows.map(r => r.sport).filter(Boolean))].sort();
+      const markets = [...new Set(edgesRows.map(r => r.marketType).filter(Boolean))].sort();
+      document.getElementById("edgeSport").innerHTML = `<option value="">Vsetky sporty</option>${sports.map(s => `<option value="${esc(s)}">${esc(s)}</option>`).join("")}`;
+      document.getElementById("edgeMarket").innerHTML = `<option value="">Vsetky markety</option>${markets.map(m => `<option value="${esc(m)}">${esc(m)}</option>`).join("")}`;
+    }
+
+    function renderEdges() {
+      const search = document.getElementById("edgeSearch").value.trim().toLowerCase();
+      const sport = document.getElementById("edgeSport").value;
+      const market = document.getElementById("edgeMarket").value;
+      const filtered = edgesRows.filter(r => {
+        if (search && !(r.match || "").toLowerCase().includes(search)) return false;
+        if (sport && r.sport !== sport) return false;
+        if (market && r.marketType !== market) return false;
+        return true;
+      });
+      $edgeCount.textContent = filtered.length;
+      if (!filtered.length) {
+        $edgesList.innerHTML = '<div class="empty-state"><div class="icon">&#9889;</div>Ziadne edges. Skus Refresh.</div>';
+        return;
+      }
+      $edgesList.innerHTML = filtered.map(r => {
+        const edgeVal = parseFloat(r.probabilityEdgePp) || 0;
+        const edgeCls = edgeVal > 0 ? "edge-positive" : edgeVal < 0 ? "edge-negative" : "edge-neutral";
+        return `<div class="edge-card">
+          <div class="match-name">${r.flashscoreMatchUrl ? `<a href="${esc(r.flashscoreMatchUrl)}" target="_blank" style="color:var(--accent);text-decoration:none">${esc(r.match)}</a>` : esc(r.match)}</div>
+          <div class="meta">
+            <span class="tag sport">${esc(r.sport)}</span>
+            <span class="tag">${esc(r.marketType)}</span>
+            <span class="tag time">${formatDate(r.kickoffAt)}</span>
+          </div>
+          <div class="odds-row">
+            <div class="odd-box">
+              <div class="odd-label">Nike</div>
+              <div class="odd-value">${esc(r.nikeOdd)} ${trendArrow(r.nikeOddTrend)}</div>
+            </div>
+            <div class="edge-badge ${edgeCls}">${esc(r.probabilityEdgePp)} pp</div>
+            <div class="odd-box">
+              <div class="odd-label">Tipsport</div>
+              <div class="odd-value">${esc(r.tipsportOdd)} ${trendArrow(r.tipsportOddTrend)}</div>
+            </div>
+          </div>
+          <div class="detail-grid">
+            <span class="dl">Selection</span><span class="dv">${esc(r.selection)}</span>
+            <span class="dl">Period</span><span class="dv">${esc(r.period || "-")}</span>
+            <span class="dl">Line</span><span class="dv">${r.line != null ? esc(r.line) : "-"}</span>
+            <span class="dl">Diff</span><span class="dv">${esc(r.diff)}</span>
+          </div>
+        </div>`;
+      }).join("");
+    }
+
+    // --- Render opportunities ---
+    function renderOppFilters() {
+      const sports = [...new Set(oppRows.map(r => r.sport).filter(Boolean))].sort();
+      const markets = [...new Set(oppRows.map(r => r.marketType).filter(Boolean))].sort();
+      document.getElementById("oppSport").innerHTML = `<option value="">Vsetky sporty</option>${sports.map(s => `<option value="${esc(s)}">${esc(s)}</option>`).join("")}`;
+      document.getElementById("oppMarket").innerHTML = `<option value="">Vsetky markety</option>${markets.map(m => `<option value="${esc(m)}">${esc(m)}</option>`).join("")}`;
+    }
+
+    function renderOpportunities() {
+      const search = document.getElementById("oppSearch").value.trim().toLowerCase();
+      const sport = document.getElementById("oppSport").value;
+      const market = document.getElementById("oppMarket").value;
+      const filtered = oppRows.filter(r => {
+        if (search && !(r.match || "").toLowerCase().includes(search)) return false;
+        if (sport && r.sport !== sport) return false;
+        if (market && r.marketType !== market) return false;
+        return true;
+      });
+      $oppCount.textContent = filtered.length;
+      if (!filtered.length) {
+        $oppList.innerHTML = '<div class="empty-state"><div class="icon">&#128200;</div>Ziadne opportunities.</div>';
+        return;
+      }
+      $oppList.innerHTML = filtered.map(r => `<div class="edge-card">
+        <div class="match-name">${esc(r.match)}</div>
+        <div class="meta">
+          <span class="tag sport">${esc(r.sport)}</span>
+          <span class="tag">${esc(r.marketType)}</span>
+          <span class="tag time">${formatDate(r.kickoffAt)}</span>
+        </div>
+        <div class="odds-row">
+          <div class="odd-box">
+            <div class="odd-label">Nike</div>
+            <div class="odd-value">${esc(r.nikeOdd)} ${trendArrow(r.nikeOddTrend)}</div>
+          </div>
+          <div class="odd-box">
+            <div class="odd-label">Tipsport</div>
+            <div class="odd-value">${esc(r.tipsportOdd)} ${trendArrow(r.tipsportOddTrend)}</div>
+          </div>
+        </div>
+        <div class="detail-grid">
+          <span class="dl">Selection</span><span class="dv">${esc(r.selection)}</span>
+          <span class="dl">Period</span><span class="dv">${esc(r.period || "-")}</span>
+          <span class="dl">Line</span><span class="dv">${r.line != null ? esc(r.line) : "-"}</span>
+          <span class="dl">Nike margin</span><span class="dv">${marginBadge(r.nikeMarginPercent)}</span>
+          <span class="dl">Tips margin</span><span class="dv">${marginBadge(r.tipsportMarginPercent)}</span>
+          <span class="dl">Margin diff</span><span class="dv">${marginDiffBadge(r.marginDiff)}</span>
+          <span class="dl">Status</span><span class="dv">${esc(r.status)}</span>
+          <span class="dl">Source</span><span class="dv">${esc(r.sourceType || "-")}</span>
+        </div>
+      </div>`).join("");
+    }
+
+    // --- Render control ---
+    function renderControl() {
+      const search = document.getElementById("ctrlSearch").value.trim().toLowerCase();
+      const filtered = controlRows.filter(r => {
+        if (search && !(r.match || "").toLowerCase().includes(search)) return false;
+        return true;
+      });
+      if (!filtered.length) {
+        $ctrlList.innerHTML = '<div class="empty-state"><div class="icon">&#128221;</div>Ziadne control zaznamy.</div>';
+        return;
+      }
+      $ctrlList.innerHTML = filtered.map(r => `<div class="edge-card">
+        <div class="match-name">${esc(r.match)}</div>
+        <div class="meta">
+          <span class="tag sport">${esc(r.sport)}</span>
+          <span class="tag">${esc(r.marketType)}</span>
+          <span class="tag time">${formatDate(r.kickoffAt)}</span>
+        </div>
+        <div class="odds-row">
+          <div class="odd-box">
+            <div class="odd-label">Nike</div>
+            <div class="odd-value">${esc(r.nikeOdd)} ${trendArrow(r.nikeOddTrend)}</div>
+          </div>
+          <div class="odd-box">
+            <div class="odd-label">Tipsport</div>
+            <div class="odd-value">${esc(r.tipsportOdd)} ${trendArrow(r.tipsportOddTrend)}</div>
+          </div>
+        </div>
+        <div class="detail-grid">
+          <span class="dl">Selection</span><span class="dv">${esc(r.selection)}</span>
+          <span class="dl">Period</span><span class="dv">${esc(r.period || "-")}</span>
+          <span class="dl">Line</span><span class="dv">${r.line != null ? esc(r.line) : "-"}</span>
+          <span class="dl">Status</span><span class="dv">${esc(r.status)}</span>
+          <span class="dl">Dovod</span><span class="dv" style="font-size:0.7rem">${esc(r.compareReason || "-")}</span>
+        </div>
+      </div>`).join("");
+    }
+
+    // --- Tab navigation ---
+    document.querySelectorAll(".nav-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+        document.getElementById(btn.dataset.tab).classList.add("active");
+      });
+    });
+
+    // --- Apply snapshot ---
+    async function applySnapshot(res) {
+      renderSummary(res.summary || {});
+      edgesRows = res.finalEdges?.rows || [];
+      controlRows = res.controlTable?.rows || [];
+      renderEdgeFilters();
+      renderEdges();
+      renderControl();
+      $statusText.textContent = "Updated: " + formatDate(res.updatedAt || new Date().toISOString());
+
+      // Save cache
+      try { localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(res)); } catch {}
+
+      // Load opportunities
+      setLoading(75, "Nacitavam 2-Way opportunities...");
+      try {
+        const oppRes = await apiFetch("/api/ui/all-2way-opportunities");
+        if (oppRes.ok) {
+          oppRows = oppRes.rows || [];
+          renderOppFilters();
+          renderOpportunities();
+        }
+      } catch {}
+      setLoading(100, "");
+    }
+
+    // --- Full refresh ---
+    async function loadAll() {
+      $btnRefresh.disabled = true;
+      $btnUpdateOdds.disabled = true;
+      $btnRefresh.textContent = "Nacitavam...";
+      setLoading(10, "Nacitavam Nike + Tipsport data...");
+
+      try {
+        const res = await apiFetch("/api/ui/snapshot");
+        if (!res.ok) throw new Error(res.error || "snapshot error");
+        setLoading(60, "Renderujem...");
+        await applySnapshot(res);
+      } catch (err) {
+        setLoading(100, "");
+        $statusText.textContent = "Chyba: " + (err.message || err);
+      } finally {
+        $btnRefresh.disabled = false;
+        $btnUpdateOdds.disabled = false;
+        $btnRefresh.textContent = "Refresh";
+      }
+    }
+
+    // --- Update odds only ---
+    async function updateOdds() {
+      $btnRefresh.disabled = true;
+      $btnUpdateOdds.disabled = true;
+      $btnUpdateOdds.textContent = "Aktualizujem...";
+      setLoading(20, "Update kurzov...");
+
+      try {
+        const res = await apiFetch("/api/ui/update-odds", { method: "POST" });
+        if (!res.ok) throw new Error(res.error || "update-odds error");
+        setLoading(60, "Renderujem...");
+        await applySnapshot(res);
+      } catch (err) {
+        setLoading(100, "");
+        $statusText.textContent = "Chyba: " + (err.message || err);
+      } finally {
+        $btnRefresh.disabled = false;
+        $btnUpdateOdds.disabled = false;
+        $btnUpdateOdds.textContent = "Update kurzy";
+      }
+    }
+
+    // --- Event listeners ---
+    $btnRefresh.addEventListener("click", loadAll);
+    $btnUpdateOdds.addEventListener("click", updateOdds);
+    document.getElementById("edgeSearch").addEventListener("input", renderEdges);
+    document.getElementById("edgeSport").addEventListener("change", renderEdges);
+    document.getElementById("edgeMarket").addEventListener("change", renderEdges);
+    document.getElementById("oppSearch").addEventListener("input", renderOpportunities);
+    document.getElementById("oppSport").addEventListener("change", renderOpportunities);
+    document.getElementById("oppMarket").addEventListener("change", renderOpportunities);
+    document.getElementById("ctrlSearch").addEventListener("input", renderControl);
+
+    // --- Settings ---
+    const $settingsUrl = document.getElementById("settingsUrl");
+    const $settingsMsg = document.getElementById("settingsMsg");
+    $settingsUrl.value = getBackendUrl();
+
+    document.getElementById("btnSaveUrl").addEventListener("click", async () => {
+      let url = $settingsUrl.value.trim();
+      if (!url) { $settingsMsg.className = "settings-msg err"; $settingsMsg.textContent = "Zadaj URL."; return; }
+      if (!/^https?:\/\//i.test(url)) url = "http://" + url;
+      url = url.replace(/\/+$/, "");
+      $settingsUrl.value = url;
+      localStorage.setItem(STORAGE_KEY, url);
+
+      $settingsMsg.className = "settings-msg"; $settingsMsg.textContent = "Testujem...";
+      try {
+        const ctrl = new AbortController();
+        const t = setTimeout(() => ctrl.abort(), 8000);
+        const res = await fetch(url + "/health", {
+          signal: ctrl.signal,
+          headers: { "ngrok-skip-browser-warning": "true" }
+        });
+        clearTimeout(t);
+        const data = await res.json();
+        if (data.ok) {
+          $settingsMsg.className = "settings-msg ok";
+          $settingsMsg.textContent = "Backend dostupny! Prepni na Edges tab a stlac Refresh.";
+        } else {
+          throw new Error("health check failed");
+        }
+      } catch (err) {
+        $settingsMsg.className = "settings-msg err";
+        $settingsMsg.textContent = "Backend nedostupny. Skontroluj URL a ci bezi server.";
+      }
+    });
+
+    // --- Init ---
+    (async () => {
+      // Try loading cached data first (only if <30 min old)
+      let cacheShown = false;
+      try {
+        const cached = JSON.parse(localStorage.getItem(SNAPSHOT_KEY));
+        if (cached?.summary) {
+          const cacheAgeMin = cached.updatedAt ? (Date.now() - new Date(cached.updatedAt).getTime()) / 60000 : 999;
+          if (cacheAgeMin < 30) {
+            renderSummary(cached.summary);
+            edgesRows = cached.finalEdges?.rows || [];
+            controlRows = cached.controlTable?.rows || [];
+            renderEdgeFilters();
+            renderEdges();
+            renderControl();
+            $statusText.textContent = "Cache (" + Math.round(cacheAgeMin) + " min): " + formatDate(cached.updatedAt);
+            cacheShown = true;
+          } else {
+            // Stale cache - clear it
+            localStorage.removeItem(SNAPSHOT_KEY);
+            $statusText.textContent = "Cache stary (" + Math.round(cacheAgeMin) + " min), nacitavam cerstve data...";
+          }
+        }
+      } catch {}
+
+      // Try last-snapshot from backend
+      if (!getBackendUrl()) return;
+      let snapshotLoaded = false;
+      try {
+        const res = await apiFetch("/api/ui/last-snapshot", { timeout: 10000 });
+        if (res.ok) {
+          await applySnapshot(res);
+          snapshotLoaded = true;
+          // If snapshot is older than 10 min, auto-refresh
+          const snapAgeMin = res.updatedAt ? (Date.now() - new Date(res.updatedAt).getTime()) / 60000 : 999;
+          if (snapAgeMin > 10) {
+            $statusText.textContent = "Data su " + Math.round(snapAgeMin) + " min stare, refreshujem...";
+            await loadAll();
+          }
+        }
+      } catch {
+        // Backend not reachable
+      }
+
+      // If no snapshot loaded (backend down, too old, etc.), and no cache shown, show message
+      if (!snapshotLoaded && !cacheShown) {
+        $statusText.textContent = "Stlac Refresh alebo over backend URL v Nastaveniach.";
+      }
+    })();
+  </script>
+</body>
+</html>

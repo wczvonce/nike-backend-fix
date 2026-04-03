@@ -139,11 +139,43 @@ export function validateMarketCandidate(row) {
   if (isLineMarket(row.marketType) && row.line == null) return { ok: false, reason: "line_missing" };
   if (isLineMarket(row.marketType) && row.sourceLine == null) return { ok: false, reason: "line_missing_source" };
   if (isLineMarket(row.marketType) && !sameLine(row.line, row.sourceLine)) return { ok: false, reason: "line_mismatch" };
-  if (row.sourceSelection && row.sourceSelection !== row.mappedSelection && row.sourceSelection !== row.selection) {
+  // sourceSelection is confirmed from Tipsport selectionOdds (null if key not found).
+  // If null, the mapped selection doesn't exist in the source → reject.
+  if (row.sourceSelection === null && row.tipsportOdd != null) {
+    return { ok: false, reason: "selection_not_in_source" };
+  }
+  if (row.sourceSelection && row.sourceSelection !== row.mappedSelection) {
     return { ok: false, reason: "selection_source_mismatch" };
   }
 
   return { ok: true };
+}
+
+export function compute2WayMarginPercent(odd1, odd2) {
+  if (!(odd1 > 1) || !(odd2 > 1)) return null;
+  return round2(((1 / odd1) + (1 / odd2) - 1) * 100);
+}
+
+export function compute3WayMarginPercent(odd1, odd2, odd3) {
+  if (!(odd1 > 1) || !(odd2 > 1) || !(odd3 > 1)) return null;
+  // Standard overround: (sum of 1/odd_i - 1) * 100
+  return round2(((1 / odd1) + (1 / odd2) + (1 / odd3) - 1) * 100);
+}
+
+export function getPairSelectionsForMarket(marketType) {
+  if (["match_winner_2way", "draw_no_bet_2way", "asian_handicap_2way", "european_handicap_2way"].includes(marketType)) {
+    return { type: "home_away", keys: ["home", "away"] };
+  }
+  if (marketType === "over_under_2way") {
+    return { type: "over_under", keys: ["over", "under"] };
+  }
+  if (["both_teams_to_score", "team_to_score_yes_no", "generic_yes_no"].includes(marketType)) {
+    return { type: "yes_no", keys: ["yes", "no"] };
+  }
+  if (marketType === "double_chance") {
+    return { type: "double_chance_3way", keys: ["1x", "12", "x2"] };
+  }
+  return null;
 }
 
 export function validateFinalRows(rows) {

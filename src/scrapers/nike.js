@@ -6,22 +6,33 @@ import { delay } from "../utils/delay.js";
 import { EXPECTED_SUPERPONUKA_SNAPSHOT, EXPECTED_SUPERPONUKA_SPORT_BY_TITLE } from "../config/superponuka.js";
 import { normalizeForCompare } from "../utils/pipeline-logic.js";
 
-const NIKE_URLS = ["https://m.nike.sk/tipovanie", "https://www.nike.sk/tipovanie"];
+const NIKE_MOBILE_URLS = [
+  "https://m.nike.sk/tipovanie/superkurzy",
+  "https://m.nike.sk/tipovanie"
+];
+const NIKE_DESKTOP_URLS = [
+  "https://www.nike.sk/tipovanie/superkurzy",
+  "https://www.nike.sk/tipovanie"
+];
+const NIKE_SITE_MODE = String(process.env.NIKE_SITE_MODE || "mobile").toLowerCase();
 const DC_SELECTIONS = ["1x", "12", "x2"];
 const STRICT_EXPECTED_SUPERPONUKA = String(process.env.STRICT_EXPECTED_SUPERPONUKA || "false") === "true";
 
 function detectSportFromText(value = "") {
   const t = String(value || "").toLowerCase();
-  if (t.includes("futbal") || t.includes("football")) return "football";
-  if (t.includes("hokej") || t.includes("hockey")) return "hockey";
-  if (t.includes("tenis") || t.includes("tennis")) return "tennis";
+  if (t.includes("futbal") || t.includes("football") || t.includes("liga na dedine")) return "football";
+  if (t.includes("hokej") || t.includes("hockey") || t.includes("erste liga")) return "hockey";
+  if (t.includes("tenis") || t.includes("tennis") || t.includes("wta") || t.includes("atp")) return "tennis";
+  if (t.includes("basketbal") || t.includes("basketball") || t.includes("nba") || t.includes("bc ") || /\bbc\s/.test(t) || t.includes("euroliga") || t.includes("euroleague")) return "basketball";
+  if (t.includes("hádzan") || t.includes("handbal") || t.includes("handball") || t.includes("ehf")) return "handball";
+  if (t.includes("volejbal") || t.includes("volleyball") || t.includes("extraliga mu") || /polo\s/i.test(t)) return "volleyball";
   return "unknown";
 }
 
 function splitParticipants(value = "") {
   const raw = String(value || "").trim();
   if (!raw) return { homeTeam: "", awayTeam: "" };
-  const parts = raw.split(/\s+(?:vs|v\.?)\s+|-/i).map((p) => p.trim()).filter(Boolean);
+  const parts = raw.split(/\s+(?:vs|v\.?)\s+|\s+-\s+/i).map((p) => p.trim()).filter(Boolean);
   if (parts.length >= 2) return { homeTeam: parts[0], awayTeam: parts[1] };
   return { homeTeam: raw, awayTeam: "" };
 }
@@ -84,9 +95,15 @@ async function acceptCookies(page) {
   }
 }
 
-async function openNikePage(page, timeoutMs) {
+function getNikeUrls(siteMode = NIKE_SITE_MODE) {
+  if (siteMode === "desktop") return [...NIKE_DESKTOP_URLS, ...NIKE_MOBILE_URLS];
+  if (siteMode === "mobile") return [...NIKE_MOBILE_URLS, ...NIKE_DESKTOP_URLS];
+  return [...NIKE_MOBILE_URLS, ...NIKE_DESKTOP_URLS];
+}
+
+async function openNikePage(page, timeoutMs, siteMode = NIKE_SITE_MODE) {
   let lastError = null;
-  for (const url of NIKE_URLS) {
+  for (const url of getNikeUrls(siteMode)) {
     try {
       await page.goto(url, { waitUntil: "domcontentloaded", timeout: timeoutMs });
       return page.url();
@@ -99,10 +116,18 @@ async function openNikePage(page, timeoutMs) {
 
 function buildMarketsFromCardOdds(matches) {
   const markets = [];
-  const dcRange = (o) => o >= 1.05 && o <= 4.5;
+  const dcRange = (o) => o >= 1.05 && o <= 6.0;
   for (const match of matches) {
     const odds = match.rawOdds;
     if (match.sport === "tennis") {
+      if (odds.length >= 2) {
+        markets.push({ id: `${match.id}-winner-home`, matchId: match.id, marketType: "match_winner_2way", period: "full_time", line: null, selection: "home", nikeOdd: odds[0] });
+        markets.push({ id: `${match.id}-winner-away`, matchId: match.id, marketType: "match_winner_2way", period: "full_time", line: null, selection: "away", nikeOdd: odds[1] });
+      }
+      continue;
+    }
+    if (match.sport === "basketball") {
+      // Basketball has no draws – emit 2-way winner, not double chance.
       if (odds.length >= 2) {
         markets.push({ id: `${match.id}-winner-home`, matchId: match.id, marketType: "match_winner_2way", period: "full_time", line: null, selection: "home", nikeOdd: odds[0] });
         markets.push({ id: `${match.id}-winner-away`, matchId: match.id, marketType: "match_winner_2way", period: "full_time", line: null, selection: "away", nikeOdd: odds[1] });
@@ -188,7 +213,7 @@ function parseNikeDetailMarketsForMatch(match, detailMarkets = []) {
         const hasDraw = normalizeForCompare(row.text || "").includes("remiza");
         if (odds.length >= 6 && hasDraw) {
           const dc = odds.slice(-3);
-          if (dc.length === 3 && dc.every((o) => o >= 1.05 && o <= 4.5)) {
+          if (dc.length === 3 && dc.every((o) => o >= 1.05 && o <= 6.0)) {
             pushMarket(markets, { id: `${match.id}-dc-1x`, matchId: match.id, marketType: "double_chance", period, line: null, selection: "1x", nikeOdd: dc[0] });
             pushMarket(markets, { id: `${match.id}-dc-12`, matchId: match.id, marketType: "double_chance", period, line: null, selection: "12", nikeOdd: dc[1] });
             pushMarket(markets, { id: `${match.id}-dc-x2`, matchId: match.id, marketType: "double_chance", period, line: null, selection: "x2", nikeOdd: dc[2] });
@@ -202,11 +227,14 @@ function parseNikeDetailMarketsForMatch(match, detailMarkets = []) {
     }
 
     if (normalizedName.includes("stavka bez remizy")) {
+      // DNB has only one row (no line). If Nike shows multiple rows under "Stávka bez remízy",
+      // the extra rows are european handicap lines — only take the first valid row.
       for (const row of rows) {
         const odds = (row.odds || []).map((v) => parseOdd(v, { rejectDateLike: false, rejectTimeLike: false })).filter((v) => v !== null);
         if (odds.length < 2) continue;
         pushMarket(markets, { id: `${match.id}-dnb-home`, matchId: match.id, marketType: "draw_no_bet_2way", period, line: null, selection: "home", nikeOdd: odds[0] });
         pushMarket(markets, { id: `${match.id}-dnb-away`, matchId: match.id, marketType: "draw_no_bet_2way", period, line: null, selection: "away", nikeOdd: odds[1] });
+        break; // only first row is actual DNB
       }
       continue;
     }
@@ -228,12 +256,18 @@ function parseNikeDetailMarketsForMatch(match, detailMarkets = []) {
     ) {
       for (const row of rows) {
         const odds = (row.odds || []).map((v) => parseOdd(v, { rejectDateLike: false, rejectTimeLike: false })).filter((v) => v !== null);
-        const lines = [...String(row.text || "").matchAll(/([+-]\d+(?:[.,](?:0|5))?)/g)]
+        // Support all decimal lines (not just .0/.5) — e.g. +1.25, -2.75
+        const lines = [...String(row.text || "").matchAll(/([+-]\d+(?:[.,]\d+)?)/g)]
           .map((m) => sanitizeLine(parseLineToken(m[1])))
           .filter((x) => x != null);
+        // Group lines into unique absolute values for pairing with odds
+        const uniqueAbsLines = [...new Set(lines.map((l) => Math.abs(l)))].sort((a, b) => a - b);
         const pairs = Math.floor(odds.length / 2);
         for (let i = 0; i < pairs; i++) {
-          const line = sanitizeLine(lines[i * 2] ?? lines[i] ?? null);
+          // Use the i-th unique absolute line. If not available, skip (reject unreliable pairing).
+          const absLine = uniqueAbsLines[i];
+          if (absLine == null) continue;
+          const line = sanitizeLine(absLine);
           if (line == null) continue;
           const homeOdd = odds[i * 2];
           const awayOdd = odds[i * 2 + 1];
@@ -252,15 +286,24 @@ function parseNikeDetailMarketsForMatch(match, detailMarkets = []) {
     if ((isMatchGoalsTotal || isMatchGamesTotal) && !isPlayerScopedTotal) {
       for (const row of rows) {
         const odds = (row.odds || []).map((v) => parseOdd(v, { rejectDateLike: false, rejectTimeLike: false })).filter((v) => v !== null);
+        const rowText = normalizeForCompare(row.text || "");
         const lineTokens = [...String(row.text || "").matchAll(/menej ako\s*(\d+(?:[.,](?:0|5))?)/gi)]
           .map((m) => sanitizeLine(parseLineToken(m[1])))
           .filter((x) => x != null);
+        // Detect if "viac" (over) appears before "menej" (under) in text → odds may be over-first
+        const viacPos = rowText.indexOf("viac");
+        const menejPos = rowText.indexOf("menej");
+        const overFirst = viacPos >= 0 && menejPos >= 0 && viacPos < menejPos;
         const pairs = Math.floor(odds.length / 2);
         for (let i = 0; i < pairs; i++) {
           const line = sanitizeLine(lineTokens[i] ?? null);
           if (line == null) continue;
-          const underOdd = odds[i * 2];
-          const overOdd = odds[i * 2 + 1];
+          // Nike "menej ako X" shows two odds: [OVER_kurz, UNDER_kurz].
+          // odds[0] = over (will NOT be under X) — typically low for low lines
+          // odds[1] = under (WILL be under X) — typically high for low lines in hockey
+          // Verified against Flashscore: Nike L=2.5 odds[0]=1.12 = over, Flashscore over=1.13
+          let overOdd = odds[i * 2];
+          let underOdd = odds[i * 2 + 1];
           pushMarket(markets, { id: `${match.id}-ou-under-${line}-${i}`, matchId: match.id, marketType: "over_under_2way", period, line, selection: "under", nikeOdd: underOdd });
           pushMarket(markets, { id: `${match.id}-ou-over-${line}-${i}`, matchId: match.id, marketType: "over_under_2way", period, line, selection: "over", nikeOdd: overOdd });
         }
@@ -274,7 +317,15 @@ function dedupeMarkets(markets = []) {
   const result = [];
   const seen = new Set();
   for (const m of markets) {
-    const key = [m.matchId, m.marketType, m.period || "full_time", m.line ?? "null", m.selection, m.nikeOdd].join("|");
+    // For non-line markets (DNB, DC, winner, BTTS), deduplicate by matchId+type+period+selection
+    // to keep only the FIRST occurrence (most reliable). Including nikeOdd in the key would
+    // allow duplicates with different odds from different Nike detail sections.
+    // Dedupe by logical market identity only — never include nikeOdd in the key.
+    // Including nikeOdd allows duplicates with different odds from fallback vs detail scrape.
+    const isLineMarket = ["asian_handicap_2way", "over_under_2way", "european_handicap_2way"].includes(m.marketType);
+    const key = isLineMarket
+      ? [m.matchId, m.marketType, m.period || "full_time", m.line ?? "null", m.selection].join("|")
+      : [m.matchId, m.marketType, m.period || "full_time", m.selection].join("|");
     if (seen.has(key)) continue;
     seen.add(key);
     result.push(m);
@@ -282,7 +333,7 @@ function dedupeMarkets(markets = []) {
   return result;
 }
 
-async function scrapeNikeCore({ headless = true, timeoutMs = 45000, saveDebugArtifacts = false } = {}) {
+async function scrapeNikeCore({ headless = true, timeoutMs = 45000, saveDebugArtifacts = false, siteMode = NIKE_SITE_MODE } = {}) {
   const browser = await chromium.launch({ headless });
   try {
     const context = await browser.newContext({
@@ -290,7 +341,7 @@ async function scrapeNikeCore({ headless = true, timeoutMs = 45000, saveDebugArt
       userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36"
     });
     const page = await context.newPage();
-    await openNikePage(page, timeoutMs);
+    await openNikePage(page, timeoutMs, siteMode);
     await acceptCookies(page);
     await delay(4000);
 
@@ -309,16 +360,52 @@ async function scrapeNikeCore({ headless = true, timeoutMs = 45000, saveDebugArt
 
       const rows = Array.from(document.querySelectorAll("[data-game-state]"))
         .filter((row) => row.querySelector('[data-atid="bets-opponents"]'));
+      const detectSectionForRow = (row, rowEl) => {
+        // Primary: reliable detection via ancestor container data-atid attribute
+        // Nike HTML structure: <div data-atid="superoffer"> wraps Superponuka,
+        //                      <div data-atid="superchance"> wraps Superšanca
+        const el = row || rowEl;
+        if (el?.closest?.('[data-atid="superchance"]')) return "super_sanca";
+        if (el?.closest?.('[data-atid="superoffer"]')) return "super_ponuka";
+        // Secondary: check title attributes which contain "Superšanca | date | ..."
+        const titleText = clean(
+          row?.getAttribute?.("title") || rowEl?.getAttribute?.("title") ||
+          row?.querySelector?.("[title]")?.getAttribute?.("title") || ""
+        ).toLowerCase();
+        if (/super\s*š?anca|supersanca/i.test(titleText)) return "super_sanca";
+        if (/superponuka/i.test(titleText)) return "super_ponuka";
+        // Tertiary: data-tournament attribute on ancestor bet-group-view
+        const betGroupEl = el?.closest?.('[data-atid="bet-group-view"]');
+        const dataTournament = clean(betGroupEl?.getAttribute?.("data-tournament") || betGroupEl?.closest?.("[data-tournament]")?.getAttribute?.("data-tournament") || "");
+        if (/super\s*š?anca|supersanca/i.test(dataTournament)) return "super_sanca";
+        // Fallback: scan sibling elements for section headers
+        let cursor = row;
+        for (let i = 0; i < 12 && cursor; i++) {
+          cursor = cursor.previousElementSibling;
+          const siblingText = clean(cursor?.textContent || "").toLowerCase();
+          if (!siblingText) continue;
+          if (/super\s*š?anca|supersanca/i.test(siblingText)) return "super_sanca";
+          if (/super\s*ponuka|superponuka/i.test(siblingText)) return "super_ponuka";
+        }
+        return "super_ponuka";
+      };
       const candidateCards = [];
+      let currentDateParts = null;
       for (const row of rows) {
-        const rowText = clean(row.textContent || "").toLowerCase();
-        const rowTitle = clean(row.querySelector("[title]")?.getAttribute("title") || "").toLowerCase();
-        const boundaryParticipants = clean(row.querySelector('[data-atid="bets-opponents"]')?.getAttribute("data-participants") || "").toLowerCase();
-        const boundaryBlob = `${rowText} ${rowTitle} ${boundaryParticipants}`;
-        if (/super\s*š?anca/i.test(boundaryBlob)) break;
         const btn = row.querySelector('[data-atid="bets-opponents"]');
         if (!btn) continue;
         const rowEl = btn.closest("[data-game-state]") || btn.closest("li") || btn.parentElement?.parentElement || btn.parentElement;
+        const section = detectSectionForRow(row, rowEl);
+        let cursor = row;
+        for (let i = 0; i < 8 && cursor; i++) {
+          cursor = cursor.previousElementSibling;
+          const siblingText = clean(cursor?.textContent || "");
+          const dateInSibling = siblingText.match(/(\d{1,2})\.\s*(\d{1,2})\.\s*(\d{4})/);
+          if (dateInSibling) {
+            currentDateParts = { d: dateInSibling[1], m: dateInSibling[2], y: dateInSibling[3] };
+            break;
+          }
+        }
         const oddEls = rowEl ? Array.from(rowEl.querySelectorAll('[data-atid$="bet-odd"], [data-atid*="bet-odd"]')) : [];
         const odds = oddEls.map((el) => clean(el.textContent)).filter(Boolean);
 
@@ -327,11 +414,34 @@ async function scrapeNikeCore({ headless = true, timeoutMs = 45000, saveDebugArt
         const participants = participantsAttr || clean(btn.textContent || "");
         const homeTeam = divParts[0] || "";
         const awayTeam = divParts[1] || "";
-        const metaTitle = clean(btn.getAttribute("title") || rowEl?.querySelector("[title]")?.getAttribute("title") || "");
-        const dateMatch = metaTitle.match(/(\d{2})\.(\d{2})\.(\d{4})\s+(\d{2}):(\d{2})/);
-        const kickoffAt = dateMatch ? `${dateMatch[3]}-${dateMatch[2]}-${dateMatch[1]}T${dateMatch[4]}:${dateMatch[5]}:00` : null;
+        const metaTitle = clean(
+          rowEl?.getAttribute("title") ||
+          btn.getAttribute("title") ||
+          rowEl?.querySelector("[title]")?.getAttribute("title") ||
+          ""
+        );
+        const rowSnippet = clean(rowEl?.textContent || "").slice(0, 500);
+        let dateMatch = metaTitle.match(/(\d{2})\.(\d{2})\.(\d{4})\s+(\d{2}):(\d{2})/);
+        if (!dateMatch && rowSnippet) {
+          dateMatch = rowSnippet.match(/(\d{2})\.(\d{2})\.(\d{4})\s+(\d{2}):(\d{2})/);
+          if (!dateMatch) dateMatch = rowSnippet.match(/(\d{1,2})\.\s*(\d{1,2})\.\s*(\d{4})\s+(\d{2}):(\d{2})/);
+        }
+        let kickoffAt = null;
+        if (dateMatch && dateMatch.length >= 6) {
+          kickoffAt = `${dateMatch[3]}-${String(dateMatch[2]).padStart(2, "0")}-${String(dateMatch[1]).padStart(2, "0")}T${dateMatch[4]}:${dateMatch[5]}:00`;
+        } else {
+          const timeMatch = (rowSnippet || metaTitle).match(/\b(\d{1,2}):(\d{2})\b/);
+          if (currentDateParts && timeMatch) {
+            const d = String(currentDateParts.d).padStart(2, "0");
+            const m = String(currentDateParts.m).padStart(2, "0");
+            const h = String(timeMatch[1]).padStart(2, "0");
+            const min = String(timeMatch[2]).padStart(2, "0");
+            kickoffAt = `${currentDateParts.y}-${m}-${d}T${h}:${min}:00`;
+          }
+        }
 
         candidateCards.push({
+          section,
           sport: clean(btn.getAttribute("data-sport") || rowEl?.querySelector("[data-sport]")?.getAttribute("data-sport") || ""),
           tournament: clean(btn.getAttribute("data-tournament") || ""),
           participants,
@@ -340,9 +450,9 @@ async function scrapeNikeCore({ headless = true, timeoutMs = 45000, saveDebugArt
           kickoffAt,
           metaTitle,
           odds,
-          rowSnippet: clean(rowEl?.textContent || "").slice(0, 500)
+          rowSnippet
         });
-        if (candidateCards.length > 20) break; // hard stop; Superponuka has only a few top rows
+        if (candidateCards.length > 80) break;
       }
 
       return {
@@ -362,16 +472,18 @@ async function scrapeNikeCore({ headless = true, timeoutMs = 45000, saveDebugArt
         : splitParticipants(card.participants);
       const homeTeam = teams.homeTeam?.trim();
       const awayTeam = teams.awayTeam?.trim();
+      // IMPORTANT: Do NOT dedup/Set parsedOdds — order is positional (1X2 + DC mapping).
+      // Duplicate values (e.g. two odds of 1.85) are valid and must be preserved.
       const parsedOdds = card.odds.map((v) => parseOdd(v, { rejectDateLike: false, rejectTimeLike: false })).filter((v) => v !== null);
       if (!homeTeam || !awayTeam || parsedOdds.length < 2) continue;
-      const uniqueOdds = [...new Set(parsedOdds)];
       const dedupKey = `${normalizeTeamName(homeTeam)}__${normalizeTeamName(awayTeam)}__${card.tournament || ""}`;
       if (seenMatches.has(dedupKey)) continue;
       seenMatches.add(dedupKey);
       matches.push({
         id: `nike-${matchId++}`,
         source: "nike",
-        sport: detectSportFromText(card.sport || card.tournament),
+        section: card.section || "super_ponuka",
+        sport: detectSportFromText(card.sport || card.tournament || card.rowSnippet || ""),
         tournament: card.tournament || null,
         kickoffAt: card.kickoffAt || null,
         rawTitle: `${homeTeam} vs ${awayTeam}`,
@@ -379,13 +491,19 @@ async function scrapeNikeCore({ headless = true, timeoutMs = 45000, saveDebugArt
         awayTeam,
         homeTeamNormalized: normalizeTeamName(homeTeam),
         awayTeamNormalized: normalizeTeamName(awayTeam),
-        rawOdds: uniqueOdds
+        rawOdds: parsedOdds
       });
     }
 
-    validateSuperponukaMatches(matches);
+    const superPonukaMatches = matches.filter((m) => m.section === "super_ponuka");
+    validateSuperponukaMatches(STRICT_EXPECTED_SUPERPONUKA ? superPonukaMatches : matches);
     const detailMarketsByMatch = {};
     for (const match of matches) {
+      if (match.section === "super_sanca") {
+        // Super sanca can contain many rows; keep extraction fast by using row-level fallback odds.
+        detailMarketsByMatch[match.id] = [];
+        continue;
+      }
       const rowBtn = page
         .locator('[data-atid="bets-opponents"]')
         .filter({ hasText: match.homeTeam })
@@ -437,17 +555,17 @@ async function scrapeNikeCore({ headless = true, timeoutMs = 45000, saveDebugArt
       detailMarketsByMatch
     };
 
-    return { sourceUrl: extracted.finalUrl, matches, markets, debugInfo };
+    return { sourceUrl: extracted.finalUrl, sourceSiteMode: siteMode, matches, markets, debugInfo };
   } finally {
     await browser.close();
   }
 }
 
-export async function scrapeNikeSuperkurzy({ headless = true, timeoutMs = 45000 } = {}) {
-  const result = await scrapeNikeCore({ headless, timeoutMs, saveDebugArtifacts: false });
-  return { sourceUrl: result.sourceUrl, matches: result.matches, markets: result.markets };
+export async function scrapeNikeSuperkurzy({ headless = true, timeoutMs = 45000, siteMode = NIKE_SITE_MODE } = {}) {
+  const result = await scrapeNikeCore({ headless, timeoutMs, saveDebugArtifacts: false, siteMode });
+  return { sourceUrl: result.sourceUrl, sourceSiteMode: result.sourceSiteMode, matches: result.matches, markets: result.markets };
 }
 
-export async function debugNikeSuperkurzy({ headless = true, timeoutMs = 45000 } = {}) {
-  return scrapeNikeCore({ headless, timeoutMs, saveDebugArtifacts: true });
+export async function debugNikeSuperkurzy({ headless = true, timeoutMs = 45000, siteMode = NIKE_SITE_MODE } = {}) {
+  return scrapeNikeCore({ headless, timeoutMs, saveDebugArtifacts: true, siteMode });
 }

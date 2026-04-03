@@ -21,6 +21,23 @@ const MARKET_ODDS_ROUTE_SLUGS = {
   european_handicap_2way: "europsky-handicap",
   team_to_score_yes_no: "tim-da-gol"
 };
+const SEARCH_API_BASE = "https://s.livesport.services/api/v2/search/";
+
+function sportToSiteSlug(sport = "") {
+  if (sport === "football") return "futbal";
+  if (sport === "hockey") return "hokej";
+  if (sport === "tennis") return "tenis";
+  return null;
+}
+
+function sportMatchesSearchEntity(entity = {}, sport = "") {
+  const sportName = String(entity?.sport?.name || "").toLowerCase();
+  if (!sport) return true;
+  if (sport === "football") return sportName === "soccer";
+  if (sport === "hockey") return sportName === "hockey";
+  if (sport === "tennis") return sportName === "tennis";
+  return true;
+}
 
 function scoreMatch(targetHome, targetAway, fsHome, fsAway) {
   const tHome = normalizeTeamName(targetHome);
@@ -42,13 +59,19 @@ function scoreMatch(targetHome, targetAway, fsHome, fsAway) {
   return Math.round(Math.max(straight, reversed) * 100);
 }
 
-function programUrlsByTournament(sport = "football", tournament = "") {
+function programUrlsByTournament(sport = "football", tournament = "", { homeTeam = "", awayTeam = "" } = {}) {
   const t = normalizeTeamName(tournament);
+  const h = normalizeTeamName(homeTeam);
+  const a = normalizeTeamName(awayTeam);
   const urls = new Set([`${FLASHSCORE_BASE}/`]);
   if (sport === "football") {
     if (t.includes("anglicko") && t.includes("i liga")) urls.add(`${FLASHSCORE_BASE}/futbal/anglicko/premier-league/program/`);
     if (t.includes("taliansko") && t.includes("i liga")) urls.add(`${FLASHSCORE_BASE}/futbal/taliansko/serie-a/program/`);
     if (t.includes("nike liga")) urls.add(`${FLASHSCORE_BASE}/futbal/slovensko/nike-liga/program/`);
+    // Czech 2nd tier appears in Nike feed as "Cesko II. liga" and sometimes with mojibake ("esko ii liga").
+    if ((t.includes("ii liga") && (t.includes("cesko") || t.includes("esko"))) || h.includes("brno") || a.includes("brno")) {
+      urls.add(`${FLASHSCORE_BASE}/futbal/cesko/2-liga/program/`);
+    }
   } else if (sport === "hockey") {
     if (t.includes("slovensko") && t.includes("extraliga")) urls.add(`${FLASHSCORE_BASE}/hokej/slovensko/extraliga/program/`);
   } else if (sport === "tennis") {
@@ -73,8 +96,113 @@ function extractMatchAnchors(html = "") {
   return matches;
 }
 
-export async function searchFlashscoreMatch({ homeTeam, awayTeam, sport = "football", tournament = "", headless = true, timeoutMs = 45000 }) {
-  const urls = programUrlsByTournament(sport, tournament);
+function parseEventTitleTeams(html = "") {
+  const titleMatch = html.match(/<title>\s*([^<]+)\s*<\/title>/i);
+  const title = (titleMatch?.[1] || "").replace(/\s+/g, " ").trim();
+  if (!title) return null;
+  const vs = title.match(/^(.+?)\s*-\s*(.+?)(?:\s+LIVE|\s+\(|\s+\d{2}\/\d{2}\/\d{4}|$)/i);
+  if (!vs) return null;
+  return { homeTeam: vs[1].trim(), awayTeam: vs[2].trim() };
+}
+
+function parseEventStartEpoch(html = "") {
+  const m = html.match(/"eventStageStartTime":(\d{9,12})/);
+  if (!m?.[1]) return null;
+  const epoch = Number(m[1]);
+  return Number.isFinite(epoch) ? epoch : null;
+}
+
+function kickoffBonus(kickoffAt, eventStartEpoch) {
+  if (!kickoffAt || !eventStartEpoch) return 0;
+  const expected = Date.parse(kickoffAt);
+  if (!Number.isFinite(expected)) return 0;
+  const diffMin = Math.abs((eventStartEpoch * 1000 - expected) / 60000);
+  if (diffMin <= 10) return 35;
+  if (diffMin <= 30) return 25;
+  if (diffMin <= 90) return 15;
+  if (diffMin <= 240) return 8;
+  if (diffMin <= 720) return 3;
+  return -8;
+}
+
+async function fetchSearchEntities(query = "", timeoutMs = 45000) {
+  const q = String(query || "").trim();
+  if (!q) return [];
+  try {
+    const url = `${SEARCH_API_BASE}?q=${encodeURIComponent(q)}`;
+    const response = await fetch(url, { signal: AbortSignal.timeout(timeoutMs) });
+    if (!response.ok) return [];
+    const json = await response.json().catch(() => []);
+    return Array.isArray(json) ? json : [];
+  } catch {
+    return [];
+  }
+}
+
+function topParticipantCandidates(entities = [], teamName = "", sport = "", limit = 4) {
+  return entities
+    .filter((x) => ["Team", "Player", "PlayerInTeam"].includes(String(x?.type?.name || "")))
+    .filter((x) => sportMatchesSearchEntity(x, sport))
+    .map((x) => ({ ...x, _score: scoreMatch(teamName, teamName, x?.name || "", x?.name || "") }))
+    .sort((a, b) => b._score - a._score)
+    .slice(0, limit);
+}
+
+async function searchFlashscoreByParticipantPairing({ homeTeam, awayTeam, sport = "football", kickoffAt = null, timeoutMs = 45000 }) {
+  const sportSlug = sportToSiteSlug(sport);
+  if (!sportSlug) return null;
+  const [homeEntities, awayEntities] = await Promise.all([
+    fetchSearchEntities(homeTeam, timeoutMs),
+    fetchSearchEntities(awayTeam, timeoutMs)
+  ]);
+  const homeCandidates = topParticipantCandidates(homeEntities, homeTeam, sport, 4);
+  const awayCandidates = topParticipantCandidates(awayEntities, awayTeam, sport, 4);
+  if (!homeCandidates.length || !awayCandidates.length) return null;
+
+  let best = null;
+  const visited = new Set();
+  for (const h of homeCandidates) {
+    for (const a of awayCandidates) {
+      const combos = [
+        { home: h, away: a },
+        { home: a, away: h }
+      ];
+      for (const combo of combos) {
+        const href = `${FLASHSCORE_BASE}/zapas/${sportSlug}/${combo.away.url}-${combo.away.id}/${combo.home.url}-${combo.home.id}/`;
+        if (visited.has(href)) continue;
+        visited.add(href);
+        try {
+          const response = await fetch(href, { signal: AbortSignal.timeout(timeoutMs) });
+          if (!response.ok) continue;
+          const html = await response.text();
+          const mid = extractEventMidFromHtml(html);
+          if (!mid) continue;
+          const parsedTeams = parseEventTitleTeams(html);
+          const fsHome = parsedTeams?.homeTeam || combo.home.name || "";
+          const fsAway = parsedTeams?.awayTeam || combo.away.name || "";
+          const baseScore = scoreMatch(homeTeam, awayTeam, fsHome, fsAway);
+          const timeScore = kickoffBonus(kickoffAt, parseEventStartEpoch(html));
+          const total = baseScore + timeScore;
+          if (!best || total > best.score) {
+            best = {
+              score: total,
+              homeTeam: fsHome,
+              awayTeam: fsAway,
+              href: attachMidQuery(href, mid),
+              sourceUrl: "search_api_pairing"
+            };
+          }
+        } catch {
+          // continue
+        }
+      }
+    }
+  }
+  return best;
+}
+
+export async function searchFlashscoreMatch({ homeTeam, awayTeam, sport = "football", tournament = "", kickoffAt = null, headless = true, timeoutMs = 45000 }) {
+  const urls = programUrlsByTournament(sport, tournament, { homeTeam, awayTeam });
   let best = null;
   for (const url of urls) {
     try {
@@ -83,7 +211,7 @@ export async function searchFlashscoreMatch({ homeTeam, awayTeam, sport = "footb
       const html = await response.text();
       const candidates = extractMatchAnchors(html);
       for (const cand of candidates) {
-        const s = scoreMatch(homeTeam, awayTeam, cand.homeTeam, cand.awayTeam);
+        const s = scoreMatch(homeTeam, awayTeam, cand.homeTeam, cand.awayTeam) + kickoffBonus(kickoffAt, null);
         if (!best || s > best.score) {
           best = {
             score: s,
@@ -98,19 +226,72 @@ export async function searchFlashscoreMatch({ homeTeam, awayTeam, sport = "footb
       // try next url
     }
   }
-  if (!best || best.score < 140) return null;
-  return { homeTeam: best.homeTeam, awayTeam: best.awayTeam, confidence: best.score, href: best.href, sourceUrl: best.sourceUrl };
+  const pairingFallback = await searchFlashscoreByParticipantPairing({
+    homeTeam,
+    awayTeam,
+    sport,
+    kickoffAt,
+    timeoutMs
+  });
+  const chosen = (!best || (pairingFallback && pairingFallback.score > best.score))
+    ? pairingFallback
+    : best;
+  if (!chosen || chosen.score < 130) return null;
+  const mid = await extractMidFromEventPage(chosen.href, timeoutMs);
+  const hrefWithMid = attachMidQuery(chosen.href, mid);
+  return {
+    homeTeam: chosen.homeTeam,
+    awayTeam: chosen.awayTeam,
+    confidence: chosen.score,
+    href: hrefWithMid,
+    sourceUrl: chosen.sourceUrl
+  };
 }
 
 function normalizeMatchUrl(matchUrl = "") {
-  const normalizedUrl = (matchUrl || "").trim();
-  if (!normalizedUrl) throw new Error("matchUrl is required");
-  let url = normalizedUrl;
-  if (!/^https?:\/\//i.test(url)) {
-    url = url.startsWith("/") ? FLASHSCORE_BASE + url : FLASHSCORE_BASE + "/" + url;
+  const normalized = (matchUrl || "").trim();
+  if (!normalized) throw new Error("matchUrl is required");
+  const absolute = /^https?:\/\//i.test(normalized)
+    ? normalized
+    : (normalized.startsWith("/") ? `${FLASHSCORE_BASE}${normalized}` : `${FLASHSCORE_BASE}/${normalized}`);
+  let parsed;
+  try {
+    parsed = new URL(absolute);
+  } catch {
+    throw new Error(`invalid matchUrl: ${matchUrl}`);
   }
-  if (!/\/kurzy\b/.test(url)) url = url.replace(/\/$/, "") + "/kurzy";
-  return url;
+  if (!/\/kurzy\b/.test(parsed.pathname)) {
+    parsed.pathname = `${parsed.pathname.replace(/\/$/, "")}/kurzy`;
+  }
+  return parsed.toString();
+}
+
+function extractEventMidFromHtml(html = "") {
+  if (!html) return null;
+  const m = html.match(/"event_id_c":"([A-Za-z0-9]{6,12})"/);
+  return m?.[1] || null;
+}
+
+function attachMidQuery(url, mid) {
+  if (!mid) return url;
+  try {
+    const parsed = new URL(url);
+    parsed.searchParams.set("mid", mid);
+    return parsed.toString();
+  } catch {
+    return url;
+  }
+}
+
+async function extractMidFromEventPage(eventUrl, timeoutMs = 45000) {
+  try {
+    const response = await fetch(eventUrl, { signal: AbortSignal.timeout(timeoutMs) });
+    if (!response.ok) return null;
+    const html = await response.text();
+    return extractEventMidFromHtml(html);
+  } catch {
+    return null;
+  }
 }
 
 function periodToFlashscoreSlug(period = "full_time") {
@@ -152,7 +333,7 @@ function periodMatchesScope(period = "full_time", scope = "") {
 function marketTypeMatchesBettingType(marketType = "", bettingType = "") {
   const t = normalizeToken(bettingType);
   if (marketType === "double_chance") return /double_chance/.test(t);
-  if (marketType === "match_winner_2way") return /home_away|winner/.test(t);
+  if (marketType === "match_winner_2way") return /home_away|winner|1x2|match_result/.test(t);
   if (marketType === "over_under_2way") return /over_under|totals/.test(t);
   if (marketType === "asian_handicap_2way") return /asian_handicap/.test(t);
   if (marketType === "both_teams_to_score") return /both_teams_to_score|btts/.test(t);
@@ -172,7 +353,10 @@ function parseNetworkSelectionKey(item = {}, index = 0, marketType = "") {
   if (marketType === "over_under_2way") {
     if (/over/.test(selection)) return "over";
     if (/under/.test(selection)) return "under";
-    return index % 2 === 0 ? "over" : "under";
+    // Do NOT fall back to index — API item ordering is unreliable for O/U.
+    // Returning null forces the row to be skipped, falling back to DOM path
+    // where column order [Over, Under] is always correct.
+    return null;
   }
   if (marketType === "asian_handicap_2way" || marketType === "match_winner_2way" || marketType === "draw_no_bet_2way") {
     // Never resolve home/away by index here — resolved in parseGraphqlOddsToSnapshot with participantId context.
@@ -248,7 +432,18 @@ function toLineKey(line) {
   if (line == null || !Number.isFinite(Number(line))) return null;
   return Number(line).toFixed(2);
 }
-export function parseGraphqlOddsToSnapshot(payload, { marketType, period, marketName }, { participantDomOrder = [] } = {}) {
+
+function trendFromOpening(current, opening) {
+  if (current == null || opening == null) return null;
+  const c = Number(current);
+  const o = Number(opening);
+  if (Number.isNaN(c) || Number.isNaN(o)) return null;
+  if (c > o) return "up";
+  if (c < o) return "down";
+  return "same";
+}
+
+export function parseGraphqlOddsToSnapshot(payload, { marketType, period, marketName }, { participantDomOrder = [], hdaVerification = null } = {}) {
   const root = payload?.data?.findOddsByEventId || {};
   const byBookmakerId = new Map(
     (root?.settings?.bookmakers || []).map((x) => [String(x?.bookmaker?.id || ""), x?.bookmaker?.name || ""])
@@ -272,6 +467,32 @@ export function parseGraphqlOddsToSnapshot(payload, { marketType, period, market
   const isHomeAwayFamily = ["match_winner_2way", "draw_no_bet_2way", "asian_handicap_2way", "european_handicap_2way"].includes(marketType);
   const participantRoles = isHomeAwayFamily ? resolveParticipantRoles(oddsEntries) : null;
 
+  // Verify that the API's participant ordering matches the website's display ordering.
+  // The API's HOME_DRAW_AWAY entry may list participants in a different order than the
+  // website displays them (e.g., API puts Nitra first but website shows Michalovce first).
+  // We detect this by comparing the API's "home" HDA odd with the DOM's column-1 HDA odd.
+  // If they don't match but the API's "away" odd matches column-1, roles are inverted.
+  if (participantRoles?.homeId && participantRoles?.awayId && hdaVerification?.column1Odd) {
+    const hdaEntry = oddsEntries.find(e => e?.bettingType === "HOME_DRAW_AWAY");
+    if (hdaEntry) {
+      const hdaItems = (hdaEntry?.odds || []).filter(x => x?.value != null && x?.eventParticipantId != null);
+      const apiHomeItem = hdaItems.find(i => i.eventParticipantId === participantRoles.homeId);
+      const apiAwayItem = hdaItems.find(i => i.eventParticipantId === participantRoles.awayId);
+      if (apiHomeItem && apiAwayItem) {
+        const apiHomeVal = Number(apiHomeItem.value);
+        const apiAwayVal = Number(apiAwayItem.value);
+        const domCol1 = hdaVerification.column1Odd;
+        // If API "home" matches DOM column 2, and API "away" matches DOM column 1 → inverted
+        if (Math.abs(apiAwayVal - domCol1) < 0.02 && Math.abs(apiHomeVal - domCol1) > 0.02) {
+          const tmp = participantRoles.homeId;
+          participantRoles.homeId = participantRoles.awayId;
+          participantRoles.awayId = tmp;
+          participantRoles.confidence = "explicit_dom_corrected";
+        }
+      }
+    }
+  }
+
   const rows = [];
   for (const entry of filtered) {
     const bookmaker = byBookmakerId.get(String(entry?.bookmakerId || "")) || `Bookmaker ${entry?.bookmakerId || ""}`;
@@ -283,14 +504,17 @@ export function parseGraphqlOddsToSnapshot(payload, { marketType, period, market
     // Build rows using explicit participant IDs to prevent mixed/overwritten pairing.
     if (marketType === "asian_handicap_2way" && participantRoles?.homeId && participantRoles?.awayId) {
       const oddByPidAndLine = new Map();
+      const openingByPidAndLine = new Map();
       const candidateLines = new Set();
       for (const item of items) {
         const pid = item?.eventParticipantId;
         const line = toLineValue(item?.handicap);
         const odd = parseOdd(String(item?.value ?? ""), { rejectDateLike: false, rejectTimeLike: false });
+        const opening = parseOdd(String(item?.opening ?? ""), { rejectDateLike: false, rejectTimeLike: false });
         const lineKey = toLineKey(line);
         if (!pid || lineKey == null || odd == null) continue;
         oddByPidAndLine.set(`${pid}|${lineKey}`, odd);
+        if (opening != null) openingByPidAndLine.set(`${pid}|${lineKey}`, opening);
         if (pid === participantRoles.homeId) candidateLines.add(Number(lineKey));
       }
       for (const line of [...candidateLines].sort((a, b) => a - b)) {
@@ -300,20 +524,32 @@ export function parseGraphqlOddsToSnapshot(payload, { marketType, period, market
         if (!homeLineKey || !awayOppositeLineKey || !awaySameLineKey) continue;
 
         const homeOdd = oddByPidAndLine.get(`${participantRoles.homeId}|${homeLineKey}`) ?? null;
-        // Prefer opposite-sign away pairing (canonical asian handicap row).
         const awayOdd = (
           oddByPidAndLine.get(`${participantRoles.awayId}|${awayOppositeLineKey}`) ??
           oddByPidAndLine.get(`${participantRoles.awayId}|${awaySameLineKey}`) ??
           null
         );
         if (homeOdd == null || awayOdd == null) continue;
+        const homeOpening = openingByPidAndLine.get(`${participantRoles.homeId}|${homeLineKey}`) ?? null;
+        const awayOpening = (
+          openingByPidAndLine.get(`${participantRoles.awayId}|${awayOppositeLineKey}`) ??
+          openingByPidAndLine.get(`${participantRoles.awayId}|${awaySameLineKey}`) ??
+          null
+        );
+        const selectionOdds = { home: homeOdd, away: awayOdd };
+        const selectionOpening = (homeOpening != null || awayOpening != null) ? { home: homeOpening, away: awayOpening } : null;
+        const selectionTrend = selectionOpening
+          ? { home: trendFromOpening(homeOdd, homeOpening), away: trendFromOpening(awayOdd, awayOpening) }
+          : null;
         rows.push({
           bookmaker,
           bookmakerId: String(entry?.bookmakerId || ""),
           oddTexts: [String(homeOdd), String(awayOdd)],
           lineText: String(Number(line.toFixed(2))),
-          rawRowText: `${marketName || marketType} ${bookmaker} ${JSON.stringify({ home: homeOdd, away: awayOdd })}`,
-          _selectionOddsFromNetwork: { home: homeOdd, away: awayOdd },
+          rawRowText: `${marketName || marketType} ${bookmaker} ${JSON.stringify(selectionOdds)}`,
+          _selectionOddsFromNetwork: selectionOdds,
+          _selectionOpening: selectionOpening,
+          _selectionTrend: selectionTrend,
           _selectionConfidence: participantRoles.confidence
         });
       }
@@ -333,9 +569,20 @@ export function parseGraphqlOddsToSnapshot(payload, { marketType, period, market
     }
     for (const group of lineGroups.values()) {
       const selectionOdds = {};
+      const selectionOpening = {};
       let homeLine = null;
       let awayLine = null;
       let selectionConfidence = "derived";
+
+      const setOddAndOpening = (key, item, lineRef) => {
+        const odd = parseOdd(String(item?.value ?? ""), { rejectDateLike: false, rejectTimeLike: false });
+        if (odd == null) return;
+        selectionOdds[key] = odd;
+        const opening = parseOdd(String(item?.opening ?? ""), { rejectDateLike: false, rejectTimeLike: false });
+        if (opening != null) selectionOpening[key] = opening;
+        if (lineRef && key === "home" && lineRef != null) homeLine = lineRef;
+        if (lineRef && key === "away" && lineRef != null) awayLine = lineRef;
+      };
 
       if (isHomeAwayFamily && participantRoles?.homeId && participantRoles?.awayId) {
         // Use explicit participantId-based mapping.
@@ -343,11 +590,14 @@ export function parseGraphqlOddsToSnapshot(payload, { marketType, period, market
           const pid = wrapped.item?.eventParticipantId;
           const odd = parseOdd(String(wrapped.item?.value ?? ""), { rejectDateLike: false, rejectTimeLike: false });
           if (odd == null) continue;
+          const opening = parseOdd(String(wrapped.item?.opening ?? ""), { rejectDateLike: false, rejectTimeLike: false });
           if (pid === participantRoles.homeId) {
             selectionOdds.home = odd;
+            if (opening != null) selectionOpening.home = opening;
             if (wrapped.line != null) homeLine = wrapped.line;
           } else if (pid === participantRoles.awayId) {
             selectionOdds.away = odd;
+            if (opening != null) selectionOpening.away = opening;
             if (wrapped.line != null) awayLine = wrapped.line;
           }
         }
@@ -357,12 +607,7 @@ export function parseGraphqlOddsToSnapshot(payload, { marketType, period, market
           // Explicit mapping incomplete — fall back to index order with "derived" confidence.
           for (const [localIdx, wrapped] of group.entries.entries()) {
             const key = localIdx === 0 ? "home" : "away";
-            const odd = parseOdd(String(wrapped.item?.value ?? ""), { rejectDateLike: false, rejectTimeLike: false });
-            if (odd != null) {
-              selectionOdds[key] = odd;
-              if (key === "home" && wrapped.line != null) homeLine = wrapped.line;
-              if (key === "away" && wrapped.line != null) awayLine = wrapped.line;
-            }
+            setOddAndOpening(key, wrapped.item, wrapped.line);
           }
           selectionConfidence = "derived";
         }
@@ -371,22 +616,17 @@ export function parseGraphqlOddsToSnapshot(payload, { marketType, period, market
         for (const [localIdx, wrapped] of group.entries.entries()) {
           const key = parseNetworkSelectionKey(wrapped.item, localIdx, marketType);
           if (!key) {
-            // parseNetworkSelectionKey returns null for home/away families when called without explicit participantId context.
-            // Use index-based fallback for home/away with "derived" confidence.
             if (isHomeAwayFamily) {
               const k = localIdx === 0 ? "home" : "away";
-              const odd = parseOdd(String(wrapped.item?.value ?? ""), { rejectDateLike: false, rejectTimeLike: false });
-              if (odd != null) {
-                selectionOdds[k] = odd;
-                if (k === "home" && wrapped.line != null) homeLine = wrapped.line;
-                if (k === "away" && wrapped.line != null) awayLine = wrapped.line;
-              }
+              setOddAndOpening(k, wrapped.item, wrapped.line);
             }
             continue;
           }
           const odd = parseOdd(String(wrapped.item?.value ?? ""), { rejectDateLike: false, rejectTimeLike: false });
           if (odd == null) continue;
           selectionOdds[key] = odd;
+          const opening = parseOdd(String(wrapped.item?.opening ?? ""), { rejectDateLike: false, rejectTimeLike: false });
+          if (opening != null) selectionOpening[key] = opening;
         }
       }
 
@@ -396,10 +636,13 @@ export function parseGraphqlOddsToSnapshot(payload, { marketType, period, market
         if (marketType === "both_teams_to_score" || marketType === "team_to_score_yes_no") return ["yes", "no"];
         return ["home", "away"];
       })();
+      const _selectionOpeningOut = Object.keys(selectionOpening).length ? selectionOpening : null;
+      const _selectionTrendOut = _selectionOpeningOut
+        ? Object.fromEntries(oddOrder.filter((k) => selectionOdds[k] != null).map((k) => [k, trendFromOpening(selectionOdds[k], _selectionOpeningOut[k])]))
+        : null;
       const oddTexts = oddOrder.map((k) => selectionOdds[k]).filter((v) => v != null).map((v) => String(v));
       let lineTextValue = group.line;
       if (marketType === "asian_handicap_2way") {
-        // Canonicalize asian handicap line to the home-side sign, so both selections share one comparable line.
         if (homeLine != null) lineTextValue = homeLine;
         else if (awayLine != null) lineTextValue = -awayLine;
         if (lineTextValue != null) lineTextValue = Number(Number(lineTextValue).toFixed(2));
@@ -411,6 +654,8 @@ export function parseGraphqlOddsToSnapshot(payload, { marketType, period, market
         lineText: lineTextValue == null ? "" : String(lineTextValue),
         rawRowText: `${marketName || marketType} ${bookmaker} ${JSON.stringify(selectionOdds)}`,
         _selectionOddsFromNetwork: selectionOdds,
+        _selectionOpening: _selectionOpeningOut,
+        _selectionTrend: _selectionTrendOut,
         _selectionConfidence: selectionConfidence
       });
     }
@@ -435,6 +680,28 @@ async function getParticipantOrderFromPage(session) {
   }
 }
 
+/**
+ * Extract the first bookmaker's HDA (1X2) odds from the currently loaded page.
+ * Used to verify that the GraphQL API's participant ordering matches the website display.
+ * Returns { column1Odd, column2Odd, bookmaker } or null if not available.
+ */
+async function getHdaVerificationFromPage(session) {
+  try {
+    return await session.page.evaluate(() => {
+      const rows = document.querySelectorAll('.ui-table__row');
+      if (!rows.length) return null;
+      const row = rows[0];
+      const oddNodes = [...row.querySelectorAll('.oddsCell__odd')];
+      if (oddNodes.length < 2) return null;
+      const odds = oddNodes.map(n => parseFloat(n.textContent?.trim())).filter(v => !isNaN(v));
+      if (odds.length < 2) return null;
+      return { column1Odd: odds[0], column2Odd: odds[odds.length - 1] };
+    });
+  } catch {
+    return null;
+  }
+}
+
 async function getGraphqlPayloadForEvent(session, matchUrl, timeoutMs) {
   const key = normalizeMatchUrl(matchUrl);
   if (!session.eventCache) session.eventCache = new Map();
@@ -455,6 +722,8 @@ async function getGraphqlPayloadForEvent(session, matchUrl, timeoutMs) {
 
   // Additionally capture participant DOM order for home/away disambiguation.
   const participantDomOrder = await getParticipantOrderFromPage(session);
+  // Capture HDA odds from DOM to verify API participant ordering matches display.
+  const hdaVerification = await getHdaVerificationFromPage(session);
 
   if (!graphqlReq?.url) {
     session.eventCache.set(key, null);
@@ -488,7 +757,7 @@ async function getGraphqlPayloadForEvent(session, matchUrl, timeoutMs) {
     session.eventCache.set(key, null);
     return null;
   }
-  const data = { graphqlUrl: graphqlReq.url, payload, participantDomOrder };
+  const data = { graphqlUrl: graphqlReq.url, payload, participantDomOrder, hdaVerification };
   session.eventCache.set(key, data);
   return data;
 }
@@ -581,11 +850,43 @@ async function extractOddsTableFromPage(page) {
       const bookmakerId = clean(row.querySelector("[data-analytics-bookmaker-id]")?.getAttribute("data-analytics-bookmaker-id") || "");
       const oddNodes = Array.from(row.querySelectorAll(".oddsCell__odd"));
       const oddTexts = oddNodes.map((n) => clean(n.textContent));
-      const lineText = clean(row.querySelector(".oddsCell__noOddsCell, .oddsCell__line")?.textContent || "");
+      // Extract trend arrows from DOM: arrowUp-ico = "up", arrowDown-ico = "down", none = null
+      const oddTrends = oddNodes.map((n) => {
+        const svg = n.querySelector(".oddsCell__arrow");
+        if (!svg) return null;
+        const cls = svg.className?.baseVal || svg.getAttribute("class") || "";
+        if (cls.includes("arrowUp")) return "up";
+        if (cls.includes("arrowDown")) return "down";
+        return null;
+      });
+      // Try multiple selectors for line value — Flashscore O/U has line in various elements
+      let lineText = clean(row.querySelector(".oddsCell__noOddsCell, .oddsCell__line")?.textContent || "");
+      // Fallback: extract line from row text before the odds values.
+      // Flashscore DOM row text format: "Live Bet Icon{line}{odd1}{odd2}"
+      // e.g. "Live Bet Icon-1.52.521.51" where line=-1.5, odds=[2.52, 1.51]
+      if (!lineText || lineText === "-") {
+        const fullText = clean(row.textContent || "");
+        // Strategy: find the line BETWEEN "Live Bet Icon" (or bookmaker) and the first odd
+        const firstOdd = oddTexts[0] || "";
+        const iconEnd = fullText.replace(/Live Bet Icon/gi, "\x00").indexOf("\x00");
+        const oddStart = firstOdd ? fullText.indexOf(firstOdd, Math.max(0, iconEnd)) : -1;
+        if (oddStart > 0) {
+          // Extract text between icon/bookmaker and first odd
+          const beforeOdds = fullText.substring(0, oddStart).replace(/Live Bet Icon/gi, "").replace(bookmaker, "").replace(/[a-záčďéíĺľňóôŕšťúýžA-ZÁČĎÉÍĹĽŇÓÔŔŠŤÚÝŽ]+/gi, "").trim();
+          // Skip split/asian lines like "-1.5, -2"
+          if (/[-+]?\d+(?:[.,]\d+)?\s*,\s*[-+]?\d/.test(beforeOdds)) {
+            lineText = "__SPLIT_LINE__";
+          } else {
+            const lineMatch = beforeOdds.match(/([-+]?\d+(?:[.,]\d+)?)/);
+            if (lineMatch) lineText = lineMatch[1];
+          }
+        }
+      }
       return {
         bookmaker,
         bookmakerId,
         oddTexts,
+        oddTrends,
         lineText,
         rawRowText: clean(row.textContent)
       };
@@ -676,7 +977,7 @@ async function tryNetworkGraphqlPath({
   if (!graphqlData?.payload) {
     return { ok: false, reason: "network_graphql_payload_missing" };
   }
-  const snapshot = parseGraphqlOddsToSnapshot(graphqlData.payload, { marketType, period: periodConfig.period, marketName }, { participantDomOrder: graphqlData.participantDomOrder || [] });
+  const snapshot = parseGraphqlOddsToSnapshot(graphqlData.payload, { marketType, period: periodConfig.period, marketName }, { participantDomOrder: graphqlData.participantDomOrder || [], hdaVerification: graphqlData.hdaVerification || null });
   const normalizedFromGraphql = normalizeFlashscoreMarketSnapshot(
     {
       labels: snapshot.labels,
@@ -756,12 +1057,14 @@ async function tryNetworkDirectHtmlPath({
       );
       if (!(normalizedDirect.bookmakerRows || []).length) continue;
       ownSession.metrics.networkFirstHits += 1;
+      const directParticipantDomOrder = await getParticipantOrderFromPage(ownSession).catch(() => []);
       return {
         ok: true,
         result: {
           ...normalizedDirect,
           sourceType: "network_direct_html",
-          directOddsUrl: directUrl
+          directOddsUrl: directUrl,
+          participantDomOrder: directParticipantDomOrder || []
         }
       };
     } catch {
@@ -792,6 +1095,7 @@ async function tryDomFallbackPath({
   await page.getByText(tabRegex).first().click({ timeout: 4500 }).catch(() => {});
   await page.getByText(periodConfig.clickRegex).first().click({ timeout: 2200 }).catch(() => {});
   await page.waitForSelector(".ui-table__row", { timeout: 5000 }).catch(() => {});
+  const participantDomOrder = await getParticipantOrderFromPage(ownSession).catch(() => []);
   const table = await extractOddsTableFromPage(page);
   const normalizedFallback = normalizeFlashscoreMarketSnapshot(
     {
@@ -821,7 +1125,8 @@ async function tryDomFallbackPath({
     result: {
       ...normalizedFallback,
       sourceType: "dom_fallback",
-      directOddsUrl: null
+      directOddsUrl: null,
+      participantDomOrder: participantDomOrder || []
     }
   };
 }
@@ -848,7 +1153,13 @@ async function scrapeFlashscoreMarketTable({
   const ownSession = session || await createFlashscoreSession({ headless, timeoutMs });
   try {
     const attempts = [];
-    if (enableNetworkFirst) {
+    // For home/away markets, the GraphQL API's resolveParticipantRoles can
+    // assign home/away backwards (API internal ordering != display ordering).
+    // Skip GraphQL for these markets and use DOM/direct-HTML where column
+    // ordering [1=home, 2=away] is always correct.
+    const isHomeAwayType = ["match_winner_2way", "draw_no_bet_2way", "asian_handicap_2way", "european_handicap_2way"].includes(marketType);
+    const useGraphql = enableNetworkFirst && !isHomeAwayType;
+    if (useGraphql) {
       const graphqlAttempt = await tryNetworkGraphqlPath({
         ownSession,
         url,
@@ -875,6 +1186,8 @@ async function scrapeFlashscoreMarketTable({
         };
       }
 
+    }
+    if (enableNetworkFirst) {
       const directAttempt = await tryNetworkDirectHtmlPath({
         ownSession,
         url,
@@ -1026,7 +1339,10 @@ export function normalizeFlashscoreMarketSnapshot(snapshot, config, matchUrl = "
       extractedOddsArray: parsedOdds,
       rawRowText: row.rawRowText || "",
       selectionOdds: row._selectionOddsFromNetwork || null,
-      selectionConfidence: row._selectionConfidence || "derived"
+      selectionOpening: row._selectionOpening || null,
+      selectionTrend: row._selectionTrend || null,
+      selectionConfidence: row._selectionConfidence || "derived",
+      _domOddTrends: Array.isArray(row.oddTrends) ? row.oddTrends : null
     };
   }).filter((row) => {
     if (!row.bookmaker) return false;
@@ -1056,20 +1372,32 @@ function mapDcRows(rows = []) {
         "1x": row.extractedOddsArray[0] ?? null,
         "12": row.extractedOddsArray[1] ?? null,
         "x2": row.extractedOddsArray[2] ?? null
-      }
+      },
+      selectionTrend: row.selectionTrend || (row._domOddTrends ? {
+        "1x": row._domOddTrends[0] ?? null,
+        "12": row._domOddTrends[1] ?? null,
+        "x2": row._domOddTrends[2] ?? null
+      } : null)
     }))
     .filter((row) => dcRange(row.selectionOdds["1x"]) && dcRange(row.selectionOdds["12"]) && dcRange(row.selectionOdds["x2"]));
 }
 
 function mapTwoWayRows(rows = [], leftKey, rightKey, minOdd = 1.01, maxOdd = 20) {
   return rows
-    .map((row) => ({
-      ...row,
-      selectionOdds: row.selectionOdds || {
+    .map((row) => {
+      let odds = row.selectionOdds || {
         [leftKey]: row.extractedOddsArray[0] ?? null,
         [rightKey]: row.extractedOddsArray[1] ?? null
-      }
-    }))
+      };
+      return {
+        ...row,
+        selectionOdds: odds,
+        selectionTrend: row.selectionTrend || (row._domOddTrends ? {
+          [leftKey]: row._domOddTrends[0] ?? null,
+          [rightKey]: row._domOddTrends[1] ?? null
+        } : null)
+      };
+    })
     .filter((row) => {
       const a = row.selectionOdds[leftKey];
       const b = row.selectionOdds[rightKey];
