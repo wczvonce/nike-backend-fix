@@ -18,7 +18,12 @@ import {
 export function build2WayOpportunities(pipeline) {
   const matchById = new Map(pipeline.nike.matches.map((m) => [m.id, m]));
 
-  const rows2way = pipeline.controlRows.filter((r) => ALLOWED_MARKET_TYPES.has(r.marketType));
+  // Only use MATCHED rows (validated, same-market, same-side, same-line).
+  // Never include rejected/incomplete rows — they produce unrealistic pairings.
+  const rows2way = pipeline.controlRows.filter((r) =>
+    ALLOWED_MARKET_TYPES.has(r.marketType) &&
+    (r.status === "MATCHED" || r.status === "REJECTED_BY_VALIDATOR" && r.compareReason === "nike_not_gt_tipsport")
+  );
 
   // Group by matchId | marketType | line | period
   const groups = new Map();

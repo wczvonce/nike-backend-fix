@@ -236,8 +236,9 @@ function parseNikeDetailMarketsForMatch(match, detailMarkets = []) {
         // Group lines into unique absolute values for pairing with odds
         const uniqueAbsLines = [...new Set(lines.map((l) => Math.abs(l)))].sort((a, b) => a - b);
         const pairs = Math.floor(odds.length / 2);
+        // Safety: if line count doesn't match pair count, pairing is ambiguous — skip entirely
+        if (uniqueAbsLines.length > 0 && uniqueAbsLines.length < pairs) continue;
         for (let i = 0; i < pairs; i++) {
-          // Use the i-th unique absolute line. If not available, skip (reject unreliable pairing).
           const absLine = uniqueAbsLines[i];
           if (absLine == null) continue;
           const line = sanitizeLine(absLine);
@@ -271,12 +272,14 @@ function parseNikeDetailMarketsForMatch(match, detailMarkets = []) {
         for (let i = 0; i < pairs; i++) {
           const line = sanitizeLine(lineTokens[i] ?? null);
           if (line == null) continue;
-          // Nike "menej ako X" shows two odds: [UNDER_kurz, OVER_kurz].
-          // odds[0] = under (YES will be under X) — the first displayed number
-          // odds[1] = over (NO will NOT be under X) — the second displayed number
-          // For hockey L=5: odds[0]=1.96 (under, less likely) odds[1]=1.82 (over, more likely)
+          // Default: Nike "menej ako X" shows [UNDER, OVER].
+          // If "viac" appears before "menej" in text, order is [OVER, UNDER].
           let underOdd = odds[i * 2];
           let overOdd = odds[i * 2 + 1];
+          if (overFirst) {
+            overOdd = odds[i * 2];
+            underOdd = odds[i * 2 + 1];
+          }
           pushMarket(markets, { id: `${match.id}-ou-under-${line}-${i}`, matchId: match.id, marketType: "over_under_2way", period, line, selection: "under", nikeOdd: underOdd });
           pushMarket(markets, { id: `${match.id}-ou-over-${line}-${i}`, matchId: match.id, marketType: "over_under_2way", period, line, selection: "over", nikeOdd: overOdd });
         }
@@ -513,7 +516,9 @@ async function scrapeNikeCore({ headless = true, timeoutMs = 45000, saveDebugArt
 
     const fallbackMarkets = buildMarketsFromCardOdds(matches);
     const detailMarkets = matches.flatMap((m) => parseNikeDetailMarketsForMatch(m, detailMarketsByMatch[m.id] || []));
-    const markets = dedupeMarkets([...fallbackMarkets, ...detailMarkets]);
+    // Detail markets first — dedupeMarkets keeps the first occurrence per logical key,
+    // so detail-scraped odds have priority over fallback/card odds.
+    const markets = dedupeMarkets([...detailMarkets, ...fallbackMarkets]);
     const debugInfo = {
       title: extracted.title,
       finalUrl: extracted.finalUrl,
