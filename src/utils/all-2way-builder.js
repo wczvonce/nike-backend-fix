@@ -9,25 +9,29 @@ import {
 /**
  * Builds the flat "All 2-Way Opportunities" row list from a completed pipeline result.
  *
- * - Groups controlRows by matchId + marketType + line + period
- * - For each group, identifies the 2-way (or 3-way for double_chance) pair
- * - Computes Nike margin and Tipsport margin from the correctly matched pair
- * - Annotates every individual selection row with the group's margin
- * - Returns rows sorted by nikeMarginPercent ASC (nulls last), then match name
+ * Source: pipeline.rows (validated final edges where Nike > Tipsport)
+ *       + pipeline.controlRows with status MATCHED or nike_not_gt_tipsport
+ *         (both sides of a valid pair, even if Nike is not greater)
+ *
+ * NEVER uses rejected/incomplete/stale rows.
  */
 export function build2WayOpportunities(pipeline) {
   const matchById = new Map(pipeline.nike.matches.map((m) => [m.id, m]));
 
-  // Only use MATCHED rows (validated, same-market, same-side, same-line).
-  // Never include rejected/incomplete rows — they produce unrealistic pairings.
-  const rows2way = pipeline.controlRows.filter((r) =>
-    ALLOWED_MARKET_TYPES.has(r.marketType) &&
-    (r.status === "MATCHED" || r.status === "REJECTED_BY_VALIDATOR" && r.compareReason === "nike_not_gt_tipsport")
-  );
+  // Source: only rows that passed full validation (MATCHED or nike_not_gt_tipsport).
+  // These have verified same-event, same-market, same-period, same-line, same-selection.
+  // Both Nike and Tipsport odds are present and valid.
+  const safeRows = (pipeline.controlRows || []).filter((r) => {
+    if (!ALLOWED_MARKET_TYPES.has(r.marketType)) return false;
+    if (r.nikeOdd == null || r.tipsportOdd == null) return false;
+    if (r.status === "MATCHED") return true;
+    if (r.status === "REJECTED_BY_VALIDATOR" && r.compareReason === "nike_not_gt_tipsport") return true;
+    return false;
+  });
 
   // Group by matchId | marketType | line | period
   const groups = new Map();
-  for (const row of rows2way) {
+  for (const row of safeRows) {
     const lineKey = row.line == null ? "__null__" : String(row.line);
     const key = `${row.matchId}|${row.marketType}|${lineKey}|${row.period || "full_time"}`;
     if (!groups.has(key)) groups.set(key, []);
@@ -56,9 +60,6 @@ export function build2WayOpportunities(pipeline) {
     if (!pairInfo) {
       marginNote = "unsupported_market_type";
     } else if (pairInfo.type === "double_chance_3way") {
-      // double_chance has 3 correlated selections (1x, 12, x2); their implied
-      // probabilities overlap and sum to 2, not 1. The standard 2-way margin
-      // formula is not applicable. Show rows without a margin figure.
       marginNote = "margin_not_applicable_double_chance_3way";
     } else {
       const [key1, key2] = pairInfo.keys;
@@ -67,14 +68,8 @@ export function build2WayOpportunities(pipeline) {
 
       if (r1?.nikeOdd > 1 && r2?.nikeOdd > 1) {
         nikeMarginPercent = compute2WayMarginPercent(r1.nikeOdd, r2.nikeOdd);
-      } else if (r1 == null && r2 == null) {
-        marginNote = "incomplete_pair";
-      } else if (!(r1?.nikeOdd > 1) && !(r2?.nikeOdd > 1)) {
-        marginNote = "incomplete_pair";
-      } else if (!(r1?.nikeOdd > 1)) {
-        marginNote = `missing_nike_odd_for_${key1}`;
       } else {
-        marginNote = `missing_nike_odd_for_${key2}`;
+        marginNote = "incomplete_pair";
       }
 
       if (r1?.tipsportOdd > 1 && r2?.tipsportOdd > 1) {
@@ -113,7 +108,6 @@ export function build2WayOpportunities(pipeline) {
     }
   }
 
-  // Primary sort: nikeMarginPercent ASC (nulls last); secondary: match name
   result.sort((a, b) => {
     if (a.nikeMarginPercent == null && b.nikeMarginPercent == null) return 0;
     if (a.nikeMarginPercent == null) return 1;

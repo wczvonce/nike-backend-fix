@@ -229,19 +229,30 @@ function parseNikeDetailMarketsForMatch(match, detailMarkets = []) {
     ) {
       for (const row of rows) {
         const odds = (row.odds || []).map((v) => parseOdd(v, { rejectDateLike: false, rejectTimeLike: false })).filter((v) => v !== null);
-        // Support all decimal lines (not just .0/.5) — e.g. +1.25, -2.75
-        const lines = [...String(row.text || "").matchAll(/([+-]\d+(?:[.,]\d+)?)/g)]
+        // Extract signed handicap lines from text in ORIGINAL order (not sorted/deduped).
+        const rawLines = [...String(row.text || "").matchAll(/([+-]\d+(?:[.,]\d+)?)/g)]
           .map((m) => sanitizeLine(parseLineToken(m[1])))
           .filter((x) => x != null);
-        // Group lines into unique absolute values for pairing with odds
-        const uniqueAbsLines = [...new Set(lines.map((l) => Math.abs(l)))].sort((a, b) => a - b);
         const pairs = Math.floor(odds.length / 2);
-        // Safety: if line count doesn't match pair count, pairing is ambiguous — skip entirely
-        if (uniqueAbsLines.length > 0 && uniqueAbsLines.length < pairs) continue;
+        if (pairs === 0) continue;
+
+        // Build line-to-pair mapping: each pair of odds needs exactly one line.
+        // Strategy: use original text order. Each line token in rawLines maps
+        // to the next odds pair. Reject row if line count !== pair count.
+        // Also reject split/quarter lines (already filtered by sanitizeLine).
+        // Deduplicate adjacent identical lines (e.g. "+1.5 +1.5" from repeated text).
+        const pairLines = [];
+        let prev = null;
+        for (const l of rawLines) {
+          if (l === prev) continue; // skip adjacent duplicates
+          pairLines.push(Math.abs(l));
+          prev = l;
+        }
+        // Strict: line count must exactly match pair count
+        if (pairLines.length !== pairs) continue;
+
         for (let i = 0; i < pairs; i++) {
-          const absLine = uniqueAbsLines[i];
-          if (absLine == null) continue;
-          const line = sanitizeLine(absLine);
+          const line = sanitizeLine(pairLines[i]);
           if (line == null) continue;
           const homeOdd = odds[i * 2];
           const awayOdd = odds[i * 2 + 1];
