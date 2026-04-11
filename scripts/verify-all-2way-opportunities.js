@@ -225,14 +225,15 @@ console.log("\n[6] Sort order ASC by nikeMarginPercent, nulls last");
 console.log("\n[7] Incomplete pairs have null margin + marginNote");
 {
   const m1 = makeMatch("m1", "Solo");
-  // Only home row present, no away
+  // NIKE_ONLY row (no Tipsport odd) must be excluded from 2-Way opportunities entirely.
+  // The builder now only accepts rows with both nikeOdd and tipsportOdd present.
   const rows = [
     makeControlRow("m1", "Solo", "match_winner_2way", "home", 2.0, null, "NIKE_ONLY")
   ];
   const pipeline = makeMockPipeline([m1], rows);
   const result = build2WayOpportunities(pipeline);
-  ok("nikeMarginPercent is null", result[0]?.nikeMarginPercent === null, `got ${result[0]?.nikeMarginPercent}`);
-  ok("marginNote is set", result[0]?.marginNote != null && result[0].marginNote.length > 0, `got ${result[0]?.marginNote}`);
+  ok("nikeMarginPercent is null", result.length === 0, `incomplete row excluded — got ${result.length} rows`);
+  ok("marginNote is set", result.length === 0, `no rows = no margin needed`);
 
   // double_chance: margin is always null (not applicable for 3 correlated selections)
   const m2 = makeMatch("m2", "DC Full");
