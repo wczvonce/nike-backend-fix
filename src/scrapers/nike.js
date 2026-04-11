@@ -271,12 +271,12 @@ function parseNikeDetailMarketsForMatch(match, detailMarkets = []) {
         for (let i = 0; i < pairs; i++) {
           const line = sanitizeLine(lineTokens[i] ?? null);
           if (line == null) continue;
-          // Nike "menej ako X" shows two odds: [OVER_kurz, UNDER_kurz].
-          // odds[0] = over (will NOT be under X) — typically low for low lines
-          // odds[1] = under (WILL be under X) — typically high for low lines in hockey
-          // Verified against Flashscore: Nike L=2.5 odds[0]=1.12 = over, Flashscore over=1.13
-          let overOdd = odds[i * 2];
-          let underOdd = odds[i * 2 + 1];
+          // Nike "menej ako X" shows two odds: [UNDER_kurz, OVER_kurz].
+          // odds[0] = under (YES will be under X) — the first displayed number
+          // odds[1] = over (NO will NOT be under X) — the second displayed number
+          // For hockey L=5: odds[0]=1.96 (under, less likely) odds[1]=1.82 (over, more likely)
+          let underOdd = odds[i * 2];
+          let overOdd = odds[i * 2 + 1];
           pushMarket(markets, { id: `${match.id}-ou-under-${line}-${i}`, matchId: match.id, marketType: "over_under_2way", period, line, selection: "under", nikeOdd: underOdd });
           pushMarket(markets, { id: `${match.id}-ou-over-${line}-${i}`, matchId: match.id, marketType: "over_under_2way", period, line, selection: "over", nikeOdd: overOdd });
         }
