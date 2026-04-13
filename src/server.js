@@ -421,7 +421,7 @@ async function buildNikeTipsportPipeline() {
         const metrics = computeMetrics(row.nikeOdd, row.tipsportOdd);
         // Sanity check: edges > 15pp are almost certainly parser bugs (inverted home/away,
         // wrong line match, etc.). Real Nike vs Tipsport differences are typically 0.5-5pp.
-        if (metrics.probabilityEdgePp > 15) {
+        if (metrics.probabilityEdgePp > 10) {
           controlRows.push({
             matchId: match.id,
             match: match.rawTitle,

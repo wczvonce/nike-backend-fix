@@ -283,10 +283,12 @@ function parseNikeDetailMarketsForMatch(match, detailMarkets = []) {
         for (let i = 0; i < pairs; i++) {
           const line = sanitizeLine(lineTokens[i] ?? null);
           if (line == null) continue;
-          // Default: Nike "menej ako X" shows [UNDER, OVER].
-          // If "viac" appears before "menej" in text, order is [OVER, UNDER].
-          let underOdd = odds[i * 2];
+          // Nike O/U odds order is unreliable — varies by match/detail view.
+          // Emit both values. Pipeline edge sanity check (>15pp) catches bad pairings.
+          // Default: odds[0] = first displayed, odds[1] = second displayed.
+          // overFirst flag tries to detect order from text context.
           let overOdd = odds[i * 2 + 1];
+          let underOdd = odds[i * 2];
           if (overFirst) {
             overOdd = odds[i * 2];
             underOdd = odds[i * 2 + 1];
